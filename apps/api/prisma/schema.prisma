@@ -1,0 +1,354 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+model Tenant {
+  id        String   @id @default(uuid())
+  name      String
+  currency  String   @default("USD")
+  locale    String   @default("en-US")
+  onboardingCompleted Boolean @default(false)
+  stores    Store[]
+  users     User[]
+  products  Product[]
+  sales     Sale[]
+  returns   SalesReturn[]
+  customers Customer[]
+  suppliers Supplier[]
+  taxes     Tax[]
+  discounts Discount[]
+  roles     Role[]
+  tills     Till[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Store {
+  id        String   @id @default(uuid())
+  name      String
+  address   String?
+  phone     String?
+  email     String?
+  website   String?
+  logoUrl   String?
+  receiptHeader String?
+  receiptFooter String?
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  users     User[]
+  inventory Inventory[]
+  sales     Sale[]
+  returns   SalesReturn[]
+  tills     Till[]
+  products  Product[]
+  customers Customer[]
+  suppliers Supplier[]
+  inventoryEvents InventoryEvent[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  password  String   // Hashed
+  
+  // RBAC Relations
+  roleId    String?
+  roleDef   Role?    @relation(fields: [roleId], references: [id])
+
+  // Deprecated fields (Keep for migration script, then remove)
+  role      String?   // ADMIN, MANAGER, CASHIER
+  permissions String[] @default([])
+
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  storeId   String?
+  store     Store?   @relation(fields: [storeId], references: [id])
+  inventoryEvents InventoryEvent[]
+  sales     Sale[]
+  returnsProcessed SalesReturn[]
+  tillSessions TillSession[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  permissions String[] @default([]) // List of permission strings e.g. "MANAGE_PRODUCTS"
+  isSystem    Boolean  @default(false) // System roles cannot be deleted
+  
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  
+  users       User[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([tenantId, name])
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  sku         String   @unique
+  barcode     String?  @unique
+  name        String
+  category    String?  // New Field
+  description String?
+  price       Decimal  // Selling Price
+  costPrice   Decimal  @default(0.0) // Purchase Price
+  minStockLevel Int    @default(0)
+  taxRate     Decimal  @default(0.0)
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  supplierId  String?
+  supplier    Supplier? @relation(fields: [supplierId], references: [id])
+  
+  // Store Isolation
+  storeId     String?
+  store       Store?    @relation(fields: [storeId], references: [id])
+
+  inventory   Inventory[]
+  saleItems   SaleItem[]
+  returnItems SalesReturnItem[]
+  inventoryEvents InventoryEvent[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Inventory {
+  id        String   @id @default(uuid())
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id])
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  quantity  Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@unique([storeId, productId])
+}
+
+model InventoryEvent {
+  id        String   @id @default(uuid())
+  type      String   // RECEIVE, SALE, ADJUSTMENT, TRANSFER, RETURN
+  quantity  Int      // Positive or negative change
+  reason    String?
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id])
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  supplierId String?
+  supplier  Supplier? @relation(fields: [supplierId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Supplier {
+  id        String   @id @default(uuid())
+  name      String
+  contact   String?
+  phone     String?
+  email     String?
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  storeId   String?
+  store     Store?   @relation(fields: [storeId], references: [id])
+  events    InventoryEvent[]
+  products  Product[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Tax {
+  id        String   @id @default(uuid())
+  name      String
+  rate      Decimal  // Percentage (e.g. 0.05)
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Discount {
+  id           String   @id @default(uuid())
+  name         String
+  type         String   // PERCENTAGE, FIXED
+  value        Decimal
+  targetType   String   @default("ALL") // ALL, PRODUCT, CATEGORY
+  targetValues String[] // List of IDs or Category Names
+  startDate    DateTime? // Optional Start Date
+  endDate      DateTime? // Optional End Date
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Sale {
+  id            String     @id @default(uuid())
+  total         Decimal
+  subtotal      Decimal    @default(0.0)
+
+  taxTotal      Decimal    @default(0.0)
+  discountTotal Decimal    @default(0.0)
+  paymentMethod String     @default("CASH") // CASH, CARD
+  status        String     @default("COMPLETED")
+  
+  tenantId      String
+  tenant        Tenant     @relation(fields: [tenantId], references: [id])
+  
+  storeId       String
+  store         Store      @relation(fields: [storeId], references: [id])
+  
+  userId        String
+  user          User       @relation(fields: [userId], references: [id])
+  
+  tillSessionId String?
+  tillSession   TillSession? @relation(fields: [tillSessionId], references: [id])
+
+  customerId    String?
+  customer      Customer?  @relation(fields: [customerId], references: [id])
+  
+  loyaltyPointsUsed   Int @default(0)
+  loyaltyPointsEarned Int @default(0)
+
+  items         SaleItem[]
+  
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  returns       SalesReturn[]
+}
+
+model Customer {
+  id        String   @id @default(uuid())
+  code      String   @unique // Human readable e.g. C-1025
+  name      String
+  email     String?
+  phone     String?
+  
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  
+  // Store Isolation
+  storeId     String?
+  store       Store?    @relation(fields: [storeId], references: [id])
+  
+  loyaltyPoints Int      @default(0)
+  
+  sales     Sale[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SaleItem {
+  id          String   @id @default(uuid())
+  saleId      String
+  sale        Sale     @relation(fields: [saleId], references: [id])
+  
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  
+  quantity    Int
+  priceAtSale Decimal
+  costAtSale  Decimal  @default(0.0)
+  
+  createdAt   DateTime @default(now())
+}
+
+
+model Till {
+  id        String   @id @default(uuid())
+  name      String
+  status    String   @default("CLOSED") // OPEN, CLOSED
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id])
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  sessions  TillSession[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TillSession {
+  id           String   @id @default(uuid())
+  tillId       String
+  till         Till     @relation(fields: [tillId], references: [id])
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  openedAt     DateTime @default(now())
+  closedAt     DateTime?
+  openingFloat Decimal  @default(0.0)
+  closingCash  Decimal?
+  expectedCash Decimal?
+  variance     Decimal?
+  status       String   @default("OPEN") // OPEN, CLOSED
+  
+  sales        Sale[]
+  cashTransactions CashTransaction[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model CashTransaction {
+  id            String   @id @default(uuid())
+  tillSessionId String
+  tillSession   TillSession @relation(fields: [tillSessionId], references: [id])
+  type          String   // CASH_IN, CASH_OUT
+  amount        Decimal
+  reason        String?
+  description   String?
+  createdAt     DateTime @default(now())
+}
+
+model SalesReturn {
+  id          String   @id @default(uuid())
+  
+  saleId      String
+  sale        Sale     @relation(fields: [saleId], references: [id])
+  
+  total       Decimal
+  reason      String?
+  
+  items       SalesReturnItem[]
+  
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  
+  storeId     String
+  store       Store    @relation(fields: [storeId], references: [id])
+  
+  createdBy   String
+  user        User     @relation(fields: [createdBy], references: [id])
+  
+  createdAt   DateTime @default(now())
+}
+
+model SalesReturnItem {
+  id          String   @id @default(uuid())
+  
+  returnId    String
+  return      SalesReturn   @relation(fields: [returnId], references: [id])
+  
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  
+  quantity    Int
+  restock     Boolean  @default(true)
+  refundAmount Decimal
+}

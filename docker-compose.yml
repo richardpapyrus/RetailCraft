@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: pos_postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: pos_db
+    volumes:
+      - ./docker/postgres:/var/lib/postgresql/data
+    networks:
+      - pos_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d pos_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: pos_redis
+    ports:
+      - "6379:6379"
+    networks:
+      - pos_network
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - pos_network
+    environment:
+      DATABASE_URL: postgresql://admin:password@postgres:5432/pos_db
+    volumes:
+      - ./apps/api/src:/app/apps/api/src
+      - ./apps/api/prisma:/app/apps/api/prisma
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_started
+    networks:
+      - pos_network
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+    volumes:
+      - ./apps/web/src:/app/apps/web/src
+      - ./apps/web/public:/app/apps/web/public
+
+networks:
+  pos_network:
+    driver: bridge

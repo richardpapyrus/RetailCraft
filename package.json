@@ -1,0 +1,25 @@
+{
+    "name": "retail-pos-monorepo",
+    "version": "0.0.1",
+    "private": true,
+    "workspaces": [
+        "apps/*"
+    ],
+    "scripts": {
+        "dev": "docker compose up",
+        "start": "pm2 start ecosystem.config.js",
+        "stop": "pm2 delete ecosystem.config.js",
+        "logs": "pm2 logs",
+        "monitor": "pm2 monit",
+        "build": "turbo run build",
+        "test": "turbo run test",
+        "lint": "turbo run lint"
+    },
+    "devDependencies": {
+        "eslint": "latest",
+        "pm2": "^6.0.14",
+        "prettier": "latest",
+        "turbo": "latest"
+    },
+    "packageManager": "npm@11.6.2"
+}
