@@ -12,6 +12,7 @@ export default function RegisterPage() {
     const [error, setError] = useState('');
     const [formData, setFormData] = useState({
         businessName: '',
+        storeName: '',
         email: '',
         password: ''
     });
@@ -60,6 +61,19 @@ export default function RegisterPage() {
                                 placeholder="Business Name"
                                 value={formData.businessName}
                                 onChange={e => setFormData({ ...formData, businessName: e.target.value })}
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="store-name" className="sr-only">First Location Name</label>
+                            <input
+                                id="store-name"
+                                name="storeName"
+                                type="text"
+                                required
+                                className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                                placeholder="First Location Name (e.g. Main Street Branch)"
+                                value={formData.storeName}
+                                onChange={e => setFormData({ ...formData, storeName: e.target.value })}
                             />
                         </div>
                         <div>

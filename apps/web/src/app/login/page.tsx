@@ -35,16 +35,15 @@ export default function LoginPage() {
         <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
             <div className="w-full max-w-md space-y-8">
                 <div>
-                    <div className="flex justify-center mb-6">
+                    <div className="flex flex-col items-center justify-center mb-8">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src="/logo.jpg" alt="RetailCraft Logo" className="h-24 w-auto object-contain" />
+                        <img src="/logo.jpg" alt="RetailCraft Logo" className="h-32 w-auto object-contain mb-4 filter drop-shadow-xl" />
+                        <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">RetailCraft</h1>
+                        <p className="text-gray-500 font-medium mt-2">The Operating System for Retail</p>
                     </div>
-                    <h2 className="mt-2 text-center text-3xl font-extrabold tracking-tight text-gray-900">
-                        Sign in to RetailCraft
+                    <h2 className="mt-2 text-center text-xl font-bold tracking-tight text-gray-900">
+                        Sign in to your workspace
                     </h2>
-                    <p className="mt-2 text-center text-sm text-gray-600">
-                        Use seeded accounts: admin@pos.local / password
-                    </p>
                 </div>
                 <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
                     <div className="-space-y-px rounded-md shadow-sm">
@@ -89,6 +88,14 @@ export default function LoginPage() {
                         </button>
                     </div>
                 </form>
+            </div>
+
+            {/* Product Branding Footer */}
+            <div className="absolute bottom-6 left-0 right-0 flex justify-center opacity-70">
+                <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">Powered by</span>
+                    <span className="font-bold text-gray-600 text-sm tracking-tight">RetailCraft</span>
+                </div>
             </div>
         </div>
     );

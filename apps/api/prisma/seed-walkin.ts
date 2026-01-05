@@ -14,11 +14,18 @@ async function main() {
     });
 
     if (!exists) {
+        const store = await prisma.store.findFirst({ where: { tenantId: tenant.id } });
+        if (!store) {
+            console.log("No store found for tenant.");
+            return;
+        }
+
         await prisma.customer.create({
             data: {
                 name: 'Walk-in Customer',
                 code: 'WALKIN',
-                tenantId: tenant.id
+                tenantId: tenant.id,
+                storeId: store.id
             }
         });
         console.log("Created Walk-in Customer for Tenant:", tenant.name);

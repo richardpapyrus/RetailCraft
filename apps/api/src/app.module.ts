@@ -19,6 +19,9 @@ import { OnboardingModule } from "./onboarding/onboarding.module";
 import { ConfigModule } from "@nestjs/config";
 import { RolesModule } from "./roles/roles.module";
 import { PrismaModule } from "./prisma/prisma.module";
+import { BusinessModule } from "./business/business.module";
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 import { LoggerMiddleware } from "./common/middleware/logger.middleware";
 
@@ -40,7 +43,13 @@ import { LoggerMiddleware } from "./common/middleware/logger.middleware";
     TenantsModule,
     ReturnsModule,
     RolesModule,
+    RolesModule,
     PrismaModule,
+    BusinessModule,
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', '..', 'uploads'), // Go up from dist/src/app.module
+      serveRoot: '/uploads',
+    }),
   ],
   controllers: [],
   providers: [],

@@ -65,6 +65,18 @@ export default function DashboardPage() {
         setLoading(true);
         const fetchData = async () => {
             try {
+                // If HQ mode (no store selected), use Business Endpoint for richer data (Breakdown)
+                // Otherwise use Sales Stats
+                const endpoint = (!selectedStoreId && isAdmin)
+                    ? `/business/dashboard?from=${dateRange.from}&to=${dateRange.to}`
+                    : `/sales/stats?from=${dateRange.from}&to=${dateRange.to}&storeId=${selectedStoreId || ''}`;
+
+                // For now, let's just use the EXISTING sales/stats for consistency, 
+                // but if we want the breakdown we'd fetch it.
+                // Let's keep using api.sales.stats as it returns the chart data structure the page expects.
+                // The BusinessController returns { aggregate, byLocation }. The Page expects { filtered, comparison, trendChartData ... }.
+                // So switching endpoints would break the page unless I refactor the page significantly.
+                // Given "cleanly with minimal disruption", I will stick to existing endpoint which works for Aggregates.
                 const s = await api.sales.stats(dateRange.from, dateRange.to, selectedStoreId || undefined);
                 setStats(s);
             } catch (error) {
@@ -85,14 +97,10 @@ export default function DashboardPage() {
                 <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
                     <div className="flex flex-col">
                         <h1 className="text-3xl font-extrabold text-[#111827] tracking-tight leading-tight">
-                            {selectedStoreId
-                                ? stores.find(s => s.id === selectedStoreId)?.name
-                                : (!isAdmin && user?.store?.name)
-                                    ? user.store.name
-                                    : (user?.tenantName || 'RetailCraft')}
+                            Dashboard Overview
                         </h1>
                         <span className="text-sm font-bold text-gray-400 uppercase tracking-wider">
-                            {selectedStoreId || (!isAdmin && user?.store) ? 'Store Dashboard' : 'HQ Dashboard'}
+                            {selectedStoreId || (!isAdmin && user?.store) ? 'Store Performance' : 'Organization Performance'}
                         </span>
                     </div>
 

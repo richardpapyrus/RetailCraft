@@ -78,6 +78,7 @@ async function main() {
             name: 'Walk-in Customer',
             code: 'WALKIN',
             tenantId: tenant.id,
+            storeId: store.id
         }
     });
 

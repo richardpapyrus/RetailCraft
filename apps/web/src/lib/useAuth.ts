@@ -13,7 +13,10 @@ interface User {
     store?: { id: string; name: string };
     currency?: string;
     locale?: string;
+    locale?: string;
     permissions?: string[];
+    tenantLogo?: string;
+    tenantBrandColor?: string;
 }
 
 export const formatCurrency = (amount: number | string | undefined | null, currency = 'USD', locale = 'en-US') => {
@@ -53,7 +56,15 @@ export const useAuth = create<AuthState>()(
                         body: JSON.stringify({ email, password }),
                     });
 
-                    set({ token: data.access_token, user: data.user, lastActive: Date.now() });
+                    const isStrictLocation = data.user.role !== 'Administrator' && data.user.role !== 'ADMIN';
+                    const initialStoreId = isStrictLocation ? data.user.storeId : null; // Admin defaults to Business Dashboard (null)
+
+                    set({
+                        token: data.access_token,
+                        user: data.user,
+                        lastActive: Date.now(),
+                        selectedStoreId: initialStoreId
+                    });
                 } catch (error) {
                     console.error('Login failed', error);
                     throw error;
@@ -81,7 +92,16 @@ export const useAuth = create<AuthState>()(
                     try {
                         const freshUser = await fetchClient('/auth/profile', { method: 'POST', body: JSON.stringify({ email: user.email }) });
                         if (freshUser) {
-                            set({ user: freshUser });
+                            // Re-enforce binding
+                            const isStrictLocation = freshUser.role !== 'Administrator' && freshUser.role !== 'ADMIN';
+                            const currentSelection = get().selectedStoreId;
+
+                            // If strict user somehow got unselected, force them back
+                            if (isStrictLocation && currentSelection !== freshUser.storeId) {
+                                set({ user: freshUser, selectedStoreId: freshUser.storeId });
+                            } else {
+                                set({ user: freshUser });
+                            }
                         }
                     } catch (e) {
                         console.error('Failed to refresh profile', e);

@@ -229,7 +229,15 @@ export const api = {
         delete: (id: string) => fetchClient(`/discounts/${id}`, { method: 'DELETE' }),
     },
     tenants: {
-        update: (id: string, data: { currency?: string; locale?: string }) => fetchClient(`/tenants/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+        update: (id: string, data: { currency?: string; locale?: string; logoUrl?: string; brandColor?: string }) => fetchClient(`/tenants/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+        uploadLogo: (id: string, file: File) => {
+            const formData = new FormData();
+            formData.append('file', file);
+            return fetchClient(`/tenants/${id}/logo`, {
+                method: 'POST',
+                body: formData
+            }).then(res => res as { logoUrl: string });
+        }
     },
     returns: {
         create: (data: ReturnRequest) => fetchClient('/returns', {

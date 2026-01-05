@@ -48,7 +48,7 @@ export class AuthService {
     const fullUser = await this.prisma.user.findUnique({
       where: { id: user.id },
       include: {
-        tenant: { select: { name: true, currency: true, locale: true } },
+        tenant: { select: { name: true, currency: true, locale: true, logoUrl: true, brandColor: true } },
         store: true,
         roleDef: true, // Include the Role entity
       },
@@ -79,6 +79,8 @@ export class AuthService {
         locale: fullUser?.tenant?.locale || "en-US",
         permissions: effectivePermissions,
         store: fullUser?.store,
+        tenantLogo: fullUser?.tenant?.logoUrl,
+        tenantBrandColor: fullUser?.tenant?.brandColor,
       },
     };
   }
@@ -87,7 +89,7 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({
       where: { email },
       include: {
-        tenant: { select: { name: true, currency: true, locale: true } },
+        tenant: { select: { name: true, currency: true, locale: true, logoUrl: true, brandColor: true } },
         store: true,
         roleDef: true,
       },
@@ -108,6 +110,8 @@ export class AuthService {
       locale: user.tenant?.locale || "en-US",
       permissions: effectivePermissions,
       store: user.store,
+      tenantLogo: user.tenant?.logoUrl,
+      tenantBrandColor: user.tenant?.brandColor,
     };
   }
 
@@ -123,7 +127,7 @@ export class AuthService {
 
     // Transaction: Tenant -> Roles -> Store -> User
     const user = await this.prisma.$transaction(async (tx) => {
-      // 1. Create Tenant
+      // 1. Create Tenant (Business)
       const tenant = await tx.tenant.create({
         data: {
           name: data.businessName || "My Business",
@@ -136,17 +140,18 @@ export class AuthService {
       const adminRole = await tx.role.create({
         data: {
           name: "Administrator",
-          description: "Full access to al system features",
+          description: "Full access to all system features",
           permissions: ["*"],
           isSystem: true,
           tenantId: tenant.id,
         },
       });
 
-      // 3. Create Default Store
+      // 3. Create Default Store (Location)
+      // Use 'subdomain' or explict 'storeName' if passed, otherwise 'Main Location'
       const store = await tx.store.create({
         data: {
-          name: data.businessName || "Main Store",
+          name: data.storeName || "Main Location",
           tenantId: tenant.id,
         },
       });

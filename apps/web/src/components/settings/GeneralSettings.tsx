@@ -22,7 +22,7 @@ const COUNTRIES = [
 ];
 
 export default function GeneralSettings() {
-    const { user, selectedStoreId } = useAuth();
+    const { user, selectedStoreId, refreshProfile } = useAuth();
     const [selectedCountry, setSelectedCountry] = useState(COUNTRIES[0]);
     const [saving, setSaving] = useState(false);
     const [locked, setLocked] = useState(false);
@@ -31,11 +31,19 @@ export default function GeneralSettings() {
     const [storeName, setStoreName] = useState('');
     const [storeData, setStoreData] = useState<any>(null);
 
+    // Branding State
+    const [logoUrl, setLogoUrl] = useState('');
+    const [brandColor, setBrandColor] = useState('#1F2937'); // Default gray-900
+
     useEffect(() => {
         if (user?.currency) {
             const match = COUNTRIES.find(c => c.currency === user.currency && c.locale === user.locale);
             if (match) setSelectedCountry(match);
         }
+
+        // Init Branding derived from user session
+        setLogoUrl(user?.tenantLogo || '');
+        setBrandColor(user?.tenantBrandColor || '#1F2937');
 
         if (selectedStoreId) {
             loadStoreDetails();
@@ -90,13 +98,15 @@ export default function GeneralSettings() {
                 // For now, assume Currency is Tenant Global.
                 alert('Store Name Updated');
             } else if (user?.tenantId) {
-                // Update TENANT Name? We don't have an endpoint for simple tenant name update yet easily accessible here, 
-                // but existing code updated currency/locale on tenant.
+                // Update TENANT Name and Branding
                 await api.tenants.update(user.tenantId, {
                     currency: selectedCountry.currency,
-                    locale: selectedCountry.locale
+                    locale: selectedCountry.locale,
+                    logoUrl: logoUrl || null,
+                    brandColor: brandColor || null
                 });
-                alert('Tenant Settings Saved');
+                await refreshProfile();
+                alert('Organization Settings Saved');
             }
         } catch (e: any) {
             console.error('Settings Save Error:', e);
@@ -148,6 +158,84 @@ export default function GeneralSettings() {
                             Switch to "All Locations" (deselect store) to edit Currency settings.
                         </p>
                     )}
+                </div>
+
+                <div className="pt-4 border-t border-gray-100">
+                    <h3 className="text-sm font-bold text-gray-900 mb-4">Branding</h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Business Logo</label>
+
+                            <div className="flex flex-col gap-2">
+                                {/* File Upload Input */}
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={async (e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file && user?.tenantId) {
+                                            try {
+                                                setSaving(true);
+                                                const res = await api.tenants.uploadLogo(user.tenantId, file);
+                                                setLogoUrl(res.logoUrl);
+                                                await refreshProfile();
+                                                alert('Logo Uploaded Successfully');
+                                            } catch (err) {
+                                                console.error(err);
+                                                alert('Failed to upload logo');
+                                            } finally {
+                                                setSaving(false);
+                                            }
+                                        }
+                                    }}
+                                    className="block w-full text-sm text-gray-500
+                                      file:mr-4 file:py-2 file:px-4
+                                      file:rounded-full file:border-0
+                                      file:text-sm file:font-semibold
+                                      file:bg-indigo-50 file:text-indigo-700
+                                      hover:file:bg-indigo-100
+                                    "
+                                />
+
+                                {logoUrl && (
+                                    <div className="mt-2 p-2 bg-gray-50 rounded border border-gray-200 flex items-center justify-between">
+                                        <div>
+                                            <span className="text-[10px] uppercase text-gray-400 block mb-1">Current Logo</span>
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img src={logoUrl} alt="Preview" className="h-10 object-contain" />
+                                        </div>
+                                        <button
+                                            onClick={() => setLogoUrl('')}
+                                            className="text-xs text-red-500 hover:text-red-700 font-medium"
+                                        >
+                                            Remove
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Brand Color</label>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="color"
+                                    value={brandColor}
+                                    onChange={(e) => setBrandColor(e.target.value)}
+                                    className="h-10 w-10 p-1 rounded border border-gray-300 cursor-pointer"
+                                />
+                                <input
+                                    type="text"
+                                    value={brandColor}
+                                    onChange={(e) => setBrandColor(e.target.value)}
+                                    className="flex-1 p-2 border border-gray-300 rounded-lg text-sm uppercase"
+                                    maxLength={7}
+                                />
+                            </div>
+                            <p className="text-[10px] text-gray-400 mt-1">Used for sidebar headers and accents.</p>
+                        </div>
+                    </div>
                 </div>
 
                 <div className="pt-4">

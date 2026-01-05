@@ -21,15 +21,10 @@ export class OnboardingService {
       },
     });
 
-    // Also update the default store name to match business name if it's the only one
-    // or just update the first store found.
-    const store = await prisma.store.findFirst({ where: { tenantId } });
-    if (store) {
-      await prisma.store.update({
-        where: { id: store.id },
-        data: { name: data.name },
-      });
-    }
+    // We no longer auto-rename the store to match business name. 
+    // Locations are distinct entities.
+    // However, if no store exists (rare), we might create one, but onboarding flow should handle that.
+    
     return { success: true };
   }
 

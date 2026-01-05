@@ -6,6 +6,7 @@ import GeneralSettings from '@/components/settings/GeneralSettings';
 import StoreSettings from '@/components/settings/StoreSettings';
 import TeamSettings from '@/components/settings/TeamSettings';
 import RolesSettings from '@/components/settings/RolesSettings';
+import TaxesDiscountsSettings from '@/components/settings/TaxesDiscountsSettings';
 
 export default function SettingsPage() {
     const [activeTab, setActiveTab] = useState('general');
@@ -55,6 +56,5 @@ export default function SettingsPage() {
     );
 }
 
-// Import at top (placeholder for now until created)
-import TaxesDiscountsSettings from '@/components/settings/TaxesDiscountsSettings';
+
 

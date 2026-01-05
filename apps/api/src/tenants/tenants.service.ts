@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 @Injectable()
 export class TenantsService {
-  async update(id: string, data: { currency?: string; locale?: string }) {
+  async update(id: string, data: { currency?: string; locale?: string; logoUrl?: string; brandColor?: string }) {
     // If updating currency/locale, check if sales exist
     if (data.currency || data.locale) {
       // Check default store or all stores? All stores for this tenant.

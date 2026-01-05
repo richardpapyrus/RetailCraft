@@ -13,6 +13,8 @@ model Tenant {
   name      String
   currency  String   @default("USD")
   locale    String   @default("en-US")
+  logoUrl   String?
+  brandColor String?
   onboardingCompleted Boolean @default(false)
   stores    Store[]
   users     User[]
@@ -244,8 +246,8 @@ model Customer {
   tenant    Tenant   @relation(fields: [tenantId], references: [id])
   
   // Store Isolation
-  storeId     String?
-  store       Store?    @relation(fields: [storeId], references: [id])
+  storeId     String
+  store       Store     @relation(fields: [storeId], references: [id])
   
   loyaltyPoints Int      @default(0)
   
