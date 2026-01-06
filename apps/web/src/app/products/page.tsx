@@ -631,7 +631,7 @@ export default function ProductsPage() {
                 )}
 
                 {/* Table */}
-                <div className="bg-white shadow-sm rounded-xl overflow-hidden border border-gray-100">
+                <div className="bg-white shadow-sm rounded-xl overflow-hidden border border-gray-100 overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
@@ -658,12 +658,12 @@ export default function ProductsPage() {
                                     const isLowStock = stock <= (p.minStockLevel || 0);
                                     return (
                                         <tr key={p.id} className={`hover:bg-gray-50 cursor-pointer ${isLowStock ? 'bg-red-50' : ''}`} onClick={() => router.push(`/products/${p.id}`)}>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm font-medium text-gray-900">{p.name}</div>
+                                            <td className="px-6 py-4">
+                                                <div className="text-sm font-medium text-gray-900 max-w-[200px] truncate" title={p.name}>{p.name}</div>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm text-gray-500">{p.sku}</div>
-                                                <div className="text-xs text-gray-400">{p.barcode}</div>
+                                            <td className="px-6 py-4">
+                                                <div className="text-sm text-gray-500 max-w-[150px] truncate" title={p.sku}>{p.sku}</div>
+                                                <div className="text-xs text-gray-400 max-w-[150px] truncate" title={p.barcode || ''}>{p.barcode}</div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 {formatCurrency(p.price, user?.currency)}

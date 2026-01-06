@@ -82,21 +82,60 @@ export class ProductsService {
         storeId: targetStoreId,
       };
 
-      const existing = await prisma.product.findFirst({
-        where: { sku: finalSku, tenantId },
-      });
+      // SMART DEDUPLICATION LOGIC
+      // 1. If we generated a random SKU, we can't reliably use it to find existing products.
+      // 2. We must look for existing products by Barcode OR Name to prevent duplicates/constraint errors.
+
+      const searchConditions: any[] = [];
+
+      // If SKU was provided in CSV (not generated), it is the primary key.
+      if (sku) {
+        searchConditions.push({ sku: sku });
+      }
+
+      // If Barcode is provided, check for it.
+      if (row.barcode) {
+        searchConditions.push({ barcode: row.barcode });
+      }
+
+      // Fallback: Check by Name if we haven't found it yet.
+      // (Useful for re-imports of files without SKU/Barcode)
+      if (name) {
+        searchConditions.push({ name: name });
+      }
+
+      // Execute Search
+      let existing = null;
+      if (searchConditions.length > 0) {
+        existing = await prisma.product.findFirst({
+          where: {
+            tenantId,
+            OR: searchConditions
+          }
+        });
+      }
 
       let product;
       let status: 'created' | 'updated' = 'created';
 
       if (existing) {
-        const { storeId: _s, ...updateData } = productData;
+        // If we found a match, we UPDATE it. 
+        // We do NOT overwrite the SKU if the existing product already has one and the CSV row didn't provide one.
+        const { storeId: _s, sku: _skuInput, ...updateData } = productData;
+
+        // Only update SKU if explicitly provided in CSV, otherwise keep existing
+        const finalUpdateData = { ...updateData };
+        if (sku) {
+          (finalUpdateData as any).sku = sku;
+        }
+
         product = await prisma.product.update({
           where: { id: existing.id },
-          data: updateData,
+          data: finalUpdateData,
         });
         status = 'updated';
       } else {
+        // Only create if truly new
         product = await prisma.product.create({
           data: productData,
         });
