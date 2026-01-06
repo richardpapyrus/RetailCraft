@@ -1,0 +1,31 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/retail-craft
+          chmod 600 ~/.ssh/retail-craft
+          ssh-keyscan -H 165.227.26.131 >> ~/.ssh/known_hosts
+
+      - name: Install rsync
+        run: sudo apt-get update && sudo apt-get install -y rsync
+
+      - name: Transfer files
+        run: |
+          rsync -avz --exclude '.git/' --exclude 'node_modules/' -e "ssh -i ~/.ssh/retail-craft" ./ root@165.227.26.131:/root/retail-craft-app/
+
+      - name: Deploy on server
+        run: |
+          ssh -i ~/.ssh/retail-craft root@165.227.26.131 "cd /root/retail-craft-app/ && docker compose up --build -d"
