@@ -54,13 +54,23 @@ export class ProductsService {
       const sku = row.sku;
       const price = row.price;
 
-      // Auto-generate SKU if missing (Name + Random Suffix)
-      const finalSku = sku || (name ? `${name.replace(/[^a-zA-Z0-9]/g, '-').toUpperCase().substring(0, 15)}-${Math.floor(Math.random() * 10000)}` : null);
+      // Relaxed Validation: Default values for missing fields
 
-      if (!name || !finalSku || !price) {
-        // console.log("Skipping row missing mandatory fields:", row);
-        return { status: 'skipped' };
+      // Name defaults to "Unnamed Product" if completely missing
+      const finalName = name || `Unnamed Product ${Math.floor(Math.random() * 1000)}`;
+
+      // Auto-generate SKU if missing (Name + Random Suffix) uses finalName
+      const finalSku = sku || `${finalName.replace(/[^a-zA-Z0-9]/g, '-').toUpperCase().substring(0, 15)}-${Math.floor(Math.random() * 10000)}`;
+
+      // Price defaults to 0 if missing
+      let finalPrice = 0;
+      if (price) {
+        const parsed = parseFloat(price.toString());
+        if (!isNaN(parsed)) finalPrice = parsed;
       }
+
+      // Removed Strict Check: We now accept almost anything.
+      // if (!name || !finalSku || !price) ...
 
       // Handle Store Fallback for Inventory
       let targetStoreId = storeId;
@@ -70,9 +80,9 @@ export class ProductsService {
       }
 
       const productData = {
-        name,
+        name: finalName,
         sku: finalSku,
-        price: parseFloat(price),
+        price: finalPrice,
         tenantId,
         costPrice: row.costprice ? parseFloat(row.costprice) : undefined,
         minStockLevel: row.minstocklevel ? parseInt(row.minstocklevel) : 0,
@@ -100,8 +110,8 @@ export class ProductsService {
 
       // Fallback: Check by Name if we haven't found it yet.
       // (Useful for re-imports of files without SKU/Barcode)
-      if (name) {
-        searchConditions.push({ name: name });
+      if (finalName) {
+        searchConditions.push({ name: finalName });
       }
 
       // Execute Search
