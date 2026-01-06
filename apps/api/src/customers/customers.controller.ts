@@ -34,10 +34,13 @@ export class CustomersController {
       if (!targetStoreId) targetStoreId = req.user.storeId;
     }
 
+    // Verify storeId is not passed twice (as string and as relation)
+    const { storeId: _s, ...rest } = createCustomerDto as any;
+
     return this.customersService.create({
-      ...createCustomerDto,
+      ...rest,
       tenant: { connect: { id: req.user.tenantId } },
-      store: targetStoreId ? { connect: { id: targetStoreId } } : undefined, // Connect to store
+      store: targetStoreId ? { connect: { id: targetStoreId } } : undefined,
     });
   }
 

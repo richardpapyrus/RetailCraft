@@ -52,12 +52,23 @@ export class SalesController {
     @Query("to") to?: string,
     @Query("storeId") queryStoreId?: string,
   ) {
+    console.log(`[SalesController] getStats params: from=${from}, to=${to}, queryStoreId=${queryStoreId}`);
+    console.log(`[SalesController] User: ${req.user.email}, Role: ${req.user.role}, StoreId: ${req.user.storeId}, Permissions: ${req.user.permissions}`);
+
     let storeId = queryStoreId;
-    // Non-Admins are restricted to their assigned store
-    const isSystemAdmin = req.user.role === 'Administrator' || req.user.role === 'ADMIN' || req.user.permissions?.includes('*');
-    if (!isSystemAdmin) {
+
+    // Check if user has global access permissions
+    // We allow explicit 'Administrator', 'ADMIN' roles, OR 'Owner', 'Manager'
+    // Also check for '*' permission.
+    const allowedGlobalRoles = ['Administrator', 'ADMIN', 'Owner', 'Manager'];
+    const hasGlobalAccess = allowedGlobalRoles.includes(req.user.role) || req.user.permissions?.includes('*');
+
+    if (!hasGlobalAccess) {
       if (req.user.storeId) storeId = req.user.storeId;
-      else storeId = 'invalid-store-id'; // Prevent fallback to "All Stores"
+      else storeId = 'invalid-store-id'; // Lock out users with no store and no global access
+    } else {
+      // If system admin, allow undefined storeId (All stores)
+      // If queryStoreId is provided, use it.
     }
     return this.salesService.getStats(req.user.tenantId, from, to, storeId);
   }

@@ -318,7 +318,7 @@ export class SalesService {
     let endOfPeriod;
     if (to) {
       endOfPeriod = new Date(to);
-      endOfPeriod.setHours(23, 59, 59, 999);
+      endOfPeriod.setUTCHours(23, 59, 59, 999);
     } else {
       endOfPeriod = new Date(
         now.getFullYear(),
@@ -505,7 +505,7 @@ export class SalesService {
     let end;
     if (to) {
       end = new Date(to);
-      end.setHours(23, 59, 59, 999);
+      end.setUTCHours(23, 59, 59, 999);
     } else {
       end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
     }
@@ -601,7 +601,7 @@ export class SalesService {
     let endDt;
     if (to) {
       endDt = new Date(to);
-      endDt.setHours(23, 59, 59, 999);
+      endDt.setUTCHours(23, 59, 59, 999);
     } else {
       endDt = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
     }
