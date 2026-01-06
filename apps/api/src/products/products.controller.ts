@@ -59,8 +59,8 @@ export class ProductsController {
   @Public()
   @Get("template")
   async downloadTemplate(@Res() res: Response) {
-    const csvContent = `name,sku,price,description,category,barcode,costPrice,minStockLevel
-Example Product,EX-001,10.00,Description here,General,12345678,5.00,10`;
+    const csvContent = `name,sku,price,description,category,barcode,costPrice,minStockLevel,quantity
+Example Product,EX-001,10.00,Description here,General,12345678,5.00,10,100`;
 
     res.set({
       "Content-Type": "text/csv",

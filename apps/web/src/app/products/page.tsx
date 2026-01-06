@@ -571,7 +571,7 @@ export default function ProductsPage() {
                                         <p className="font-semibold">Required Columns:</p>
                                         <p>name, sku, price</p>
                                         <p className="font-semibold mt-1">Optional:</p>
-                                        <p>description, category, barcode, costPrice, minStockLevel</p>
+                                        <p>description, category, barcode, costPrice, minStockLevel, quantity</p>
                                     </div>
                                     <button
                                         type="button"

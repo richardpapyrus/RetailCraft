@@ -58,17 +58,36 @@ export class ProductsService {
                 where: { sku, tenantId },
               });
 
+              const quantity = row.quantity || row.Quantity;
+              let product;
+
               if (existing) {
-                await prisma.product.update({
+                product = await prisma.product.update({
                   where: { id: existing.id },
                   data: productData,
                 });
                 updatedCount++;
               } else {
-                await prisma.product.create({
+                product = await prisma.product.create({
                   data: productData,
                 });
                 createdCount++;
+              }
+
+              // Handle Inventory if Quantity & StoreId provided
+              if (storeId && quantity !== undefined && quantity !== null && quantity !== '') {
+                const qty = parseInt(quantity.toString());
+                if (!isNaN(qty)) {
+                  await prisma.inventory.upsert({
+                    where: { storeId_productId: { storeId, productId: product.id } },
+                    update: { quantity: qty }, // Import sets the absolute quantity
+                    create: {
+                      storeId,
+                      productId: product.id,
+                      quantity: qty
+                    }
+                  });
+                }
               }
             } catch (e) {
               console.error("Import Row Error", e);
