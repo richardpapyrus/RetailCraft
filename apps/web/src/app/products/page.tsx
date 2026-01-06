@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { api, Product, API_URL } from '@/lib/api';
 import { DataService } from '@/lib/db-service';
-import { useAuth } from '@/lib/useAuth';
+import { useAuth, formatCurrency } from '@/lib/useAuth';
 import { useRouter } from 'next/navigation';
 
 export default function ProductsPage() {
@@ -124,6 +124,10 @@ export default function ProductsPage() {
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!selectedStoreId) {
+            alert("Please select a specific store to create a product.");
+            return;
+        }
         try {
             const payload = {
                 ...newProduct,
@@ -220,6 +224,11 @@ export default function ProductsPage() {
         e.preventDefault();
         if (!importFile) return;
 
+        if (!selectedStoreId) {
+            alert("Please select a specific store to import products into.");
+            return;
+        }
+
         try {
             setLoading(true);
             const res = await api.products.import(importFile, selectedStoreId || undefined);
@@ -275,14 +284,26 @@ export default function ProductsPage() {
                         {hasPermission('MANAGE_PRODUCTS') && (
                             <>
                                 <button
-                                    onClick={() => setIsImportModalOpen(true)}
-                                    className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition shadow-sm"
+                                    onClick={() => {
+                                        if (!selectedStoreId) {
+                                            alert("Please select a specific store first.");
+                                            return;
+                                        }
+                                        setIsImportModalOpen(true);
+                                    }}
+                                    className={`border border-gray-300 px-4 py-2 rounded-lg transition shadow-sm ${!selectedStoreId ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
                                 >
                                     Import CSV
                                 </button>
                                 <button
-                                    onClick={() => setShowCreate(true)}
-                                    className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition shadow-sm"
+                                    onClick={() => {
+                                        if (!selectedStoreId) {
+                                            alert("Please select a specific store first.");
+                                            return;
+                                        }
+                                        setShowCreate(true);
+                                    }}
+                                    className={`px-4 py-2 rounded-lg transition shadow-sm ${!selectedStoreId ? 'bg-gray-300 cursor-not-allowed text-gray-500' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
                                 >
                                     + Add Product
                                 </button>
@@ -300,7 +321,7 @@ export default function ProductsPage() {
                         </div>
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                             <h3 className="text-gray-500 text-sm font-medium">Inventory Value</h3>
-                            <p className="text-3xl font-bold text-gray-900 mt-2">${stats.inventoryValue}</p>
+                            <p className="text-3xl font-bold text-gray-900 mt-2">{formatCurrency(stats.inventoryValue, user?.currency)}</p>
                         </div>
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                             <h3 className="text-gray-500 text-sm font-medium">Low Stock Items</h3>
@@ -645,13 +666,13 @@ export default function ProductsPage() {
                                                 <div className="text-xs text-gray-400">{p.barcode}</div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                ${Number(p.price).toFixed(2)}
+                                                {formatCurrency(p.price, user?.currency)}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 {(p as any).category || '-'}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {p.costPrice ? `$${Number(p.costPrice).toFixed(2)}` : '-'}
+                                                {p.costPrice ? formatCurrency(p.costPrice, user?.currency) : '-'}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 {p.supplier ? (

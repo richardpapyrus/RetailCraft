@@ -53,6 +53,10 @@ export class ProductsController {
     // Sanitize string "undefined"
     if (targetStoreId === 'undefined' || targetStoreId === 'null') targetStoreId = undefined;
 
+    if (!targetStoreId) {
+      throw new Error("Store ID is required for import. Global imports are not allowed.");
+    }
+
     return this.productsService.importProducts(tenantId, file.buffer, targetStoreId);
   }
 
@@ -85,6 +89,10 @@ Example Product,EX-001,10.00,Description here,General,12345678,5.00,10,100`;
     if (!isSystemAdmin) {
       if (!req.user.storeId) throw new Error("Operation denied: No store assigned");
       targetStoreId = req.user.storeId;
+    }
+
+    if (!targetStoreId) {
+      throw new Error("Store ID is required to create a product.");
     }
 
     return this.productsService.create({

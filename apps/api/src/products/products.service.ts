@@ -22,82 +22,109 @@ export class ProductsService {
           let updatedCount = 0;
           let errors = 0;
 
+          // Chunk Processing for Performance (Batch size: 50)
+          const chunkSize = 50;
 
+          for (let i = 0; i < products.length; i += chunkSize) {
+            const chunk = products.slice(i, i + chunkSize);
 
-          for (const row of products) {
-            try {
-              // Normalize keys just in case, though mapHeaders handles most
-              const name = row.name || row.Name;
-              const sku = row.sku || row.Sku || row.SKU;
-              const price = row.price || row.Price;
+            // Process chunk in parallel
+            const results = await Promise.all(
+              chunk.map(row => this.processImportRow(row, tenantId, storeId))
+            );
 
-              if (!name || !sku || !price) {
-
-                continue;
-              }
-              const { ...rest } = row;
-
-              const productData = {
-                name,
-                sku,
-                price: parseFloat(price),
-                tenantId,
-                costPrice: rest.costPrice
-                  ? parseFloat(rest.costPrice)
-                  : undefined,
-                minStockLevel: rest.minStockLevel
-                  ? parseInt(rest.minStockLevel)
-                  : 0,
-                description: rest.description,
-                category: rest.category,
-                barcode: rest.barcode,
-                storeId, // Assign to specific store if provided
-              };
-
-              const existing = await prisma.product.findFirst({
-                where: { sku, tenantId },
-              });
-
-              const quantity = row.quantity || row.Quantity;
-              let product;
-
-              if (existing) {
-                product = await prisma.product.update({
-                  where: { id: existing.id },
-                  data: productData,
-                });
-                updatedCount++;
-              } else {
-                product = await prisma.product.create({
-                  data: productData,
-                });
-                createdCount++;
-              }
-
-              // Handle Inventory if Quantity & StoreId provided
-              if (storeId && quantity !== undefined && quantity !== null && quantity !== '') {
-                const qty = parseInt(quantity.toString());
-                if (!isNaN(qty)) {
-                  await prisma.inventory.upsert({
-                    where: { storeId_productId: { storeId, productId: product.id } },
-                    update: { quantity: qty }, // Import sets the absolute quantity
-                    create: {
-                      storeId,
-                      productId: product.id,
-                      quantity: qty
-                    }
-                  });
-                }
-              }
-            } catch (e) {
-              console.error("Import Row Error", e);
-              errors++;
+            // Aggregate stats
+            for (const res of results) {
+              if (res.status === 'created') createdCount++;
+              else if (res.status === 'updated') updatedCount++;
+              else if (res.status === 'error') errors++;
             }
           }
+
           resolve({ createdCount, updatedCount, errors });
         })
         .on("error", (err) => reject(err));
     });
+  }
+
+  // Helper for Processing Single Row (Extracted for Parallel Execution)
+  private async processImportRow(row: any, tenantId: string, storeId?: string): Promise<{ status: 'created' | 'updated' | 'error' | 'skipped' }> {
+    try {
+      const name = row.name;
+      const sku = row.sku;
+      const price = row.price;
+
+      // Auto-generate SKU if missing (Name + Random Suffix)
+      const finalSku = sku || (name ? `${name.replace(/[^a-zA-Z0-9]/g, '-').toUpperCase().substring(0, 15)}-${Math.floor(Math.random() * 10000)}` : null);
+
+      if (!name || !finalSku || !price) {
+        // console.log("Skipping row missing mandatory fields:", row);
+        return { status: 'skipped' };
+      }
+
+      // Handle Store Fallback for Inventory
+      let targetStoreId = storeId;
+      if (!targetStoreId && (row.quantity || row.quantity === 0)) {
+        const defaultStore = await prisma.store.findFirst({ where: { tenantId } });
+        if (defaultStore) targetStoreId = defaultStore.id;
+      }
+
+      const productData = {
+        name,
+        sku: finalSku,
+        price: parseFloat(price),
+        tenantId,
+        costPrice: row.costprice ? parseFloat(row.costprice) : undefined,
+        minStockLevel: row.minstocklevel ? parseInt(row.minstocklevel) : 0,
+        description: row.description,
+        category: row.category,
+        barcode: row.barcode,
+        storeId: targetStoreId,
+      };
+
+      const existing = await prisma.product.findFirst({
+        where: { sku: finalSku, tenantId },
+      });
+
+      let product;
+      let status: 'created' | 'updated' = 'created';
+
+      if (existing) {
+        const { storeId: _s, ...updateData } = productData;
+        product = await prisma.product.update({
+          where: { id: existing.id },
+          data: updateData,
+        });
+        status = 'updated';
+      } else {
+        product = await prisma.product.create({
+          data: productData,
+        });
+        status = 'created';
+      }
+
+      // Handle Inventory
+      const quantity = row.quantity;
+      if (targetStoreId && quantity !== undefined && quantity !== null && quantity !== '') {
+        const qty = parseInt(quantity.toString());
+        if (!isNaN(qty)) {
+          await prisma.inventory.upsert({
+            where: { storeId_productId: { storeId: targetStoreId, productId: product.id } },
+            update: { quantity: qty },
+            create: {
+              storeId: targetStoreId,
+              productId: product.id,
+              quantity: qty
+            }
+          });
+        }
+      }
+      return { status: status };
+
+    } catch (e) {
+      console.error("Row Error:", e);
+      return { status: 'error' };
+    }
   }
 
   async create(data: {
@@ -233,7 +260,7 @@ export class ProductsService {
                  FROM "Product" p
                   LEFT JOIN "Inventory" i ON p.id = i."productId" ${storeId ? `AND i."storeId" = '${storeId}'` : ''}
                   WHERE p."tenantId" = '${tenantId}'
-                 ${storeId ? `AND p."storeId" = '${storeId}'` : ''}
+                 ${storeId ? `AND (p."storeId" = '${storeId}' OR p."storeId" IS NULL OR i."storeId" = '${storeId}')` : ''}
                  AND (${filters.category ? `p.category = '${filters.category}'` : '1=1'})
                  AND (
                     p.name ILIKE '%${searchTerm}%' OR 
@@ -279,9 +306,18 @@ export class ProductsService {
       where.category = filters.category;
     }
 
-    // STRICT STORE ISOLATION
+    // STRICT STORE ISOLATION -> NOW ALLOWS GLOBAL PRODUCTS AND SHARED INVENTORY
     if (storeId) {
-      where.storeId = storeId;
+      where.AND = [
+        {
+          OR: [
+            { storeId: storeId },
+            { storeId: null },
+            // Also visible if this store has inventory records for it
+            { inventory: { some: { storeId: storeId } } }
+          ]
+        }
+      ];
     }
 
     const [total, data] = await prisma.$transaction([
@@ -308,7 +344,11 @@ export class ProductsService {
     // 1. Total Products (Strict Isolation)
     const productWhere: any = { tenantId };
     if (storeId) {
-      productWhere.storeId = storeId;
+      productWhere.OR = [
+        { storeId: storeId },
+        { storeId: null },
+        { inventory: { some: { storeId: storeId } } }
+      ];
     }
 
     const totalProducts = await prisma.product.count({ where: productWhere });

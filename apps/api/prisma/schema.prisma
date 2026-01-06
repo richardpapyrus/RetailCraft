@@ -103,8 +103,8 @@ model Role {
 
 model Product {
   id          String   @id @default(uuid())
-  sku         String   @unique
-  barcode     String?  @unique
+  sku         String
+  barcode     String?
   name        String
   category    String?  // New Field
   description String?
@@ -127,6 +127,9 @@ model Product {
   inventoryEvents InventoryEvent[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@unique([sku, tenantId])
+  @@unique([barcode, tenantId])
 }
 
 model Inventory {
