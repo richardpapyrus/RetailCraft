@@ -16,6 +16,5 @@ COPY . .
 
 WORKDIR /app/apps/api
 RUN npx prisma generate
-RUN npm run build
 
-CMD ["npm", "run", "start:prod"]
+CMD ["npm", "run", "start:dev"]
