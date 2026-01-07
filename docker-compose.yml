@@ -37,16 +37,12 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+      migrator:
+        condition: service_completed_successfully
     networks:
       - pos_network
     environment:
       DATABASE_URL: postgresql://admin:password@postgres:5432/pos_db
-    # command: Removed, let Dockerfile default CMD run (npm run start:dev)
-    depends_on:
-      postgres:
-        condition: service_healthy
-      migrator:
-        condition: service_completed_successfully
     volumes:
       - ./apps/api/src:/app/apps/api/src
       - ./apps/api/prisma:/app/apps/api/prisma
