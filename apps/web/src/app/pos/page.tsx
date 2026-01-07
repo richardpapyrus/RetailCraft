@@ -379,7 +379,7 @@ export default function POSPage() {
         if (!user || !isHydrated) return <div className="p-8">Loading POS...</div>;
 
         // Server-side filtering now
-        const filteredProducts = products;
+        const filteredProducts = [...products];
 
         const filteredCustomers = customers.filter(c =>
             c.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
@@ -387,6 +387,7 @@ export default function POSPage() {
             c.code?.toLowerCase().includes(customerSearch.toLowerCase())
         );
 
+        // Render POS Interface
         return (
             <div className="h-full w-full">
                 <div className="flex h-full w-full bg-[#f8f9fc] font-sans overflow-hidden print:hidden">
