@@ -1,8 +1,17 @@
 // Smart API URL determination
 let defaultUrl = 'http://localhost:4000';
 if (typeof window !== 'undefined') {
-    if (window.location.hostname.includes('retailcraft.com.ng')) {
+    const hostname = window.location.hostname;
+    const protocol = window.location.protocol;
+
+    if (hostname.includes('retailcraft.com.ng')) {
+        // Production Domain
         defaultUrl = 'https://api.retailcraft.com.ng';
+    } else if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+        // LAN / IP Access (Assume Backend is on same host, port 4000)
+        // Note: Mix of HTTP/HTTPS might be an issue if frontend is HTTPS and backend is HTTP,
+        // but for LAN IPs, usually both are HTTP.
+        defaultUrl = `${protocol}//${hostname}:4000`;
     }
 }
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || defaultUrl;
