@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { api, Role } from '@/lib/api';
 import { useAuth } from '@/lib/useAuth';
 import { useRouter } from 'next/navigation';
+import { toast } from 'react-hot-toast';
 
 export default function UsersPage() {
     const { user, token, isHydrated } = useAuth();
@@ -77,9 +78,10 @@ export default function UsersPage() {
             setIsModalOpen(false);
             setEditingUser(null);
             loadData();
+            toast.success(editingUser ? 'User Updated' : 'User Created');
         } catch (err) {
             console.error(err);
-            alert('Failed to save user');
+            toast.error('Failed to save user');
         }
     };
 
@@ -88,9 +90,10 @@ export default function UsersPage() {
         try {
             await api.users.delete(id);
             loadData();
+            toast.success('User Deleted');
         } catch (e) {
             console.error(e);
-            alert('Failed to delete user');
+            toast.error('Failed to delete user');
         }
     };
 

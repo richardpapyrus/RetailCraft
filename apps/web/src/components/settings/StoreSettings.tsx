@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/useAuth';
+import { toast } from 'react-hot-toast';
 
 // Shared Form for Create/Edit
 const StoreForm = ({ isEdit = false, onSave, onCancel, formData, setFormData }: any) => (
@@ -138,7 +139,7 @@ export default function StoreSettings() {
             setIsCreating(false);
             fetchStores();
         } catch (e) {
-            alert('Failed to create store');
+            toast.error('Failed to create store');
         }
     };
 
@@ -163,7 +164,7 @@ export default function StoreSettings() {
             fetchStores();
         } catch (e) {
             console.error(e);
-            alert('Failed to update store');
+            toast.error('Failed to update store');
         }
     };
 

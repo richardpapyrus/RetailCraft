@@ -188,6 +188,7 @@ export class ProductsService {
     supplierId?: string;
     category?: string | null;
   }) {
+
     return prisma.product.create({
       data: {
         ...data,
@@ -198,6 +199,8 @@ export class ProductsService {
           data.barcode === "" || data.barcode === null ? null : data.barcode,
         category:
           data.category === "" || data.category === null ? null : data.category,
+        supplierId:
+          data.supplierId === "" || data.supplierId === null ? null : data.supplierId,
         storeId: (data as any).storeId, // Add storeId to create
       },
     });
@@ -229,42 +232,34 @@ export class ProductsService {
     const updateData: any = { ...cleanData };
 
     // Sanitize Numbers
-    if (updateData.price !== undefined) {
+    if (updateData.price !== undefined && updateData.price !== null) {
       const p = parseFloat(updateData.price.toString());
       if (isNaN(p)) throw new Error("Invalid Price");
       updateData.price = p;
     }
     if (updateData.costPrice !== undefined) {
-      // Handle null/empty explicitly if passed
       if (updateData.costPrice === "" || updateData.costPrice === null) {
-        updateData.costPrice = null; // Assuming schema allows null, but schema says default 0.0. Let's use 0 or undefined.
-        // Actually schema says: costPrice Decimal @default(0.0). It is NOT optional in schema?
-        // Schema: costPrice Decimal @default(0.0)
-        // So it cannot be null.
         updateData.costPrice = 0;
       } else {
         const c = parseFloat(updateData.costPrice.toString());
         updateData.costPrice = isNaN(c) ? 0 : c;
       }
     }
-    if (updateData.minStockLevel !== undefined) {
+    if (updateData.minStockLevel !== undefined && updateData.minStockLevel !== null) {
       const m = parseInt(updateData.minStockLevel.toString());
       updateData.minStockLevel = isNaN(m) ? 0 : m;
     }
 
-    // Sanitize Strings to Null if empty (to avoid Unique Constraint violations on empty strings)
+    // Sanitize Strings
     if (updateData.barcode === "" || updateData.barcode === null) {
       updateData.barcode = null;
     }
     if (updateData.category === "" || updateData.category === null) {
       updateData.category = null;
     }
-
-    // Handle SupplierId
-    // If it is explicitly null, we want to disconnect or set to null.
-    // Prisma update expects: supplierId: null OR supplier: { disconnect: true } if using relations,
-    // but since we have the scalar supplierId, passing null works IF it is nullable.
-    // Schema: supplierId String? -> Nullable.
+    if (updateData.supplierId === "" || updateData.supplierId === null) {
+      updateData.supplierId = null;
+    }
 
     return prisma.product.update({
       where: { id },
@@ -296,7 +291,7 @@ export class ProductsService {
                     p.barcode ILIKE ${searchTerm}
                 )
                 GROUP BY p.id
-                HAVING COALESCE(SUM(i.quantity), 0) <= p."minStockLevel"
+                HAVING COALESCE(SUM(i.quantity), 0) <= COALESCE(p."minStockLevel", 0)
                 OFFSET ${skip}
                 LIMIT ${take}
             `;
@@ -317,7 +312,7 @@ export class ProductsService {
                     p.barcode ILIKE '%${searchTerm}%'
                  )
                  GROUP BY p.id
-                 HAVING COALESCE(SUM(i.quantity), 0) <= p."minStockLevel"
+                 HAVING COALESCE(SUM(i.quantity), 0) <= COALESCE(p."minStockLevel", 0)
             `);
       const total = totalResult.length;
 
@@ -383,9 +378,9 @@ export class ProductsService {
       }),
     ]);
 
-    console.log(
+    /* console.log(
       `[ProductsService] findAll for ${tenantId} (Store: ${storeId || 'All'}): found ${data.length} items (total count: ${total}) with where clause: ${JSON.stringify(where)}`,
-    );
+    ); */
     return { total, data };
   }
 
@@ -419,14 +414,15 @@ export class ProductsService {
       const cost = Number(p.costPrice) || 0;
       totalValue += cost * totalQty;
 
-      if (p.minStockLevel > 0 && totalQty <= p.minStockLevel) {
+      const minStock = p.minStockLevel || 0; // Null Safety
+      if (totalQty <= minStock) {
         lowStockCount++;
       }
     }
 
-    console.log(
+    /* console.log(
       `[ProductsService] getStats for ${tenantId}: totalProducts=${totalProducts}, inventoryValue=${totalValue.toFixed(2)}, lowStockCount=${lowStockCount}`,
-    );
+    ); */
     return {
       totalProducts,
       inventoryValue: totalValue.toFixed(2),

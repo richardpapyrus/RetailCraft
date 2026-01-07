@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { api, Role, PermissionGroup } from '@/lib/api';
 import { Plus, Edit2, Trash2, X, Shield, Users } from 'lucide-react';
 import { Sidebar } from '@/components/Sidebar';
+import { toast } from 'react-hot-toast';
 
 export default function RolesPage() {
     const [roles, setRoles] = useState<Role[]>([]);
@@ -44,8 +45,9 @@ export default function RolesPage() {
             }
             setIsModalOpen(false);
             loadData(); // Reload all to refresh counts etc
+            toast.success(currentRole.id ? 'Role Updated' : 'Role Created');
         } catch (error) {
-            alert('Failed to save role');
+            toast.error('Failed to save role');
         }
     };
 
@@ -66,8 +68,9 @@ export default function RolesPage() {
         try {
             await api.roles.delete(id);
             loadData();
+            toast.success('Role Deleted');
         } catch (error) {
-            alert('Cannot delete role (it might be in use or is a system role)');
+            toast.error('Cannot delete role (it might be in use or is a system role)');
         }
     };
 

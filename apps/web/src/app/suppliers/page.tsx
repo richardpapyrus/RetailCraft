@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/useAuth';
 import { useRouter } from 'next/navigation';
+import { toast } from 'react-hot-toast';
 
 export default function SuppliersPage() {
     const { user, token, isHydrated, selectedStoreId } = useAuth();
@@ -48,8 +49,9 @@ export default function SuppliersPage() {
             setFormData({ id: '', name: '', contact: '', phone: '', email: '' });
             setIsEditing(false);
             loadSuppliers();
+            toast.success(isEditing ? 'Supplier Updated' : 'Supplier Created');
         } catch (error) {
-            alert("Failed to save supplier");
+            toast.error("Failed to save supplier");
         }
     };
 
@@ -69,8 +71,9 @@ export default function SuppliersPage() {
             try {
                 await api.suppliers.delete(id);
                 loadSuppliers();
+                toast.success('Supplier Deleted');
             } catch (e) {
-                alert('Failed to delete');
+                toast.error('Failed to delete');
             }
         }
     };

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { DataService } from '@/lib/db-service';
 import { Customer } from '@/lib/db';
 import { useAuth } from '@/lib/useAuth';
+import { toast } from 'react-hot-toast';
 
 export default function CustomersPage() {
     const { user, token, isHydrated, selectedStoreId } = useAuth(); // Assuming token and isHydrated are also from useAuth
@@ -55,8 +56,9 @@ export default function CustomersPage() {
             setIsModalOpen(false);
             setFormData({ name: '', phone: '', email: '' });
             loadCustomers(true);
+            toast.success("Customer Saved");
         } catch (error) {
-            alert("Failed to save customer");
+            toast.error("Failed to save customer");
         }
     };
 

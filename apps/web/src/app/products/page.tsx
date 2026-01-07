@@ -5,6 +5,7 @@ import { api, Product, API_URL } from '@/lib/api';
 import { DataService } from '@/lib/db-service';
 import { useAuth, formatCurrency } from '@/lib/useAuth';
 import { useRouter } from 'next/navigation';
+import { toast } from 'react-hot-toast';
 
 export default function ProductsPage() {
     const { user, token, isHydrated, hasPermission, selectedStoreId } = useAuth();
@@ -51,7 +52,7 @@ export default function ProductsPage() {
     useEffect(() => {
         const timeout = setTimeout(() => {
             loadProducts(true);
-        }, 500);
+        }, 800);
         return () => clearTimeout(timeout);
     }, [search, category, showLowStock]);
 
@@ -62,20 +63,12 @@ export default function ProductsPage() {
             router.push('/login');
             return;
         }
-        loadProducts(true);
-        loadSuppliers();
-        loadStats();
-        // Clear local cache when store context changes to prevent data leak from previous store
-        if (selectedStoreId) {
-            // We can't easily clear db cache from here without DataService method, 
-            // but loadProducts with reset=true ideally handles it if filters are empty.
-            // Let's force a cache clear to be safe.
-            DataService.clearCache().catch(console.error);
+        // Initial load only if we haven't loaded yet
+        if (products.length === 0) {
+            loadProducts(true);
+            loadSuppliers();
+            loadStats();
         }
-
-        loadProducts(true);
-        loadSuppliers();
-        loadStats();
     }, [token, router, isHydrated, selectedStoreId]);
 
     const loadStats = async () => {
@@ -125,7 +118,7 @@ export default function ProductsPage() {
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedStoreId) {
-            alert("Please select a specific store to create a product.");
+            toast.error("Please select a specific store to create a product.");
             return;
         }
         try {
@@ -139,10 +132,10 @@ export default function ProductsPage() {
 
             if (editingId) {
                 await api.products.update(editingId, payload);
-                alert('Product Updated');
+                toast.success('Product Updated');
             } else {
                 await api.products.create(payload);
-                alert('Product Created');
+                toast.success('Product Created');
             }
             setShowCreate(false);
             setEditingId(null);
@@ -150,7 +143,7 @@ export default function ProductsPage() {
             setNewProduct({ name: '', sku: '', barcode: '', category: '', price: '', costPrice: '', minStockLevel: 0, supplierId: '' });
         } catch (err: any) {
             console.error(err);
-            alert(`Failed to save product: ${err.message || 'Unknown error'}`);
+            toast.error(`Failed to save product: ${err.message || 'Unknown error'}`);
         }
     };
 
@@ -194,7 +187,7 @@ export default function ProductsPage() {
             setSelectedProduct(null);
             loadProducts(true);
         } catch (err) {
-            alert('Failed to update stock');
+            toast.error('Failed to update stock');
         }
     };
 
@@ -214,9 +207,10 @@ export default function ProductsPage() {
             setReceiveModalOpen(false);
             setSelectedProduct(null);
             loadProducts(true);
-            alert('Stock Received & Cost Averaged');
+            loadProducts(true);
+            toast.success('Stock Received & Cost Averaged');
         } catch (err) {
-            alert('Failed to receive stock');
+            toast.error('Failed to receive stock');
         }
     };
 
@@ -225,41 +219,34 @@ export default function ProductsPage() {
         if (!importFile) return;
 
         if (!selectedStoreId) {
-            alert("Please select a specific store to import products into.");
+            toast.error("Please select a specific store to import products into.");
             return;
         }
 
         try {
             setLoading(true);
             const res = await api.products.import(importFile, selectedStoreId || undefined);
-            alert(`Import Complete!\nCreated: ${res.createdCount}\nUpdated: ${res.updatedCount}\nErrors: ${res.errors}`);
+            toast.success(`Import Complete!\nCreated: ${res.createdCount}\nUpdated: ${res.updatedCount}`, { duration: 6000 });
+            if (res.errors) toast.error(`Some errors occurred:\n${res.errors}`, { duration: 8000 });
             setIsImportModalOpen(false);
             setImportFile(null);
             loadProducts(true);
         } catch (err: any) {
-            alert('Import Failed: ' + err.message);
+            toast.error('Import Failed: ' + err.message);
             setLoading(false);
         }
     };
 
-    if (loading || !isHydrated) return <div className="p-8">Loading...</div>;
+    if (!isHydrated) return <div className="p-8">Loading...</div>;
+
+    // Separate Initial Full Page Load from Filter Updates
+    // We only block if we are loading AND have no products (initial empty state)
+    if (loading && products.length === 0 && !search && !category) {
+        return <div className="p-8">Loading Products...</div>;
+    }
 
     return (
         <div className="h-full bg-gray-50 overflow-y-auto relative">
-            {/* Diagnostic Overlay */}
-            <div className="fixed bottom-4 right-4 z-[9999] bg-black/80 text-white p-3 rounded-lg text-xs font-mono shadow-2xl pointer-events-none">
-                <div className="font-bold text-blue-400 mb-1">POS Debug Info</div>
-                <div>Tenant ID: {user?.tenantId?.slice(0, 8)}...</div>
-                <div>Token: {token ? '✅ Present' : '❌ Missing'}</div>
-                <div>Products State: {products.length}</div>
-                <div>Total API: {totalProducts}</div>
-                {debugInfo && (
-                    <div className="mt-1 border-t border-gray-700 pt-1">
-                        Last Fetch: {debugInfo.productsFetched}
-                    </div>
-                )}
-            </div>
-
             <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
                 {error && (
                     <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded shadow-sm">
@@ -286,7 +273,7 @@ export default function ProductsPage() {
                                 <button
                                     onClick={() => {
                                         if (!selectedStoreId) {
-                                            alert("Please select a specific store first.");
+                                            toast.error("Please select a specific store first.");
                                             return;
                                         }
                                         setIsImportModalOpen(true);
@@ -298,7 +285,7 @@ export default function ProductsPage() {
                                 <button
                                     onClick={() => {
                                         if (!selectedStoreId) {
-                                            alert("Please select a specific store first.");
+                                            toast.error("Please select a specific store first.");
                                             return;
                                         }
                                         setShowCreate(true);

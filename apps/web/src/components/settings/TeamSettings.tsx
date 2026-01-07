@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react';
 import { api, Role } from '@/lib/api';
 import { useAuth } from '@/lib/useAuth';
+import { toast } from 'react-hot-toast';
 
 export default function TeamSettings() {
     const { user: currentUser, selectedStoreId } = useAuth(); // Use reactive hook
@@ -63,8 +64,9 @@ export default function TeamSettings() {
             setEmail('');
             setPassword('');
             fetchData(); // Reload all
+            toast.success('User created successfully');
         } catch (e) {
-            alert('Failed to create user');
+            toast.error('Failed to create user');
         }
     };
 
@@ -73,8 +75,9 @@ export default function TeamSettings() {
         try {
             await api.users.delete(userId);
             fetchData();
+            toast.success('User deleted');
         } catch (e) {
-            alert('Failed to delete user');
+            toast.error('Failed to delete user');
         }
     };
 

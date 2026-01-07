@@ -4,7 +4,7 @@ import { db } from './db';
 export const DataService = {
     async getProducts(skip: number = 0, take: number = 50, filters: any = {}, storeId?: string): Promise<{ data: Product[], total: number }> {
         const isOnline = typeof navigator !== 'undefined' && navigator.onLine;
-        console.log(`[DataService] getProducts skip=${skip} take=${take} filters=${JSON.stringify(filters)} storeId=${storeId} online=${isOnline}`);
+        // console.log(`[DataService] getProducts skip=${skip} take=${take} filters=${JSON.stringify(filters)} storeId=${storeId} online=${isOnline}`);
 
         // 1. Check Offline Status
         if (!isOnline) {

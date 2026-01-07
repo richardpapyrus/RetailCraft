@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { api, Product } from '@/lib/api';
 import { useAuth } from '@/lib/useAuth';
 import { useParams, useRouter } from 'next/navigation';
+import { toast } from 'react-hot-toast';
 
 // ... interface
 interface ProductWithHistory extends Product {
@@ -103,11 +104,11 @@ export default function ProductDetailPage() {
                 minStockLevel: editForm.minStockLevel ? parseInt(editForm.minStockLevel as any) : 0,
                 supplierId: editForm.supplierId || null,
             });
-            alert('Product Updated');
+            toast.success('Product Updated');
             setShowEdit(false);
             loadProduct();
         } catch (err: any) {
-            alert('Update Failed: ' + err.message);
+            toast.error('Update Failed: ' + err.message);
         }
     };
 
@@ -122,11 +123,11 @@ export default function ProductDetailPage() {
                 supplierName: receiveForm.supplier || undefined,
                 storeId: selectedStoreId || undefined
             });
-            alert('Stock Received');
+            toast.success('Stock Received');
             setShowReceive(false);
             loadProduct();
         } catch (err: any) {
-            alert('Receive Failed: ' + err.message);
+            toast.error('Receive Failed: ' + err.message);
         }
     };
 
@@ -134,11 +135,11 @@ export default function ProductDetailPage() {
         e.preventDefault();
         try {
             await api.inventory.adjust(id, parseInt(adjustForm.qty), adjustForm.reason, selectedStoreId || undefined);
-            alert('Stock Adjusted');
+            toast.success('Stock Adjusted');
             setShowAdjust(false);
             loadProduct();
         } catch (err: any) {
-            alert('Adjustment Failed: ' + err.message);
+            toast.error('Adjustment Failed: ' + err.message);
         }
     };
 

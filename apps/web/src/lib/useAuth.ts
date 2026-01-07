@@ -123,7 +123,7 @@ export const useAuth = create<AuthState>()(
         }),
         {
             name: 'auth-storage',
-            storage: createJSONStorage(() => localStorage),
+            storage: createJSONStorage(() => (typeof window !== 'undefined' ? localStorage : undefined)),
             onRehydrateStorage: () => (state) => {
                 state?.setHydrated();
                 state?.refreshProfile();

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/useAuth';
 import { api } from '@/lib/api';
 import { Sidebar } from '@/components/Sidebar';
+import { toast } from 'react-hot-toast';
 
 export default function TillsPage() {
     const { isHydrated, token, user, selectedStoreId } = useAuth();
@@ -48,7 +49,7 @@ export default function TillsPage() {
                 // But useAuth should provide it.
                 // If Admin has no store selected, BLOCK creation to prevent "Global Tills"
                 if (user?.role === 'Administrator' || user?.role === 'ADMIN') {
-                    alert("Please select a store from the top bar before creating a Till.");
+                    toast.error("Please select a store from the top bar before creating a Till.");
                     setCreating(false);
                     return;
                 }
@@ -57,7 +58,7 @@ export default function TillsPage() {
             }
 
             if (!storeId) {
-                alert("No valid store context found.");
+                toast.error("No valid store context found.");
                 setCreating(false);
                 return;
             }
@@ -67,7 +68,7 @@ export default function TillsPage() {
             fetchTills(); // Refresh
         } catch (e) {
             console.error(e);
-            alert('Failed to create till');
+            toast.error('Failed to create till');
         } finally {
             setCreating(false);
         }
@@ -83,7 +84,7 @@ export default function TillsPage() {
             setHistorySessions(sessions);
         } catch (e) {
             console.error(e);
-            alert('Failed to load history');
+            toast.error('Failed to load history');
         }
     };
 
@@ -162,7 +163,7 @@ export default function TillsPage() {
                                                                 await api.tills.delete(till.id);
                                                                 fetchTills();
                                                             } catch (err: any) {
-                                                                alert('Cannot delete: ' + err.message);
+                                                                toast.error('Cannot delete: ' + err.message);
                                                             }
                                                         }
                                                     }} className="text-red-500 hover:underline text-sm font-bold">Delete</button>
@@ -173,14 +174,14 @@ export default function TillsPage() {
                                                                 const cashStr = prompt('Enter Closing Cash Count:');
                                                                 if (cashStr === null) return;
                                                                 const closingCash = parseFloat(cashStr);
-                                                                if (isNaN(closingCash)) return alert('Invalid amount');
+                                                                if (isNaN(closingCash)) return toast.error('Invalid amount');
 
                                                                 try {
                                                                     await api.tills.closeSession(till.sessions[0].id, { closingCash });
-                                                                    alert('Session Closed');
+                                                                    toast.success('Session Closed');
                                                                     fetchTills();
                                                                 } catch (err: any) {
-                                                                    alert('Failed to close: ' + err.message);
+                                                                    toast.error('Failed to close: ' + err.message);
                                                                 }
                                                             }}
                                                             className="text-orange-600 hover:underline text-sm font-bold ml-2"

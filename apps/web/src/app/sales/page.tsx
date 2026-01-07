@@ -5,6 +5,7 @@ import { api } from '@/lib/api';
 import { useAuth, formatCurrency } from '@/lib/useAuth';
 import { useRouter } from 'next/navigation';
 import { ReturnModal } from '@/components/sales/ReturnModal';
+import { toast } from 'react-hot-toast';
 
 interface SaleItem {
     id: string;
@@ -99,7 +100,7 @@ export default function SalesHistoryPage() {
             window.URL.revokeObjectURL(url);
         } catch (e) {
             console.error('Export failed', e);
-            alert('Export failed');
+            toast.error('Export failed');
         } finally {
             setExporting(false);
         }

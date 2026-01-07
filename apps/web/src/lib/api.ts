@@ -23,7 +23,7 @@ export async function fetchClient(endpoint: string, options: RequestInit = {}) {
     // Access token from Zustand persisted storage
     let token = null;
     try {
-        const storageStr = localStorage.getItem('auth-storage');
+        const storageStr = typeof window !== 'undefined' ? localStorage.getItem('auth-storage') : null;
         if (storageStr) {
             const storage = JSON.parse(storageStr);
             token = storage.state?.token;

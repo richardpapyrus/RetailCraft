@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/useAuth';
 import { api } from '@/lib/api';
+import { toast } from 'react-hot-toast';
 
 const COUNTRIES = [
     { name: 'United States', currency: 'USD', locale: 'en-US' },
@@ -96,7 +97,7 @@ export default function GeneralSettings() {
                 });
                 // Potentially update Tenant currency/locale? Usually Tenant level.
                 // For now, assume Currency is Tenant Global.
-                alert('Store Name Updated');
+                toast.success('Store Name Updated');
             } else if (user?.tenantId) {
                 // Update TENANT Name and Branding
                 await api.tenants.update(user.tenantId, {
@@ -106,11 +107,11 @@ export default function GeneralSettings() {
                     brandColor: brandColor || null
                 });
                 await refreshProfile();
-                alert('Organization Settings Saved');
+                toast.success('Organization Settings Saved');
             }
         } catch (e: any) {
             console.error('Settings Save Error:', e);
-            alert(`Failed to save settings: ${e.message || 'Unknown error'}`);
+            toast.error(`Failed to save settings: ${e.message || 'Unknown error'}`);
         } finally {
             setSaving(false);
         }
@@ -180,10 +181,10 @@ export default function GeneralSettings() {
                                                 const res = await api.tenants.uploadLogo(user.tenantId, file);
                                                 setLogoUrl(res.logoUrl);
                                                 await refreshProfile();
-                                                alert('Logo Uploaded Successfully');
+                                                toast.success('Logo Uploaded Successfully');
                                             } catch (err) {
                                                 console.error(err);
-                                                alert('Failed to upload logo');
+                                                toast.error('Failed to upload logo');
                                             } finally {
                                                 setSaving(false);
                                             }

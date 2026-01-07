@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
+import { toast } from 'react-hot-toast';
 
 export default function TaxesDiscountsSettings() {
     const [taxes, setTaxes] = useState<any[]>([]);
@@ -49,7 +50,7 @@ export default function TaxesDiscountsSettings() {
             setTaxName('');
             setTaxRate('');
             fetchData();
-        } catch (e) { alert('Error creating tax'); }
+        } catch (e) { toast.error('Error creating tax'); }
     };
 
     const handleCreateDiscount = async () => {
@@ -71,7 +72,7 @@ export default function TaxesDiscountsSettings() {
             setStartDate('');
             setEndDate('');
             fetchData();
-        } catch (e) { alert('Error creating discount'); }
+        } catch (e) { toast.error('Error creating discount'); }
     };
 
     const handleDelete = async (type: 'taxes' | 'discounts', id: string) => {
@@ -79,7 +80,7 @@ export default function TaxesDiscountsSettings() {
             if (type === 'taxes') await api.taxes.delete(id);
             else await api.discounts.delete(id);
             fetchData();
-        } catch (e) { alert('Error deleting item'); }
+        } catch (e) { toast.error('Error deleting item'); }
     };
 
     return (

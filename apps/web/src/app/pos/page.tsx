@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'react-hot-toast';
 import { useAuth, formatCurrency } from '@/lib/useAuth';
 import { api, Product } from '@/lib/api';
 import { printerService, PrinterService } from '@/lib/printer-service';
@@ -83,7 +84,7 @@ export default function POSPage() {
                 setSearch('');
             }
         } else {
-            alert(`Product not found: ${barcode}`);
+            toast.error(`Product not found: ${barcode}`);
         }
     });
 
@@ -118,7 +119,7 @@ export default function POSPage() {
             if (session && session.status === 'OPEN') {
                 // Check if session belongs to selected store
                 if (selectedStoreId && session.till?.storeId && session.till.storeId !== selectedStoreId) {
-                    alert(`Warning: You have an active till session in another store. You cannot open a new one here until you close it.`);
+                    toast.error(`Warning: You have an active till session in another store. You cannot open a new one here until you close it.`);
                     setActiveSession(null); // Don't attach remote session
                 } else {
                     setActiveSession(session);
@@ -188,7 +189,7 @@ export default function POSPage() {
             const currentQty = existing ? existing.cartQty : 0;
 
             if (currentQty + 1 > stock) {
-                alert(`Insufficient stock. Only ${stock} unit(s) available.`);
+                toast.error(`Insufficient stock. Only ${stock} unit(s) available.`);
                 return prev;
             }
 
@@ -209,7 +210,7 @@ export default function POSPage() {
                 if (delta > 0) {
                     const stock = p.inventory?.reduce((acc, curr) => acc + curr.quantity, 0) || 0;
                     if (p.cartQty + delta > stock) {
-                        alert(`Cannot add more. Max stock is ${stock}.`);
+                        toast.error(`Cannot add more. Max stock is ${stock}.`);
                         return p;
                     }
                 }
@@ -273,7 +274,7 @@ export default function POSPage() {
 
     const handleCheckout = async () => {
         if (!activeSession) {
-            alert('Please open a till session first.');
+            toast.error('Please open a till session first.');
             setIsTillModalOpen(true);
             return;
         }
@@ -306,7 +307,9 @@ export default function POSPage() {
             setLastSaleExt({ subtotal, tax: taxAmount, discount: discountAmount });
 
             if (result.offline) {
-                alert('Offline Mode: Sale saved to local queue.');
+                toast.loading('Offline Mode: Sale saved to local queue.', { duration: 4000 });
+            } else {
+                toast.success('Sale completed!');
             }
 
             // Reset UI
@@ -321,7 +324,7 @@ export default function POSPage() {
             loadProducts(true);
         } catch (e) {
             console.error(e);
-            alert('Checkout Failed');
+            toast.error('Checkout Failed');
         }
     };
 
@@ -336,7 +339,7 @@ export default function POSPage() {
                 await printerService.print(receipt);
             } catch (e) {
                 console.error('Thermal print failed', e);
-                alert('Printer error. Falling back to browser print.');
+                toast.error('Printer error. Falling back to browser print.');
                 window.print();
             }
         } else {
