@@ -82,17 +82,17 @@ async function main() {
         for (const user of users) {
             if (user.roleId) continue; // Already migrated
 
-            const targetRoleType = user.role || 'CASHIER'; // Default to Cashier if unknown
+            const targetRoleType = 'CASHIER'; // Legacy role field removed, defaulting
             const roleId = rolesMap.get(targetRoleType);
 
             if (roleId) {
-                console.log(`  Migrating User ${user.email} (${targetRoleType}) -> Role ID: ${roleId}`);
+                console.log(`  Migrating User ${user.email} -> Role ID: ${roleId}`);
                 await prisma.user.update({
                     where: { id: user.id },
                     data: { roleId: roleId }
                 });
             } else {
-                console.warn(`  Unknown role type '${user.role}' for user ${user.email}, defaulting to Cashier.`);
+                console.warn(`  Unknown role type for user ${user.email}, defaulting to Cashier.`);
                 const cashierId = rolesMap.get('CASHIER');
                 if (cashierId) {
                     await prisma.user.update({

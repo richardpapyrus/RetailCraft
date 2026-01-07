@@ -61,7 +61,7 @@ async function main() {
             email: 'admin@pos.local',
             password: hashedPassword,
             name: 'System Admin',
-            role: 'ADMIN', // Backward compat
+
             roleId: adminRole.id,
             tenantId: tenant.id,
             storeId: store.id,
