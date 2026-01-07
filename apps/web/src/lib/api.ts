@@ -69,16 +69,17 @@ export async function fetchClient(endpoint: string, options: RequestInit = {}) {
 
         if (!response.ok) {
             let errorMessage = response.statusText;
+            let errorBody;
+            const text = await response.text();
             try {
-                const errorBody = await response.json();
-                if (errorBody.message) {
+                errorBody = JSON.parse(text);
+                if (errorBody && errorBody.message) {
                     errorMessage = Array.isArray(errorBody.message)
                         ? errorBody.message.join(', ')
                         : errorBody.message;
                 }
             } catch (e) {
-                // Ignore json parse error, stick to statusText
-                const text = await response.text();
+                // If it's not JSON, fall back to the raw text if available
                 if (text) errorMessage = text;
             }
             console.error(`[API Client] Error: ${errorMessage}`);
