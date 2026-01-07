@@ -163,7 +163,7 @@ export class AuthService {
           password: hashedPassword,
           name: "Admin",
           roleId: adminRole.id, // Link to Role
-          role: "ADMIN", // Deprecated, keep for now
+
           tenantId: tenant.id,
           storeId: store.id,
         },
