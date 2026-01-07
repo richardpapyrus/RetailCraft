@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/useAuth';
 import { useRouter } from 'next/navigation';
 
@@ -13,7 +13,9 @@ export default function LoginPage() {
     const [API_URL_DISPLAY, setApiUrl] = useState('Loading...');
 
     // Load API URL for debug display
-    import('@/lib/api').then(m => setApiUrl(m.API_URL));
+    useEffect(() => {
+        import('@/lib/api').then(m => setApiUrl(m.API_URL));
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -83,7 +85,7 @@ export default function LoginPage() {
                         <div className="bg-red-50 border border-red-200 rounded-md p-3 text-sm text-red-600 text-center">
                             <p className="font-bold">{error}</p>
                             <p className="text-xs mt-1 text-gray-500">
-                                Connecting to: {import('@/lib/api').then(m => m.API_URL) && API_URL_DISPLAY}
+                                Connecting to: {API_URL_DISPLAY}
                             </p>
                         </div>
                     )}
@@ -107,7 +109,7 @@ export default function LoginPage() {
                 </div>
                 {/* Debug Connection Info - Temporary for Troubleshooting */}
                 <div className="text-[10px] text-gray-300 mt-2 font-mono">
-                    Server: {import('@/lib/api').then(m => m.API_URL) && 'https://api.retailcraft.com.ng'}
+                    Server: {API_URL_DISPLAY}
                 </div>
             </div>
         </div>
