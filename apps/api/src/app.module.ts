@@ -20,7 +20,8 @@ import { ConfigModule } from "@nestjs/config";
 import { RolesModule } from "./roles/roles.module";
 import { PrismaModule } from "./prisma/prisma.module";
 import { BusinessModule } from "./business/business.module";
-import { ServeStaticModule } from '@nestjs/serve-static';
+// import { ServeStaticModule } from '@nestjs/serve-static';
+import { UploadsModule } from "./uploads/uploads.module";
 import { join } from 'path';
 
 import { LoggerMiddleware } from "./common/middleware/logger.middleware";
@@ -46,10 +47,9 @@ import { LoggerMiddleware } from "./common/middleware/logger.middleware";
     RolesModule,
     PrismaModule,
     BusinessModule,
-    ServeStaticModule.forRoot({
-      rootPath: join(process.cwd(), 'uploads'), // Use process.cwd() to verify robust path in Docker
-      serveRoot: '/api/uploads',
-    }),
+    BusinessModule,
+    UploadsModule,
+    // ServeStaticModule removed in favor of manual controller for better debugging
   ],
   controllers: [],
   providers: [],

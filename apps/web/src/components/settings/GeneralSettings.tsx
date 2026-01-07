@@ -213,9 +213,10 @@ export default function GeneralSettings() {
                                                     await api.tenants.deleteLogo(user.tenantId);
                                                     setLogoUrl('');
                                                     await refreshProfile();
-                                                    toast.success('Logo removed');
+                                                    toast.success('Logo removed', { duration: 4000 });
                                                 }
                                             }}
+                                            type="button"
                                             className="text-xs text-red-500 hover:text-red-700 font-medium"
                                         >
                                             Remove
