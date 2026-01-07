@@ -15,6 +15,8 @@ export default function UsersPage() {
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<any | null>(null);
+    const [selectedRoleId, setSelectedRoleId] = useState<string>('');
+    const [selectedStoreId, setSelectedStoreId] = useState<string>('');
 
     useEffect(() => {
         if (!isHydrated) return;
@@ -100,7 +102,12 @@ export default function UsersPage() {
                 <div className="flex justify-between items-center mb-6">
                     <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
                     <button
-                        onClick={() => { setEditingUser(null); setIsModalOpen(true); }}
+                        onClick={() => {
+                            setEditingUser(null);
+                            setSelectedRoleId('');
+                            setSelectedStoreId('');
+                            setIsModalOpen(true);
+                        }}
                         className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold"
                     >
                         Add User
@@ -131,7 +138,12 @@ export default function UsersPage() {
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{u.store?.name || 'All Stores'}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <button
-                                            onClick={() => { setEditingUser(u); setIsModalOpen(true); }}
+                                            onClick={() => {
+                                                setEditingUser(u);
+                                                setSelectedRoleId(u.roleId || '');
+                                                setSelectedStoreId(u.storeId || '');
+                                                setIsModalOpen(true);
+                                            }}
                                             className="text-indigo-600 hover:text-indigo-900 mr-4"
                                         >
                                             Edit
@@ -172,26 +184,19 @@ export default function UsersPage() {
                                     <label className="block text-sm font-medium text-gray-700">Role</label>
                                     <select
                                         name="roleId"
-                                        id="roleSelect"
-                                        defaultValue={editingUser?.roleId || ''}
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
-                                        required
+                                        value={selectedRoleId}
                                         onChange={(e) => {
-                                            // Auto-select "All Stores" if Admin is chosen
-                                            const roleId = e.target.value;
-                                            const role = roles.find(r => r.id === roleId);
-                                            const storeSelect = document.getElementById('storeSelect') as HTMLSelectElement;
-                                            if (role?.name === 'Administrator' || role?.name === 'Owner' || role?.name === 'Admin') {
-                                                if (storeSelect) {
-                                                    storeSelect.value = "";
-                                                    storeSelect.disabled = true;
-                                                }
-                                            } else {
-                                                if (storeSelect) {
-                                                    storeSelect.disabled = false;
-                                                }
+                                            const newRole = e.target.value;
+                                            setSelectedRoleId(newRole);
+                                            // If Admin, clear store selection
+                                            const role = roles.find(r => r.id === newRole);
+                                            const isAdmin = role?.name === 'Administrator' || role?.name === 'Owner' || role?.name === 'Admin';
+                                            if (isAdmin) {
+                                                setSelectedStoreId('');
                                             }
                                         }}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
+                                        required
                                     >
                                         <option value="" disabled>Select a Role</option>
                                         {roles.map(r => (
@@ -205,13 +210,22 @@ export default function UsersPage() {
                                     <label className="block text-sm font-medium text-gray-700">Assigned Store</label>
                                     <select
                                         name="storeId"
-                                        id="storeSelect"
-                                        defaultValue={editingUser?.storeId || ''}
+                                        value={selectedStoreId}
+                                        onChange={(e) => setSelectedStoreId(e.target.value)}
+                                        disabled={(() => {
+                                            const role = roles.find(r => r.id === selectedRoleId);
+                                            return role?.name === 'Administrator' || role?.name === 'Owner' || role?.name === 'Admin';
+                                        })()}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border disabled:bg-gray-100 disabled:text-gray-500"
                                     >
                                         <option value="">All Stores (Tenant Wide)</option>
                                         {stores.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                                     </select>
+                                    {(() => {
+                                        const role = roles.find(r => r.id === selectedRoleId);
+                                        const isAdmin = role?.name === 'Administrator' || role?.name === 'Owner' || role?.name === 'Admin';
+                                        return isAdmin ? <p className="text-xs text-gray-500 mt-1">Global roles have access to all stores.</p> : null;
+                                    })()}
                                 </div>
 
                                 <div className="flex justify-end gap-3 mt-6">

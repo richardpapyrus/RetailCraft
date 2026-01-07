@@ -98,7 +98,20 @@ export default function TeamSettings() {
                         <input type="email" placeholder="Email" className="p-2 border rounded-lg" value={email} onChange={e => setEmail(e.target.value)} />
                         <input type="password" placeholder="Password" className="p-2 border rounded-lg" value={password} onChange={e => setPassword(e.target.value)} />
 
-                        <select className="p-2 border rounded-lg" value={roleId} onChange={e => setRoleId(e.target.value)}>
+                        <select
+                            className="p-2 border rounded-lg"
+                            value={roleId}
+                            onChange={e => {
+                                const newRole = e.target.value;
+                                setRoleId(newRole);
+                                // If Admin, clear store selection
+                                const role = roles.find(r => r.id === newRole);
+                                if (role?.name === 'Administrator' || role?.name === 'Owner' || role?.name === 'Admin') {
+                                    setStoreId('');
+                                }
+                            }}
+                        >
+                            <option value="">Select Role</option>
                             {roles.map(r => (
                                 <option key={r.id} value={r.id}>{r.name} {r.isSystem ? '(System)' : ''}</option>
                             ))}
@@ -106,9 +119,23 @@ export default function TeamSettings() {
 
                         <div className="col-span-2">
                             <label className="text-xs text-gray-500 mb-1 block">Assigned Store</label>
-                            <select className="w-full p-2 border rounded-lg" value={storeId} onChange={e => setStoreId(e.target.value)}>
+                            <select
+                                className="w-full p-2 border rounded-lg disabled:bg-gray-100 disabled:text-gray-400"
+                                value={storeId}
+                                onChange={e => setStoreId(e.target.value)}
+                                disabled={(() => {
+                                    const role = roles.find(r => r.id === roleId);
+                                    return role?.name === 'Administrator' || role?.name === 'Owner' || role?.name === 'Admin';
+                                })()}
+                            >
+                                <option value="">All Stores (Tenant Wide)</option>
                                 {stores.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                             </select>
+                            {(() => {
+                                const role = roles.find(r => r.id === roleId);
+                                const isAdmin = role?.name === 'Administrator' || role?.name === 'Owner' || role?.name === 'Admin';
+                                return isAdmin ? <p className="text-xs text-gray-500 mt-1">Global roles have access to all stores.</p> : null;
+                            })()}
                         </div>
                     </div>
                     <div className="flex gap-2">
