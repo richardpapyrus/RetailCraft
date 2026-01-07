@@ -91,10 +91,14 @@ export default function LoginPage() {
             </div>
 
             {/* Product Branding Footer */}
-            <div className="absolute bottom-6 left-0 right-0 flex justify-center opacity-70">
+            <div className="absolute bottom-6 left-0 right-0 flex flex-col items-center justify-center opacity-70">
                 <div className="flex items-center gap-2">
                     <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">Powered by</span>
                     <span className="font-bold text-gray-600 text-sm tracking-tight">RetailCraft</span>
+                </div>
+                {/* Debug Connection Info - Temporary for Troubleshooting */}
+                <div className="text-[10px] text-gray-300 mt-2 font-mono">
+                    Server: {import('@/lib/api').then(m => m.API_URL) && 'https://api.retailcraft.com.ng'}
                 </div>
             </div>
         </div>

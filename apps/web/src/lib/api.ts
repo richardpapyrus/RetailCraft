@@ -5,16 +5,21 @@ if (typeof window !== 'undefined') {
     const protocol = window.location.protocol;
 
     if (hostname.includes('retailcraft.com.ng')) {
-        // Production Domain
+        // Production Domain - FORCE correct API, ignoring potentially bad Env Var (like localhost)
         defaultUrl = 'https://api.retailcraft.com.ng';
+        // Overwrite standard logic: If we are on production domain, we MUST use production API.
+        // This fixes the case where build/env might erroneously have NEXT_PUBLIC_API_URL=http://localhost:4000
     } else if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
         // LAN / IP Access (Assume Backend is on same host, port 4000)
-        // Note: Mix of HTTP/HTTPS might be an issue if frontend is HTTPS and backend is HTTP,
-        // but for LAN IPs, usually both are HTTP.
         defaultUrl = `${protocol}//${hostname}:4000`;
     }
 }
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || defaultUrl;
+
+// Logic: Use Env Var mostly, BUT if we are definitely on the specific production domain, FORCE it.
+// This is a safety patch for the user's likely misconfiguration.
+export const API_URL = (typeof window !== 'undefined' && window.location.hostname.includes('retailcraft.com.ng'))
+    ? 'https://api.retailcraft.com.ng'
+    : (process.env.NEXT_PUBLIC_API_URL || defaultUrl);
 
 export async function fetchClient(endpoint: string, options: RequestInit = {}) {
     // Access token from Zustand persisted storage
