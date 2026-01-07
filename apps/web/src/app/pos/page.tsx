@@ -964,5 +964,6 @@ export default function POSPage() {
 
                 <ReceiptTemplate sale={lastSale} user={user} />
             </div>
-        );
-    }
+        </div >
+    );
+}
