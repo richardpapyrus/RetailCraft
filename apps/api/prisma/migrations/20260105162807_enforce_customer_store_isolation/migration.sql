@@ -12,6 +12,9 @@ SET "storeId" = (
 )
 WHERE "storeId" IS NULL;
 
+-- Delete any customers that still have NULL storeId (orphans belonging to tenants with no stores)
+DELETE FROM "Customer" WHERE "storeId" IS NULL;
+
 -- DropForeignKey
 ALTER TABLE "Customer" DROP CONSTRAINT "Customer_storeId_fkey";
 
