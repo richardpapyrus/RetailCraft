@@ -58,6 +58,14 @@ export default function UsersPage() {
         if (data.storeId === '') data.storeId = null;
         if (data.roleId === '') delete data.roleId;
 
+        // Force Global Access for Admins
+        if (data.roleId) {
+            const selectedRole = roles.find(r => r.id === data.roleId);
+            if (selectedRole?.name === 'Administrator' || selectedRole?.name === 'Owner' || selectedRole?.name === 'Admin') {
+                data.storeId = null; // Enforce Global
+            }
+        }
+
         try {
             if (editingUser) {
                 await api.users.update(editingUser.id, data);
@@ -164,9 +172,26 @@ export default function UsersPage() {
                                     <label className="block text-sm font-medium text-gray-700">Role</label>
                                     <select
                                         name="roleId"
+                                        id="roleSelect"
                                         defaultValue={editingUser?.roleId || ''}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
                                         required
+                                        onChange={(e) => {
+                                            // Auto-select "All Stores" if Admin is chosen
+                                            const roleId = e.target.value;
+                                            const role = roles.find(r => r.id === roleId);
+                                            const storeSelect = document.getElementById('storeSelect') as HTMLSelectElement;
+                                            if (role?.name === 'Administrator' || role?.name === 'Owner' || role?.name === 'Admin') {
+                                                if (storeSelect) {
+                                                    storeSelect.value = "";
+                                                    storeSelect.disabled = true;
+                                                }
+                                            } else {
+                                                if (storeSelect) {
+                                                    storeSelect.disabled = false;
+                                                }
+                                            }
+                                        }}
                                     >
                                         <option value="" disabled>Select a Role</option>
                                         {roles.map(r => (
@@ -178,7 +203,12 @@ export default function UsersPage() {
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">Assigned Store</label>
-                                    <select name="storeId" defaultValue={editingUser?.storeId || ''} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+                                    <select
+                                        name="storeId"
+                                        id="storeSelect"
+                                        defaultValue={editingUser?.storeId || ''}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border disabled:bg-gray-100 disabled:text-gray-500"
+                                    >
                                         <option value="">All Stores (Tenant Wide)</option>
                                         {stores.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                                     </select>
