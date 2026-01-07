@@ -45,6 +45,7 @@ services:
       - pos_network
     environment:
       DATABASE_URL: postgresql://admin:password@postgres:5432/pos_db
+      APP_URL: https://app.retailcraft.com.ng
     volumes:
       - ./uploads:/app/apps/api/uploads
 
