@@ -8,6 +8,7 @@ services:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: password
       POSTGRES_DB: pos_db
+    restart: always
     volumes:
       - ./docker/postgres:/var/lib/postgresql/data
     networks:
@@ -23,6 +24,7 @@ services:
     container_name: pos_redis
     ports:
       - "6379:6379"
+    restart: always
     networks:
       - pos_network
 
@@ -32,6 +34,7 @@ services:
       dockerfile: apps/api/Dockerfile
     ports:
       - "4000:4000"
+    restart: always
     depends_on:
       postgres:
         condition: service_healthy
@@ -42,9 +45,6 @@ services:
       - pos_network
     environment:
       DATABASE_URL: postgresql://admin:password@postgres:5432/pos_db
-    volumes:
-      - ./apps/api/src:/app/apps/api/src
-      - ./apps/api/prisma:/app/apps/api/prisma
 
   web:
     build:
@@ -52,6 +52,7 @@ services:
       dockerfile: apps/web/Dockerfile
     ports:
       - "127.0.0.1:3000:3000"
+    restart: always
     depends_on:
       api:
         condition: service_started
@@ -59,9 +60,6 @@ services:
       - pos_network
     environment:
       NEXT_PUBLIC_API_URL: https://app.retailcraft.com.ng/api
-    volumes:
-      - ./apps/web/src:/app/apps/web/src
-      - ./apps/web/public:/app/apps/web/public
 
 networks:
   pos_network:
