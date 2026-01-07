@@ -48,7 +48,7 @@ import { LoggerMiddleware } from "./common/middleware/logger.middleware";
     BusinessModule,
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', '..', 'uploads'), // Go up from dist/src/app.module
-      serveRoot: '/uploads',
+      serveRoot: '/api/uploads',
     }),
   ],
   controllers: [],

@@ -33,7 +33,7 @@ export class TenantsController {
     const baseUrl = process.env.NODE_ENV === 'production'
       ? 'https://app.retailcraft.com.ng'
       : 'http://localhost:4000';
-    const logoUrl = `${baseUrl}/uploads/${file.filename}`;
+    const logoUrl = `${baseUrl}/api/uploads/${file.filename}`;
 
     // Save to DB
     await this.tenantsService.update(id, { logoUrl });
