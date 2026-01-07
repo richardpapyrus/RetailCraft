@@ -47,7 +47,7 @@ import { LoggerMiddleware } from "./common/middleware/logger.middleware";
     PrismaModule,
     BusinessModule,
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', '..', 'uploads'), // Go up from dist/src/app.module
+      rootPath: join(process.cwd(), 'uploads'), // Use process.cwd() to verify robust path in Docker
       serveRoot: '/api/uploads',
     }),
   ],

@@ -207,7 +207,15 @@ export default function GeneralSettings() {
                                             <img src={logoUrl} alt="Preview" className="h-10 object-contain" />
                                         </div>
                                         <button
-                                            onClick={() => setLogoUrl('')}
+                                            onClick={async () => {
+                                                if (!confirm('Remove logo?')) return;
+                                                if (user?.tenantId) {
+                                                    await api.tenants.deleteLogo(user.tenantId);
+                                                    setLogoUrl('');
+                                                    await refreshProfile();
+                                                    toast.success('Logo removed');
+                                                }
+                                            }}
                                             className="text-xs text-red-500 hover:text-red-700 font-medium"
                                         >
                                             Remove

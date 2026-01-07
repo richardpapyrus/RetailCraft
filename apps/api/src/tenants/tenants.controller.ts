@@ -1,4 +1,4 @@
-import { Controller, Put, Post, Body, Param, UseInterceptors, UploadedFile } from "@nestjs/common";
+import { Controller, Put, Post, Delete, Body, Param, UseInterceptors, UploadedFile } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { diskStorage } from "multer";
 import { extname } from "path";
@@ -39,5 +39,11 @@ export class TenantsController {
     await this.tenantsService.update(id, { logoUrl });
 
     return { logoUrl };
+  }
+
+  @Delete(':id/logo')
+  async deleteLogo(@Param('id') id: string) {
+    await this.tenantsService.update(id, { logoUrl: null });
+    return { success: true };
   }
 }
