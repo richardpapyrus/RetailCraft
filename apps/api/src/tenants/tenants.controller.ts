@@ -30,7 +30,10 @@ export class TenantsController {
   }))
   async uploadLogo(@Param('id') id: string, @UploadedFile() file: Express.Multer.File) {
     // Generate the full URL (assuming default port/host for now, ideally strictly configured)
-    const logoUrl = `http://localhost:4000/uploads/${file.filename}`;
+    const baseUrl = process.env.NODE_ENV === 'production'
+      ? 'https://app.retailcraft.com.ng'
+      : 'http://localhost:4000';
+    const logoUrl = `${baseUrl}/uploads/${file.filename}`;
 
     // Save to DB
     await this.tenantsService.update(id, { logoUrl });
