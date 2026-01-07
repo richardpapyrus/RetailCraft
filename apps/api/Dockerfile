@@ -1,6 +1,6 @@
 FROM node:18-alpine
 
-RUN apk add --no-cache openssl libc6-compat
+RUN apk add --no-cache openssl libc6-compat python3 make g++
 
 WORKDIR /app
 
@@ -9,12 +9,13 @@ COPY turbo.json .
 COPY apps/api/package.json apps/api/
 COPY apps/web/package.json apps/web/
 
-# Install dependencies (naive, optimize later with turbo prune)
+# Install dependencies
 RUN npm install
 
 COPY . .
 
 WORKDIR /app/apps/api
 RUN npx prisma generate
+RUN npm run build
 
-CMD ["npm", "run", "start:dev"]
+CMD ["npm", "run", "start:prod"]
