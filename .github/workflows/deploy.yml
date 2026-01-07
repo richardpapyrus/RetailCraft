@@ -28,4 +28,4 @@ jobs:
 
       - name: Deploy on server
         run: |
-          ssh -i ~/.ssh/retail-craft root@165.227.26.131 "cd /root/retail-craft-app/ && docker compose up --build -d"
+          ssh -i ~/.ssh/retail-craft root@165.227.26.131 "cd /root/retail-craft-app/ && docker compose up --build -d --remove-orphans"
