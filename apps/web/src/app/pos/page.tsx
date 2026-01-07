@@ -10,9 +10,9 @@ import { DataService } from '@/lib/db-service';
 import { Customer } from '@/lib/db';
 import OpenTillModal from '@/components/tills/OpenTillModal';
 import CloseTillModal from '@/components/tills/CloseTillModal';
+import { useDebounce } from '@/hooks/useDebounce';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import ReceiptTemplate from '@/components/pos/ReceiptTemplate';
-import { useDebounce } from '@/hooks/useDebounce';
 
 interface CartItem extends Product {
     cartQty: number;
@@ -108,289 +108,269 @@ export default function POSPage() {
             loadTaxesAndDiscounts();
             checkTillSession();
         }
-        useEffect(() => {
-            if (!isHydrated) return;
+    }, [token, router, isHydrated, selectedStoreId]);
 
-            if (!token) {
-                router.push('/login');
-            } else {
-                // Context Change: Reset Cart to prevent leakage
-                setCart([]);
-                setAppliedDiscount(null);
-                setSelectedCustomer(null);
+    // Search Effect
+    useEffect(() => {
+        if (isHydrated && token) {
+            loadProducts(true);
+        }
+    }, [debouncedSearch]);
 
-                // Need to wait for selectedStoreId to be ready? It comes from useAuth which hydrates.
-                // If selectedStoreId changes, we reload.
-                loadProducts(true);
-                loadCustomers(true);
-                loadTaxesAndDiscounts();
-                checkTillSession();
-            }
-        }, [token, router, isHydrated, selectedStoreId]);
-
-        // Search Effect
-        useEffect(() => {
-            if (isHydrated && token) {
-                loadProducts(true);
-            }
-        }, [debouncedSearch]);
-
-        const checkTillSession = async () => {
-            // If Admin is using POS, `req.user.storeId` is null.
-            // I need to update TillsController to support query param `storeId` for getActiveSession too?
-            // OR rely on POS passing it?
-            // Let's assume for now we just load data.
-            try {
-                const session = await api.tills.getActiveSession(selectedStoreId || undefined);
-                // ...
-                if (session && session.status === 'OPEN') {
-                    // Check if session belongs to selected store
-                    if (selectedStoreId && session.till?.storeId && session.till.storeId !== selectedStoreId) {
-                        toast.error(`Warning: You have an active till session in another store. You cannot open a new one here until you close it.`);
-                        setActiveSession(null); // Don't attach remote session
-                    } else {
-                        setActiveSession(session);
-                        setIsTillModalOpen(false);
-                    }
+    const checkTillSession = async () => {
+        // If Admin is using POS, `req.user.storeId` is null.
+        // I need to update TillsController to support query param `storeId` for getActiveSession too?
+        // OR rely on POS passing it?
+        // Let's assume for now we just load data.
+        try {
+            const session = await api.tills.getActiveSession(selectedStoreId || undefined);
+            // ...
+            if (session && session.status === 'OPEN') {
+                // Check if session belongs to selected store
+                if (selectedStoreId && session.till?.storeId && session.till.storeId !== selectedStoreId) {
+                    toast.error(`Warning: You have an active till session in another store. You cannot open a new one here until you close it.`);
+                    setActiveSession(null); // Don't attach remote session
                 } else {
-                    setActiveSession(null);
-                    setIsTillModalOpen(true);
+                    setActiveSession(session);
+                    setIsTillModalOpen(false);
                 }
-            } catch (e) {
-                // ... 
-                console.error('Failed to check till session', e);
+            } else {
+                setActiveSession(null);
                 setIsTillModalOpen(true);
-            } finally {
-                setCheckingSession(false);
             }
-        };
+        } catch (e) {
+            // ... 
+            console.error('Failed to check till session', e);
+            setIsTillModalOpen(true);
+        } finally {
+            setCheckingSession(false);
+        }
+    };
 
 
-        const loadTaxesAndDiscounts = async () => {
-            try {
-                const [t, d] = await Promise.all([api.taxes.list(), api.discounts.list()]);
-                setTaxes(t || []);
-                setDiscounts(d || []);
-            } catch (e) { console.error('Failed active taxes/discounts', e); }
-        };
+    const loadTaxesAndDiscounts = async () => {
+        try {
+            const [t, d] = await Promise.all([api.taxes.list(), api.discounts.list()]);
+            setTaxes(t || []);
+            setDiscounts(d || []);
+        } catch (e) { console.error('Failed active taxes/discounts', e); }
+    };
 
-        const loadCustomers = async (reset = false) => {
-            if (!reset) setLoadingMoreCustomers(true);
-            const skip = reset ? 0 : customers.length;
-            const { data, total } = await DataService.getCustomers(skip, 50, selectedStoreId || undefined);
+    const loadCustomers = async (reset = false) => {
+        if (!reset) setLoadingMoreCustomers(true);
+        const skip = reset ? 0 : customers.length;
+        const { data, total } = await DataService.getCustomers(skip, 50, selectedStoreId || undefined);
 
-            if (reset) setCustomers(data);
-            else setCustomers(prev => [...prev, ...data]);
+        if (reset) setCustomers(data);
+        else setCustomers(prev => [...prev, ...data]);
 
-            setHasMoreCustomers(data.length > 0 && (reset ? data.length : customers.length + data.length) < total);
+        setHasMoreCustomers(data.length > 0 && (reset ? data.length : customers.length + data.length) < total);
 
-            setLoadingMoreCustomers(false);
-        };
+        setLoadingMoreCustomers(false);
+    };
 
-        const loadProducts = async (reset = false) => {
-            try {
-                if (reset) setLoading(true);
-                else setLoadingMoreProducts(true);
+    const loadProducts = async (reset = false) => {
+        try {
+            if (reset) setLoading(true);
+            else setLoadingMoreProducts(true);
 
-                const skip = reset ? 0 : products.length;
-                const { data, total } = await DataService.getProducts(skip, 50, { search: debouncedSearch }, selectedStoreId || undefined);
+            const skip = reset ? 0 : products.length;
+            const { data, total } = await DataService.getProducts(skip, 50, { search: debouncedSearch }, selectedStoreId || undefined);
 
-                if (reset) setProducts(data);
-                else setProducts(prev => [...prev, ...data]);
+            if (reset) setProducts(data);
+            else setProducts(prev => [...prev, ...data]);
 
-                setHasMoreProducts(data.length > 0 && (reset ? data.length : products.length + data.length) < total);
+            setHasMoreProducts(data.length > 0 && (reset ? data.length : products.length + data.length) < total);
 
-            } catch (error) {
-                console.error('Failed to load products', error);
-            } finally {
-                setLoading(false);
-                setLoadingMoreProducts(false);
+        } catch (error) {
+            console.error('Failed to load products', error);
+        } finally {
+            setLoading(false);
+            setLoadingMoreProducts(false);
+        }
+    };
+
+    const addToCart = (product: Product) => {
+        const stock = product.inventory?.reduce((acc, curr) => acc + curr.quantity, 0) || 0;
+
+        setCart(prev => {
+            const existing = prev.find(p => p.id === product.id);
+            const currentQty = existing ? existing.cartQty : 0;
+
+            if (currentQty + 1 > stock) {
+                toast.error(`Insufficient stock. Only ${stock} unit(s) available.`);
+                return prev;
             }
-        };
 
-        const addToCart = (product: Product) => {
-            const stock = product.inventory?.reduce((acc, curr) => acc + curr.quantity, 0) || 0;
+            if (existing) {
+                return prev.map(p => p.id === product.id ? { ...p, cartQty: p.cartQty + 1 } : p);
+            }
+            return [...prev, { ...product, cartQty: 1 }];
+        });
+    };
 
-            setCart(prev => {
-                const existing = prev.find(p => p.id === product.id);
-                const currentQty = existing ? existing.cartQty : 0;
+    const removeFromCart = (productId: string) => {
+        setCart(prev => prev.filter(p => p.id !== productId));
+    };
 
-                if (currentQty + 1 > stock) {
-                    toast.error(`Insufficient stock. Only ${stock} unit(s) available.`);
-                    return prev;
+    const updateQty = (productId: string, delta: number) => {
+        setCart(prev => prev.map(p => {
+            if (p.id === productId) {
+                if (delta > 0) {
+                    const stock = p.inventory?.reduce((acc, curr) => acc + curr.quantity, 0) || 0;
+                    if (p.cartQty + delta > stock) {
+                        toast.error(`Cannot add more. Max stock is ${stock}.`);
+                        return p;
+                    }
+                }
+                const newQty = Math.max(1, p.cartQty + delta);
+                return { ...p, cartQty: newQty };
+            }
+            return p;
+        }));
+    };
+
+    // Helper: Calculation
+    const subtotal = cart.reduce((sum, item) => sum + (Number(item.price) * item.cartQty), 0);
+
+    let discountAmount = 0;
+    if (appliedDiscount) {
+        let eligibleSubtotal = 0;
+
+        if (!appliedDiscount.targetType || appliedDiscount.targetType === 'ALL') {
+            eligibleSubtotal = subtotal;
+        } else {
+            // Filter eligible items
+            cart.forEach(item => {
+                let isEligible = false;
+                if (appliedDiscount.targetType === 'PRODUCT') {
+                    if (appliedDiscount.targetValues?.includes(item.id)) isEligible = true;
+                } else if (appliedDiscount.targetType === 'CATEGORY') {
+                    if (item.category && appliedDiscount.targetValues?.includes(item.category)) isEligible = true;
                 }
 
-                if (existing) {
-                    return prev.map(p => p.id === product.id ? { ...p, cartQty: p.cartQty + 1 } : p);
+                if (isEligible) {
+                    eligibleSubtotal += Number(item.price) * item.cartQty;
                 }
-                return [...prev, { ...product, cartQty: 1 }];
             });
-        };
-
-        const removeFromCart = (productId: string) => {
-            setCart(prev => prev.filter(p => p.id !== productId));
-        };
-
-        const updateQty = (productId: string, delta: number) => {
-            setCart(prev => prev.map(p => {
-                if (p.id === productId) {
-                    if (delta > 0) {
-                        const stock = p.inventory?.reduce((acc, curr) => acc + curr.quantity, 0) || 0;
-                        if (p.cartQty + delta > stock) {
-                            toast.error(`Cannot add more. Max stock is ${stock}.`);
-                            return p;
-                        }
-                    }
-                    const newQty = Math.max(1, p.cartQty + delta);
-                    return { ...p, cartQty: newQty };
-                }
-                return p;
-            }));
-        };
-
-        // Helper: Calculation
-        const subtotal = cart.reduce((sum, item) => sum + (Number(item.price) * item.cartQty), 0);
-
-        let discountAmount = 0;
-        if (appliedDiscount) {
-            let eligibleSubtotal = 0;
-
-            if (!appliedDiscount.targetType || appliedDiscount.targetType === 'ALL') {
-                eligibleSubtotal = subtotal;
-            } else {
-                // Filter eligible items
-                cart.forEach(item => {
-                    let isEligible = false;
-                    if (appliedDiscount.targetType === 'PRODUCT') {
-                        if (appliedDiscount.targetValues?.includes(item.id)) isEligible = true;
-                    } else if (appliedDiscount.targetType === 'CATEGORY') {
-                        if (item.category && appliedDiscount.targetValues?.includes(item.category)) isEligible = true;
-                    }
-
-                    if (isEligible) {
-                        eligibleSubtotal += Number(item.price) * item.cartQty;
-                    }
-                });
-            }
-
-            if (appliedDiscount.type === 'PERCENTAGE') {
-                discountAmount = eligibleSubtotal * (appliedDiscount.value / 100);
-            } else {
-                discountAmount = Math.min(appliedDiscount.value, eligibleSubtotal);
-            }
         }
 
-        // Loyalty Discount (Client-side estimate)
-        if (usePoints && pointsToRedeem > 0) {
-            // 1 Point = $0.10
-            const loyaltyDiscount = pointsToRedeem * 0.10;
-            discountAmount += loyaltyDiscount;
+        if (appliedDiscount.type === 'PERCENTAGE') {
+            discountAmount = eligibleSubtotal * (appliedDiscount.value / 100);
+        } else {
+            discountAmount = Math.min(appliedDiscount.value, eligibleSubtotal);
         }
+    }
 
-        // Ensure discount doesn't exceed subtotal
-        if (discountAmount > subtotal) discountAmount = subtotal;
+    // Loyalty Discount (Client-side estimate)
+    if (usePoints && pointsToRedeem > 0) {
+        // 1 Point = $0.10
+        const loyaltyDiscount = pointsToRedeem * 0.10;
+        discountAmount += loyaltyDiscount;
+    }
 
-        const taxableAmount = subtotal - discountAmount;
+    // Ensure discount doesn't exceed subtotal
+    if (discountAmount > subtotal) discountAmount = subtotal;
 
-        // Calculate Tax (Sum of all active rates applied to taxable amount)
-        // Assumption: Taxes are exclusive and additive
-        const totalTaxRate = taxes.reduce((sum, t) => sum + Number(t.rate), 0);
-        const taxAmount = taxableAmount * totalTaxRate;
+    const taxableAmount = subtotal - discountAmount;
 
-        const cartTotal = taxableAmount + taxAmount;
+    // Calculate Tax (Sum of all active rates applied to taxable amount)
+    // Assumption: Taxes are exclusive and additive
+    const totalTaxRate = taxes.reduce((sum, t) => sum + Number(t.rate), 0);
+    const taxAmount = taxableAmount * totalTaxRate;
 
-        const handleCheckout = async () => {
-            if (!activeSession) {
-                toast.error('Please open a till session first.');
-                setIsTillModalOpen(true);
-                return;
+    const cartTotal = taxableAmount + taxAmount;
+
+    const handleCheckout = async () => {
+        if (!activeSession) {
+            toast.error('Please open a till session first.');
+            setIsTillModalOpen(true);
+            return;
+        }
+        if (cart.length === 0) return;
+
+        const tenderedVal = parseFloat(tendered) || 0;
+        const change = tenderedVal - cartTotal;
+
+        try {
+            const result = await DataService.saveSale({
+                items: cart.map(i => ({ productId: i.id, quantity: i.cartQty })),
+                paymentMethod: selectedPaymentMethod,
+                total: cartTotal,
+                customerId: selectedCustomer?.id,
+                tillSessionId: activeSession?.id,
+                redeemPoints: usePoints ? pointsToRedeem : 0,
+                storeId: selectedStoreId || undefined
+            });
+
+            // Store Sale Info for Receipt
+            setLastSale({
+                items: [...cart],
+                tendered: tenderedVal,
+                change: change,
+                date: new Date(),
+                ...result.data, // Merge ID
+                total: Number(cartTotal),
+                customerName: selectedCustomer?.name
+            });
+            setLastSaleExt({ subtotal, tax: taxAmount, discount: discountAmount });
+
+            if (result.offline) {
+                toast.loading('Offline Mode: Sale saved to local queue.', { duration: 4000 });
+            } else {
+                toast.success('Sale completed!');
             }
-            if (cart.length === 0) return;
 
-            const tenderedVal = parseFloat(tendered) || 0;
-            const change = tenderedVal - cartTotal;
+            // Reset UI
+            setCart([]);
+            setAppliedDiscount(null);
+            setTendered('');
+            setUsePoints(false);
+            setPointsToRedeem(0);
+            setCheckoutModalOpen(false);
+            setSelectedPaymentMethod('CASH'); // Reset to default
+            setReceiptModalOpen(true); // Show Receipt
+            loadProducts(true);
+        } catch (e) {
+            console.error(e);
+            toast.error('Checkout Failed');
+        }
+    };
 
+    const handlePrint = async () => {
+        if (printerService.isConnected()) {
             try {
-                const result = await DataService.saveSale({
-                    items: cart.map(i => ({ productId: i.id, quantity: i.cartQty })),
-                    paymentMethod: selectedPaymentMethod,
-                    total: cartTotal,
-                    customerId: selectedCustomer?.id,
-                    tillSessionId: activeSession?.id,
-                    redeemPoints: usePoints ? pointsToRedeem : 0,
-                    storeId: selectedStoreId || undefined
-                });
-
-                // Store Sale Info for Receipt
-                setLastSale({
-                    items: [...cart],
-                    tendered: tenderedVal,
-                    change: change,
-                    date: new Date(),
-                    ...result.data, // Merge ID
-                    total: Number(cartTotal),
-                    customerName: selectedCustomer?.name
-                });
-                setLastSaleExt({ subtotal, tax: taxAmount, discount: discountAmount });
-
-                if (result.offline) {
-                    toast.loading('Offline Mode: Sale saved to local queue.', { duration: 4000 });
-                } else {
-                    toast.success('Sale completed!');
-                }
-
-                // Reset UI
-                setCart([]);
-                setAppliedDiscount(null);
-                setTendered('');
-                setUsePoints(false);
-                setPointsToRedeem(0);
-                setCheckoutModalOpen(false);
-                setSelectedPaymentMethod('CASH'); // Reset to default
-                setReceiptModalOpen(true); // Show Receipt
-                loadProducts(true);
+                const receipt = PrinterService.createReceipt(
+                    'My Store', // TODO: Get from store context
+                    lastSale?.items || [],
+                    formatCurrency(lastSale?.total, user?.currency, user?.locale)
+                );
+                await printerService.print(receipt);
             } catch (e) {
-                console.error(e);
-                toast.error('Checkout Failed');
-            }
-        };
-
-        const handlePrint = async () => {
-            if (printerService.isConnected()) {
-                try {
-                    const receipt = PrinterService.createReceipt(
-                        'My Store', // TODO: Get from store context
-                        lastSale?.items || [],
-                        formatCurrency(lastSale?.total, user?.currency, user?.locale)
-                    );
-                    await printerService.print(receipt);
-                } catch (e) {
-                    console.error('Thermal print failed', e);
-                    toast.error('Printer error. Falling back to browser print.');
-                    window.print();
-                }
-            } else {
+                console.error('Thermal print failed', e);
+                toast.error('Printer error. Falling back to browser print.');
                 window.print();
             }
-        };
+        } else {
+            window.print();
+        }
+    };
 
 
 
-        if (!user || !isHydrated) return <div className="p-8">Loading POS...</div>;
+    if (!user || !isHydrated) return <div className="p-8">Loading POS...</div>;
 
-        // Server-side filtering now
-        const filteredProducts = [...products];
+    const filteredProducts = products;
 
-        const filteredCustomers = customers.filter(c =>
-            c.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
-            c.phone?.includes(customerSearch) ||
-            c.code?.toLowerCase().includes(customerSearch.toLowerCase())
-        );
+    const filteredCustomers = customers.filter(c =>
+        c.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
+        c.phone?.includes(customerSearch) ||
+        c.code?.toLowerCase().includes(customerSearch.toLowerCase())
+    );
 
-        // Render POS Interface
-        return <div className="h-full w-full">
+    return (
+        <div className="h-full w-full">
             <div className="flex h-full w-full bg-[#f8f9fc] font-sans overflow-hidden print:hidden">
-
                 {/* CENTER: INVOICE / CART */}
                 <div className="flex-1 flex flex-col min-w-[500px] max-w-4xl mx-auto my-6 bg-white rounded-3xl shadow-xl overflow-hidden ml-6 mb-6">
                     {/* Header Card */}
@@ -965,6 +945,5 @@ export default function POSPage() {
 
             <ReceiptTemplate sale={lastSale} user={user} />
         </div>
-        </div >
-    ;
-    }
+    );
+}
