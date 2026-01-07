@@ -87,8 +87,8 @@ export class ProductsService {
         costPrice: row.costprice ? parseFloat(row.costprice) : undefined,
         minStockLevel: row.minstocklevel ? parseInt(row.minstocklevel) : 0,
         description: row.description,
-        category: row.category,
-        barcode: row.barcode,
+        category: row.category && row.category.trim() !== "" ? row.category : null,
+        barcode: row.barcode && row.barcode.trim() !== "" ? row.barcode : null,
         storeId: targetStoreId,
       };
 
@@ -104,7 +104,7 @@ export class ProductsService {
       }
 
       // If Barcode is provided, check for it.
-      if (row.barcode) {
+      if (row.barcode && row.barcode.trim() !== "") {
         searchConditions.push({ barcode: row.barcode });
       }
 
