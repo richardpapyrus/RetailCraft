@@ -8,12 +8,12 @@ async function bootstrap() {
       "http://localhost:3000",
       "https://app.retailcraft.com.ng",
       "https://retailcraft.com.ng",
-      /\.retailcraft\.com\.ng$/, // Allow subdomains
-      /http:\/\/192\.168\.[0-9]{1,3}\.[0-9]{1,3}:3000/, // Allow LAN IP access
-      /http:\/\/10\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}:3000/, // Allow LAN IP access
+      "https://www.retailcraft.com.ng",
+      /\.retailcraft\.com\.ng$/, // Allow all subdomains
     ],
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
     credentials: true,
+    allowedHeaders: "Content-Type, Key, Authorization, X-Requested-With",
   });
   await app.listen(process.env.PORT || 4000);
   console.log(`Application is running on: ${await app.getUrl()}`);
