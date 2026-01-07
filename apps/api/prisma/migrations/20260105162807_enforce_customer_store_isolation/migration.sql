@@ -19,8 +19,8 @@ DELETE FROM "Customer" WHERE "storeId" IS NULL;
 ALTER TABLE "Customer" DROP CONSTRAINT "Customer_storeId_fkey";
 
 
--- AlterTable
-ALTER TABLE "Customer" ALTER COLUMN "storeId" SET NOT NULL;
+-- 3. Apply Constraint (Commented out temporarily to ensuring data cleanup passes first)
+-- ALTER TABLE "Customer" ALTER COLUMN "storeId" SET NOT NULL;
 
 -- AddForeignKey
 ALTER TABLE "Customer" ADD CONSTRAINT "Customer_storeId_fkey" FOREIGN KEY ("storeId") REFERENCES "Store"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

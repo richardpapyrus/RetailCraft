@@ -6,10 +6,10 @@
 
 */
 -- DropIndex
-DROP INDEX "Product_barcode_key";
+DROP INDEX IF EXISTS "Product_barcode_key";
 
 -- DropIndex
-DROP INDEX "Product_sku_key";
+DROP INDEX IF EXISTS "Product_sku_key";
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Product_sku_tenantId_key" ON "Product"("sku", "tenantId");
