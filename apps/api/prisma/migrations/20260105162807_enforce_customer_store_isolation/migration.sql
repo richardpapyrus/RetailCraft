@@ -4,8 +4,17 @@
   - Made the column `storeId` on table `Customer` required. This step will fail if there are existing NULL values in that column.
 
 */
+
+-- Backfill storeId for existing customers to avoid failures
+UPDATE "Customer" c
+SET "storeId" = (
+  SELECT id FROM "Store" s WHERE s."tenantId" = c."tenantId" ORDER BY "createdAt" ASC LIMIT 1
+)
+WHERE "storeId" IS NULL;
+
 -- DropForeignKey
 ALTER TABLE "Customer" DROP CONSTRAINT "Customer_storeId_fkey";
+
 
 -- AlterTable
 ALTER TABLE "Customer" ALTER COLUMN "storeId" SET NOT NULL;
