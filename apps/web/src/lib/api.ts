@@ -17,7 +17,23 @@ if (typeof window !== 'undefined') {
 
 // CRITICAL: Respect the Build-time Environment Variable if it exists. 
 // Only fallback to computedUrl if NEXT_PUBLIC_API_URL is undefined or empty.
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || computedUrl;
+let finalUrl = process.env.NEXT_PUBLIC_API_URL || computedUrl;
+
+if (typeof window !== 'undefined') {
+    const isRemoteOrigin = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+    const isLocalhostApi = finalUrl.includes('localhost') || finalUrl.includes('127.0.0.1');
+
+    // SMART OVERRIDE: If we are on a remote device (e.g. LAN or Prod) but the API is set to localhost,
+    // it is definitely wrong (it points to the device's own localhost). We must trust the computedUrl.
+    if (isRemoteOrigin && isLocalhostApi) {
+        console.warn(`[RetailCraft Config] Overriding hardcoded localhost API (${finalUrl}) with detected remote API (${computedUrl})`);
+        finalUrl = computedUrl;
+    }
+
+    console.info(`[RetailCraft Config] Final API URL: ${finalUrl}`);
+}
+
+export const API_URL = finalUrl;
 
 export async function fetchClient(endpoint: string, options: RequestInit = {}) {
     // Access token from Zustand persisted storage

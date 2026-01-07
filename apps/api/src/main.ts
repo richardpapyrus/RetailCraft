@@ -4,7 +4,14 @@ import { AppModule } from "./app.module";
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors({
-    origin: true,
+    origin: [
+      "http://localhost:3000",
+      "https://app.retailcraft.com.ng",
+      "https://retailcraft.com.ng",
+      /\.retailcraft\.com\.ng$/, // Allow subdomains
+      /http:\/\/192\.168\.[0-9]{1,3}\.[0-9]{1,3}:3000/, // Allow LAN IP access
+      /http:\/\/10\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}:3000/, // Allow LAN IP access
+    ],
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
     credentials: true,
   });
