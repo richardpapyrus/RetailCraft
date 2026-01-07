@@ -9,7 +9,7 @@ export function ToastProvider() {
             reverseOrder={false}
             gutter={8}
             toastOptions={{
-                duration: 5000,
+                duration: 8000,
                 style: {
                     background: '#363636',
                     color: '#fff',
@@ -21,7 +21,7 @@ export function ToastProvider() {
                     fontWeight: 500,
                 },
                 success: {
-                    duration: 5000,
+                    duration: 8000,
                     style: {
                         background: '#F0FDF4', // green-50
                         color: '#166534', // green-800
@@ -33,7 +33,7 @@ export function ToastProvider() {
                     },
                 },
                 error: {
-                    duration: 6000,
+                    duration: 10000,
                     style: {
                         background: '#FEF2F2', // red-50
                         color: '#991B1B', // red-800
