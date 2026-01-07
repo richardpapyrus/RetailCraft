@@ -41,10 +41,29 @@ services:
       - pos_network
     environment:
       DATABASE_URL: postgresql://admin:password@postgres:5432/pos_db
-    command: /bin/sh -c "npx prisma migrate deploy && npm run start:dev"
+    # command: Removed, let Dockerfile default CMD run (npm run start:dev)
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
     volumes:
       - ./apps/api/src:/app/apps/api/src
       - ./apps/api/prisma:/app/apps/api/prisma
+
+  migrator:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://admin:password@postgres:5432/pos_db
+    command: npx prisma migrate deploy
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - pos_network
+
 
   web:
     build:
