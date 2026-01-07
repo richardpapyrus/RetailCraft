@@ -273,45 +273,44 @@ export const api = {
                 method: 'POST',
                 body: formData
             }).then(res => res as { logoUrl: string });
-        }).then(res => res as { logoUrl: string });
+        },
+        deleteLogo: (id: string) => fetchClient(`/tenants/${id}/logo`, { method: 'DELETE' }),
     },
-    deleteLogo: (id: string) => fetchClient(`/tenants/${id}/logo`, { method: 'DELETE' }),
-},
     returns: {
         create: (data: ReturnRequest) => fetchClient('/returns', {
             method: 'POST',
             body: JSON.stringify(data)
-    }),
+        }),
     },
-tills: {
-    list: (storeId: string) => fetchClient(`/tills?storeId=${storeId}`),
+    tills: {
+        list: (storeId: string) => fetchClient(`/tills?storeId=${storeId}`),
         create: (data: { name: string; storeId: string }) => fetchClient('/tills', { method: 'POST', body: JSON.stringify(data) }),
-            update: (id: string, data: any) => fetchClient(`/tills/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-                delete: (id: string) => fetchClient(`/tills/${id}`, { method: 'DELETE' }),
-                    getActiveSession: (storeId?: string) => fetchClient(`/tills/session/active${storeId ? `?storeId=${storeId}` : ''}`),
-                        openSession: (data: { tillId: string; openingFloat: number }) => fetchClient('/tills/session/open', { method: 'POST', body: JSON.stringify(data) }),
-                            getSessionSummary: (id: string) => fetchClient(`/tills/session/${id}/summary`),
-                                closeSession: (id: string, data: { closingCash: number }) => fetchClient(`/tills/session/${id}/close`, { method: 'POST', body: JSON.stringify(data) }),
-                                    recordTransaction: (data: { tillSessionId: string; type: 'CASH_IN' | 'CASH_OUT'; amount: number; reason: string }) => fetchClient('/tills/transaction', { method: 'POST', body: JSON.stringify(data) }),
-                                        getSessions: (id: string) => fetchClient(`/tills/${id}/sessions`),
+        update: (id: string, data: any) => fetchClient(`/tills/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+        delete: (id: string) => fetchClient(`/tills/${id}`, { method: 'DELETE' }),
+        getActiveSession: (storeId?: string) => fetchClient(`/tills/session/active${storeId ? `?storeId=${storeId}` : ''}`),
+        openSession: (data: { tillId: string; openingFloat: number }) => fetchClient('/tills/session/open', { method: 'POST', body: JSON.stringify(data) }),
+        getSessionSummary: (id: string) => fetchClient(`/tills/session/${id}/summary`),
+        closeSession: (id: string, data: { closingCash: number }) => fetchClient(`/tills/session/${id}/close`, { method: 'POST', body: JSON.stringify(data) }),
+        recordTransaction: (data: { tillSessionId: string; type: 'CASH_IN' | 'CASH_OUT'; amount: number; reason: string }) => fetchClient('/tills/transaction', { method: 'POST', body: JSON.stringify(data) }),
+        getSessions: (id: string) => fetchClient(`/tills/${id}/sessions`),
     },
-auth: {
-    me: (email: string) => fetchClient('/auth/profile', { method: 'POST', body: JSON.stringify({ email }) }),
+    auth: {
+        me: (email: string) => fetchClient('/auth/profile', { method: 'POST', body: JSON.stringify({ email }) }),
         register: (data: any) => fetchClient('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
     },
-onboarding: {
-    updateBusiness: (data: { name: string; currency: string; locale: string }) => fetchClient('/onboarding/business', { method: 'POST', body: JSON.stringify(data) }),
+    onboarding: {
+        updateBusiness: (data: { name: string; currency: string; locale: string }) => fetchClient('/onboarding/business', { method: 'POST', body: JSON.stringify(data) }),
         updateStore: (data: { name?: string; address: string; phone: string }) => fetchClient('/onboarding/store', { method: 'POST', body: JSON.stringify(data) }),
-            createTax: (data: { name: string; rate: number }) => fetchClient('/onboarding/tax', { method: 'POST', body: JSON.stringify(data) }),
-                createProduct: (data: { name: string; price: number; sku: string }) => fetchClient('/onboarding/product', { method: 'POST', body: JSON.stringify(data) }),
-                    complete: () => fetchClient('/onboarding/complete', { method: 'POST' }),
+        createTax: (data: { name: string; rate: number }) => fetchClient('/onboarding/tax', { method: 'POST', body: JSON.stringify(data) }),
+        createProduct: (data: { name: string; price: number; sku: string }) => fetchClient('/onboarding/product', { method: 'POST', body: JSON.stringify(data) }),
+        complete: () => fetchClient('/onboarding/complete', { method: 'POST' }),
     },
-roles: {
-    list: () => fetchClient('/roles').then(res => res as Role[]),
+    roles: {
+        list: () => fetchClient('/roles').then(res => res as Role[]),
         create: (data: { name: string; description?: string; permissions: string[] }) => fetchClient('/roles', { method: 'POST', body: JSON.stringify(data) }),
-            update: (id: string, data: Partial<Role>) => fetchClient(`/roles/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
-                delete: (id: string) => fetchClient(`/roles/${id}`, { method: 'DELETE' }),
-                    getPermissions: () => fetchClient('/roles/permissions').then(res => res as PermissionGroup[]),
+        update: (id: string, data: Partial<Role>) => fetchClient(`/roles/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+        delete: (id: string) => fetchClient(`/roles/${id}`, { method: 'DELETE' }),
+        getPermissions: () => fetchClient('/roles/permissions').then(res => res as PermissionGroup[]),
     }
 };
 
