@@ -9,7 +9,13 @@ export class UsersService {
     return prisma.user.findMany({
       where: {
         tenantId,
-        ...(storeId ? { storeId } : {}),
+        // Show users in this store OR global users (Admins/Owners)
+        ...(storeId ? {
+          OR: [
+            { storeId },
+            { storeId: null }
+          ]
+        } : {}),
       },
       include: { store: true, roleDef: true },
       orderBy: { createdAt: "desc" },
