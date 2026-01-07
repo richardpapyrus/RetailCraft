@@ -13,7 +13,11 @@ export class UsersService {
         ...(storeId ? {
           OR: [
             { storeId },
-            { storeId: null }
+            { storeId: null },
+            // Include Role-based Admins even if they have a storeId set (Legacy fix)
+            { roleDef: { name: 'Administrator' } },
+            { roleDef: { name: 'Owner' } },
+            { roleDef: { name: 'Admin' } }
           ]
         } : {}),
       },
