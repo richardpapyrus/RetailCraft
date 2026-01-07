@@ -10,6 +10,10 @@ export default function LoginPage() {
     const [error, setError] = useState('');
     const router = useRouter();
     const { login } = useAuth();
+    const [API_URL_DISPLAY, setApiUrl] = useState('Loading...');
+
+    // Load API URL for debug display
+    import('@/lib/api').then(m => setApiUrl(m.API_URL));
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -76,7 +80,12 @@ export default function LoginPage() {
                     </div>
 
                     {error && (
-                        <div className="text-red-500 text-sm text-center">{error}</div>
+                        <div className="bg-red-50 border border-red-200 rounded-md p-3 text-sm text-red-600 text-center">
+                            <p className="font-bold">{error}</p>
+                            <p className="text-xs mt-1 text-gray-500">
+                                Connecting to: {import('@/lib/api').then(m => m.API_URL) && API_URL_DISPLAY}
+                            </p>
+                        </div>
                     )}
 
                     <div>

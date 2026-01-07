@@ -1,25 +1,23 @@
 // Smart API URL determination
-let defaultUrl = 'http://localhost:4000';
+let computedUrl = 'http://localhost:4000';
+
 if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
     const protocol = window.location.protocol;
 
+    // Fallback logic ONLY if Env Var is missing
     if (hostname.includes('retailcraft.com.ng')) {
-        // Production Domain - FORCE correct API, ignoring potentially bad Env Var (like localhost)
-        defaultUrl = 'https://api.retailcraft.com.ng';
-        // Overwrite standard logic: If we are on production domain, we MUST use production API.
-        // This fixes the case where build/env might erroneously have NEXT_PUBLIC_API_URL=http://localhost:4000
+        // Guessing production API - but allow override via Env Var
+        computedUrl = 'https://api.retailcraft.com.ng';
     } else if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
         // LAN / IP Access (Assume Backend is on same host, port 4000)
-        defaultUrl = `${protocol}//${hostname}:4000`;
+        computedUrl = `${protocol}//${hostname}:4000`;
     }
 }
 
-// Logic: Use Env Var mostly, BUT if we are definitely on the specific production domain, FORCE it.
-// This is a safety patch for the user's likely misconfiguration.
-export const API_URL = (typeof window !== 'undefined' && window.location.hostname.includes('retailcraft.com.ng'))
-    ? 'https://api.retailcraft.com.ng'
-    : (process.env.NEXT_PUBLIC_API_URL || defaultUrl);
+// CRITICAL: Respect the Build-time Environment Variable if it exists. 
+// Only fallback to computedUrl if NEXT_PUBLIC_API_URL is undefined or empty.
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || computedUrl;
 
 export async function fetchClient(endpoint: string, options: RequestInit = {}) {
     // Access token from Zustand persisted storage
