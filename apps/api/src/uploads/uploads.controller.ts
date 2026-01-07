@@ -17,4 +17,28 @@ export class UploadsController {
 
         return res.sendFile(filePath);
     }
+
+    @Get('debug/list')
+    listFileDebug() {
+        const uploadDir = join(process.cwd(), 'uploads');
+        const exists = existsSync(uploadDir);
+        let files: string[] = [];
+        try {
+            const fs = require('fs');
+            if (exists) files = fs.readdirSync(uploadDir);
+        } catch (e) {
+            files = [`Error: ${e.message}`];
+        }
+
+        return {
+            cwd: process.cwd(),
+            uploadDir,
+            exists,
+            files,
+            env: {
+                NODE_ENV: process.env.NODE_ENV,
+                APP_URL: process.env.APP_URL
+            }
+        };
+    }
 }
