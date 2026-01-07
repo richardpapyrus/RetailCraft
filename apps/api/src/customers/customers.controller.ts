@@ -24,7 +24,7 @@ export class CustomersController {
   ) {
     console.log('[Debug Obinna] User:', req.user.email, 'Role:', req.user.role, 'HomeStore:', req.user.storeId);
     console.log('[Debug Obinna] Body StoreId:', (createCustomerDto as any).storeId);
-    const isSystemAdmin = req.user.role === 'Administrator' || req.user.role === 'ADMIN' || req.user.permissions?.includes('*');
+    const isSystemAdmin = req.user.role === 'Administrator' || req.user.permissions?.includes('*');
 
     let targetStoreId = (createCustomerDto as any).storeId;
 
@@ -51,7 +51,7 @@ export class CustomersController {
     @Query("take") take: string,
     @Query("storeId") queryStoreId?: string,
   ) {
-    const isSystemAdmin = req.user.role === 'Administrator' || req.user.role === 'ADMIN' || req.user.permissions?.includes('*');
+    const isSystemAdmin = req.user.role === 'Administrator' || req.user.permissions?.includes('*');
     let storeId = queryStoreId; // Accept query param
 
     if (!isSystemAdmin) {

@@ -32,7 +32,7 @@ export class SalesController {
   @Get()
   async findAll(@Request() req, @Query("storeId") queryStoreId?: string) {
     let storeId = queryStoreId;
-    const isSystemAdmin = req.user.role === 'Administrator' || req.user.role === 'ADMIN' || req.user.permissions?.includes('*');
+    const isSystemAdmin = req.user.role === 'Administrator' || req.user.permissions?.includes('*');
     if (!isSystemAdmin) {
       if (req.user.storeId) storeId = req.user.storeId;
       else storeId = 'invalid-store-id';
@@ -85,7 +85,7 @@ export class SalesController {
   ) {
     let storeId = queryStoreId;
     // Non-Admins are restricted to their assigned store
-    const isSystemAdmin = req.user.role === 'Administrator' || req.user.role === 'ADMIN' || req.user.permissions?.includes('*');
+    const isSystemAdmin = req.user.role === 'Administrator' || req.user.permissions?.includes('*');
     if (!isSystemAdmin) {
       if (req.user.storeId) storeId = req.user.storeId;
       else storeId = 'invalid-store-id'; // Prevent fallback
@@ -110,7 +110,7 @@ export class SalesController {
     @Query("storeId") queryStoreId?: string,
   ) {
     let storeId = queryStoreId;
-    const isSystemAdmin = req.user.role === 'Administrator' || req.user.role === 'ADMIN' || req.user.permissions?.includes('*');
+    const isSystemAdmin = req.user.role === 'Administrator' || req.user.permissions?.includes('*');
     if (!isSystemAdmin) {
       if (req.user.storeId) storeId = req.user.storeId;
       else storeId = 'invalid-store-id'; // Prevent fallback
@@ -151,7 +151,7 @@ export class SalesController {
     // Prioritize Body StoreId (for Admins operating POS), else User StoreId
     let storeId = body.storeId;
 
-    const isSystemAdmin = req.user.role === 'Administrator' || req.user.role === 'ADMIN' || req.user.permissions?.includes('*');
+    const isSystemAdmin = req.user.role === 'Administrator' || req.user.permissions?.includes('*');
 
     if (!isSystemAdmin) {
       // Enforce assigned store for non-admins

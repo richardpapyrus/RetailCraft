@@ -44,7 +44,7 @@ export class ProductsController {
     @Query('storeId') queryStoreId: string
   ) {
     const tenantId = req.user.tenantId;
-    const isSystemAdmin = req.user.role === 'Administrator' || req.user.role === 'ADMIN' || req.user.permissions?.includes('*');
+    const isSystemAdmin = req.user.role === 'Administrator' || req.user.permissions?.includes('*');
 
     let targetStoreId = queryStoreId;
     if (!isSystemAdmin && req.user.storeId) {
@@ -80,7 +80,7 @@ Example Product,EX-001,10.00,Description here,General,12345678,5.00,10,100`;
     if (!tenantId) {
       throw new Error("Tenant ID missing from user");
     }
-    const isSystemAdmin = req.user.role === 'Administrator' || req.user.role === 'ADMIN' || req.user.permissions?.includes('*');
+    const isSystemAdmin = req.user.role === 'Administrator' || req.user.permissions?.includes('*');
 
     // Determine Store ID
     // If Non-Admin: MUST be their assigned store.
@@ -122,7 +122,7 @@ Example Product,EX-001,10.00,Description here,General,12345678,5.00,10,100`;
   @Get("stats")
   getStats(@Request() req, @Query('storeId') queryStoreId?: string) {
     let storeId = queryStoreId;
-    const isSystemAdmin = req.user.role === 'Administrator' || req.user.role === 'ADMIN' || req.user.permissions?.includes('*');
+    const isSystemAdmin = req.user.role === 'Administrator' || req.user.permissions?.includes('*');
     if (!isSystemAdmin && req.user.storeId) {
       storeId = req.user.storeId;
     }
@@ -161,7 +161,7 @@ Example Product,EX-001,10.00,Description here,General,12345678,5.00,10,100`;
     if (!tenantId) throw new Error("Start Session: Tenant ID missing in token");
 
     let storeId = queryStoreId;
-    const isSystemAdmin = req.user.role === 'Administrator' || req.user.role === 'ADMIN' || req.user.permissions?.includes('*');
+    const isSystemAdmin = req.user.role === 'Administrator' || req.user.permissions?.includes('*');
     if (!isSystemAdmin && req.user.storeId) {
       storeId = req.user.storeId;
     }

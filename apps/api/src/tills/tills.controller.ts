@@ -22,7 +22,7 @@ export class TillsController {
   @Post()
   create(@Body() body: { name: string; storeId: string }, @Request() req) {
     let targetStoreId = body.storeId;
-    const isSystemAdmin = req.user.role === 'Administrator' || req.user.role === 'ADMIN' || req.user.permissions?.includes('*');
+    const isSystemAdmin = req.user.role === 'Administrator' || req.user.permissions?.includes('*');
 
     if (!isSystemAdmin) {
       if (!req.user.storeId) throw new Error("Operation denied: No store assigned");
@@ -43,7 +43,7 @@ export class TillsController {
   @Get()
   findAll(@Query("storeId") queryStoreId: string, @Request() req) {
     let storeId = queryStoreId;
-    const isSystemAdmin = req.user.role === 'Administrator' || req.user.role === 'ADMIN' || req.user.permissions?.includes('*');
+    const isSystemAdmin = req.user.role === 'Administrator' || req.user.permissions?.includes('*');
 
     if (!isSystemAdmin) {
       if (!req.user.storeId) throw new Error("Operation denied: No store assigned");

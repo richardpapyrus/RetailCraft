@@ -22,7 +22,7 @@ export class SuppliersController {
   create(@Request() req, @Body() body: any) {
     let targetStoreId = body.storeId;
     // Strict RBAC
-    const isSystemAdmin = req.user.role === 'Administrator' || req.user.role === 'ADMIN' || req.user.permissions?.includes('*');
+    const isSystemAdmin = req.user.role === 'Administrator' || req.user.permissions?.includes('*');
     if (!isSystemAdmin) {
       if (!req.user.storeId) throw new Error("Operation denied: No store assigned");
       targetStoreId = req.user.storeId;
@@ -38,7 +38,7 @@ export class SuppliersController {
   @Get()
   findAll(@Request() req, @Query("storeId") queryStoreId?: string) {
     let storeId = queryStoreId;
-    const isSystemAdmin = req.user.role === 'Administrator' || req.user.role === 'ADMIN' || req.user.permissions?.includes('*');
+    const isSystemAdmin = req.user.role === 'Administrator' || req.user.permissions?.includes('*');
     if (!isSystemAdmin) {
       if (req.user.storeId) storeId = req.user.storeId;
       else storeId = 'invalid-store-id';

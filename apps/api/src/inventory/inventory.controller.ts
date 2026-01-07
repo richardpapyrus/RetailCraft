@@ -20,7 +20,7 @@ export class InventoryController {
   ) {
     const userId = req.user.userId;
     const userStoreId = req.user.storeId;
-    const isSystemAdmin = req.user.role === 'Administrator' || req.user.role === 'ADMIN' || req.user.permissions?.includes('*');
+    const isSystemAdmin = req.user.role === 'Administrator' || req.user.permissions?.includes('*');
 
     let targetStoreId = body.storeId;
 
@@ -66,7 +66,7 @@ export class InventoryController {
   ) {
     const userId = req.user.userId;
     const userStoreId = req.user.storeId;
-    const isSystemAdmin = req.user.role === 'Administrator' || req.user.role === 'ADMIN' || req.user.permissions?.includes('*');
+    const isSystemAdmin = req.user.role === 'Administrator' || req.user.permissions?.includes('*');
 
     let targetStoreId = body.storeId;
 
