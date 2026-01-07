@@ -322,7 +322,7 @@ export class ProductsService {
           inventory: { where: storeId ? { storeId } : undefined },
           supplier: true
         },
-        orderBy: { createdAt: "desc" },
+        orderBy: { name: "asc" },
       });
 
       return { total, data };
@@ -374,7 +374,7 @@ export class ProductsService {
         },
         skip,
         take,
-        orderBy: { createdAt: "desc" },
+        orderBy: { name: "asc" },
       }),
     ]);
 
