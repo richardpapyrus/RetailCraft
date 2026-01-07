@@ -1,4 +1,11 @@
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+// Smart API URL determination
+let defaultUrl = 'http://localhost:4000';
+if (typeof window !== 'undefined') {
+    if (window.location.hostname.includes('retailcraft.com.ng')) {
+        defaultUrl = 'https://api.retailcraft.com.ng';
+    }
+}
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || defaultUrl;
 
 export async function fetchClient(endpoint: string, options: RequestInit = {}) {
     // Access token from Zustand persisted storage

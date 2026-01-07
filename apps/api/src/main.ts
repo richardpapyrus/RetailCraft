@@ -4,7 +4,12 @@ import { AppModule } from "./app.module";
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors({
-    origin: true,
+    origin: [
+      "http://localhost:3000",
+      "https://app.retailcraft.com.ng",
+      "https://www.retailcraft.com.ng",
+      /\.retailcraft\.com\.ng$/
+    ],
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
     credentials: true,
   });
