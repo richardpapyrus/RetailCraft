@@ -29,11 +29,10 @@ export class TenantsController {
     })
   }))
   async uploadLogo(@Param('id') id: string, @UploadedFile() file: Express.Multer.File) {
-    // Generate the full URL (assuming default port/host for now, ideally strictly configured)
-    const baseUrl = process.env.APP_URL || (process.env.NODE_ENV === 'production'
-      ? 'https://app.retailcraft.com.ng'
-      : 'http://localhost:4000');
-    const logoUrl = `${baseUrl}/api/uploads/${file.filename}`;
+    // Use relative path to avoid domain issues. 
+    // The frontend/browser will resolve this against the current origin.
+    // Nginx proxies /api -> Backend. 
+    const logoUrl = `/api/uploads/${file.filename}`;
 
     // Save to DB
     await this.tenantsService.update(id, { logoUrl });
