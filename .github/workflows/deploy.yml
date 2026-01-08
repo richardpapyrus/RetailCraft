@@ -28,4 +28,4 @@ jobs:
 
       - name: Deploy on server
         run: |
-          ssh -i ~/.ssh/retail-craft root@165.227.26.131 "cd /root/retail-craft-app/ && docker compose down -v && docker system prune -af && docker compose up --build -d --remove-orphans && docker compose run --rm api npx prisma db push --accept-data-loss && docker compose run --rm api npx prisma db seed"
+          ssh -i ~/.ssh/retail-craft root@165.227.26.131 "cd /root/retail-craft-app/ && docker compose down -v && docker system prune -af && docker compose up --build -d --remove-orphans && docker compose run --rm api npx prisma db push --accept-data-loss && docker compose run --rm api npx ts-node prisma/seed.ts"
