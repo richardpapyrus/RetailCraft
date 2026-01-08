@@ -138,6 +138,7 @@ export class SalesController {
     body: {
       items: any[];
       paymentMethod: string;
+      payments?: any[]; // Multi-Tender Support
       customerId?: string;
       discount?: any;
       tillSessionId?: string;
