@@ -361,7 +361,39 @@ export default function POSPage() {
 
 
 
+    // Verify Store Selection (Global View Lock)
+    if (isHydrated && !selectedStoreId) {
+        return (
+            <div className="h-full w-full flex items-center justify-center bg-gray-50">
+                <div className="text-center p-8 bg-white rounded-3xl shadow-xl max-w-md">
+                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2-2H7" /></svg>
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Select a Store</h2>
+                    <p className="text-gray-500 mb-6">POS and Sales features are disabled in Global View. Please select a specific location from the sidebar to continue.</p>
+                </div>
+            </div>
+        )
+    }
+
     if (!user || !isHydrated) return <div className="p-8">Loading POS...</div>;
+
+    // Receipt Context: Get ACTUAL store object via API (safer than relying on user object)
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const [activeStore, setActiveStore] = useState<any>(user?.store);
+
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useEffect(() => {
+        if (selectedStoreId) {
+            api.stores.list(selectedStoreId).then((res: any) => {
+                if (Array.isArray(res) && res.length > 0) setActiveStore(res[0]);
+                else setActiveStore(user?.store);
+            }).catch(() => setActiveStore(user?.store));
+        } else {
+            setActiveStore(user?.store);
+        }
+    }, [selectedStoreId, user?.store]);
+
 
     const filteredProducts = products;
 
@@ -979,7 +1011,7 @@ export default function POSPage() {
                 />
             </div>
 
-            <ReceiptTemplate sale={lastSale} user={user} />
+            <ReceiptTemplate sale={lastSale} user={user} store={activeStore} />
         </div>
     );
 }

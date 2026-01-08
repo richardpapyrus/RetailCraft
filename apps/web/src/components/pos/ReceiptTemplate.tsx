@@ -4,13 +4,14 @@ import { formatCurrency } from '@/lib/useAuth';
 interface ReceiptTemplateProps {
     sale: any;
     user: any;
+    store?: any;
 }
 
-export default function ReceiptTemplate({ sale, user }: ReceiptTemplateProps) {
+export default function ReceiptTemplate({ sale, user, store: propStore }: ReceiptTemplateProps) {
     if (!sale) return null;
 
 
-    const store = user?.store || {};
+    const store = propStore || user?.store || {};
     // Use Business Name (Tenant) as the main header, fallback to Store Name.
     const siteName = user?.tenant?.name || user?.tenantName || store.name || 'My Store';
 

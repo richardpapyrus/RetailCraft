@@ -24,7 +24,7 @@ import { StoreSelector } from './StoreSelector';
 export function Sidebar() {
     const pathname = usePathname();
     const router = useRouter();
-    const { logout, user, hasPermission } = useAuth();
+    const { logout, user, hasPermission, selectedStoreId } = useAuth();
     const [isPinned, setIsPinned] = useState(false);
 
     useEffect(() => {
@@ -136,6 +136,33 @@ export function Sidebar() {
                 {menuItems.map((item) => {
                     const isActive = pathname === item.href;
                     const Icon = item.icon;
+                    // Global View Lock: Disable POS if no store selected
+                    const isGlobalView = !selectedStoreId;
+                    const isDisabled = item.name === 'POS' && isGlobalView;
+
+                    if (isDisabled) {
+                        return (
+                            <div
+                                key={item.name}
+                                className="flex items-center px-3 py-3 rounded-xl text-gray-300 cursor-not-allowed group/item relative overflow-hidden"
+                                title="Select a store to access POS"
+                            >
+                                <span className="w-6 h-6 flex items-center justify-center shrink-0">
+                                    <Icon size={20} strokeWidth={2} />
+                                </span>
+                                <span className={`
+                                    ml-3 font-medium whitespace-nowrap overflow-hidden transition-all duration-300
+                                    ${isPinned
+                                        ? 'opacity-100 relative left-0'
+                                        : 'opacity-0 absolute left-12 group-hover:opacity-100 group-hover:relative group-hover:left-0'
+                                    }
+                                `}>
+                                    {item.name}
+                                </span>
+                            </div>
+                        );
+                    }
+
                     return (
                         <Link
                             key={item.name}
