@@ -17,7 +17,7 @@ export default function ReceiptTemplate({ sale, user }: ReceiptTemplateProps) {
     // Receipt width: 80mm is standard thermal paper width.
     // Tailwind 'print:block' ensures it only shows when printing.
     return (
-        <div id="receipt-print-area" className="hidden print:block w-[80mm] bg-white text-black font-mono text-[12px] leading-tight mx-auto p-2">
+        <div id="receipt-print-area" className="hidden print:block w-[78mm] bg-white text-black font-mono text-[12px] leading-tight p-2">
 
             {/* --- HEADER --- */}
             <div className="text-center mb-4">
