@@ -913,6 +913,74 @@ export default function POSPage() {
 
 
 
+
+                {/* Split Payment Modal */}
+                {splitModalOpen && (
+                    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[60] backdrop-blur-sm">
+                        <div className="bg-white p-6 rounded-2xl shadow-2xl w-[450px]">
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-xl font-bold">Split Payment</h3>
+                                <button onClick={() => { setSplitPayments([]); setSplitModalOpen(false); }} className="text-gray-400 hover:text-gray-600">✕</button>
+                            </div>
+
+                            <div className="bg-gray-50 p-4 rounded-xl mb-6 flex justify-between items-center">
+                                <div>
+                                    <div className="text-xs text-gray-500 uppercase font-bold">Total Due</div>
+                                    <div className="text-2xl font-bold text-gray-900">${cartTotal.toFixed(2)}</div>
+                                </div>
+                                <div className="text-right">
+                                    <div className="text-xs text-gray-500 uppercase font-bold">Remaining</div>
+                                    <div className={`text-2xl font-bold ${cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0) <= 0.01 ? 'text-green-600' : 'text-orange-600'}`}>
+                                        ${Math.max(0, cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0)).toFixed(2)}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-3 mb-6 max-h-[200px] overflow-y-auto">
+                                {splitPayments.map((p, idx) => (
+                                    <div key={idx} className="flex justify-between items-center bg-white border p-3 rounded-lg">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-lg">{p.method === 'CASH' ? '💵' : p.method === 'CARD' ? '💳' : '🏦'}</span>
+                                            <span className="font-bold text-gray-700">{p.method}</span>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <span className="font-mono font-bold">${p.amount.toFixed(2)}</span>
+                                            <button onClick={() => setSplitPayments(prev => prev.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-600">✕</button>
+                                        </div>
+                                    </div>
+                                ))}
+                                {splitPayments.length === 0 && <div className="text-center text-gray-400 py-4 italic">No payments added yet</div>}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3 mb-4">
+                                {(['CASH', 'CARD', 'BANK_TRANSFER'] as const).map(method => (
+                                    <button
+                                        key={method}
+                                        onClick={() => {
+                                            const remaining = cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0);
+                                            if (remaining <= 0) return toast.error('Total already covered');
+                                            setSplitPayments([...splitPayments, { method, amount: parseFloat(remaining.toFixed(2)) }]); // Default to remaining
+                                        }}
+                                        className="p-3 border rounded-xl hover:bg-indigo-50 hover:border-indigo-500 text-sm font-bold text-gray-600 transition-colors"
+                                    >
+                                        Add {method}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <button
+                                onClick={() => handleCheckout()}
+                                disabled={cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0) > 0.01}
+                                className={`w-full py-4 rounded-xl font-bold text-white shadow-lg transition-all ${cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0) > 0.01
+                                    ? 'bg-gray-300 cursor-not-allowed shadow-none'
+                                    : 'bg-green-600 hover:bg-green-500 shadow-green-600/30'}`}
+                            >
+                                Complete Sale
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {/* Discount Modal */}
                 {discountModalOpen && (
                     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[70] backdrop-blur-sm">
