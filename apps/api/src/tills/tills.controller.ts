@@ -46,8 +46,13 @@ export class TillsController {
     const isSystemAdmin = req.user.role === 'Administrator' || req.user.permissions?.includes('*');
 
     if (!isSystemAdmin) {
-      if (!req.user.storeId) throw new Error("Operation denied: No store assigned");
-      storeId = req.user.storeId;
+      if (req.user.storeId) {
+        // If user is locked to a store, enforce it.
+        storeId = req.user.storeId;
+      } else {
+        // If user is "Floating" (no store assigned), allow them to view the requested store.
+        if (!storeId) throw new BadRequestException("Store ID required for floating staff");
+      }
     }
 
     // Strict isolation for Tills

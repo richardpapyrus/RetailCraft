@@ -35,9 +35,13 @@ export default function OpenTillModal({ isOpen, onClose, onSuccess }: OpenTillMo
             }
 
             const res = await api.tills.list(storeId);
-            const closed = res.filter((t: any) => t.status === 'CLOSED');
-            setAvailableTills(closed);
-            if (closed.length > 0) setSelectedTillId(closed[0].id);
+            const res = await api.tills.list(storeId);
+            // Show ALL tills so users see what's happening. Filter logic moved to Render.
+            setAvailableTills(res);
+
+            // Auto-select first AVAILABLE till
+            const firstAvailable = res.find((t: any) => t.status === 'CLOSED');
+            if (firstAvailable) setSelectedTillId(firstAvailable.id);
         } catch (e) {
             console.error(e);
             setError('Failed to load tills');
@@ -94,7 +98,14 @@ export default function OpenTillModal({ isOpen, onClose, onSuccess }: OpenTillMo
                         >
                             {availableTills.length === 0 && <option value="">No available tills</option>}
                             {availableTills.map(till => (
-                                <option key={till.id} value={till.id}>{till.name}</option>
+                                <option
+                                    key={till.id}
+                                    value={till.id}
+                                    disabled={till.status === 'OPEN'}
+                                    className={till.status === 'OPEN' ? 'text-gray-400 bg-gray-100' : 'font-bold'}
+                                >
+                                    {till.name} {till.status === 'OPEN' ? '(In Use)' : '(Available)'}
+                                </option>
                             ))}
                         </select>
                     </div>
