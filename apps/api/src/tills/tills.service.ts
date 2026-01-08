@@ -55,11 +55,17 @@ export class TillsService {
     userId: string;
     openingFloat: number;
   }) {
-    // 1. Check if Till is already OPEN
+    // 1. Check if Till is actually IN USE (ignore status flag if stuck)
     const till = await prisma.till.findUnique({ where: { id: data.tillId } });
     if (!till) throw new NotFoundException("Till not found");
-    if (till.status === "OPEN")
-      throw new BadRequestException("Till is already open");
+
+    // Robust Check: Look for an ACTUAL open session record.
+    const existingSession = await prisma.tillSession.findFirst({
+      where: { tillId: data.tillId, status: "OPEN" },
+    });
+
+    if (existingSession)
+      throw new BadRequestException("Till is already open by another user");
 
     // 2. Check if User has another open session IN THIS STORE
     // We allow same user to have open sessions in DIFFERENT stores (e.g. multi-store manager)
