@@ -35,7 +35,6 @@ export default function OpenTillModal({ isOpen, onClose, onSuccess }: OpenTillMo
             }
 
             const res = await api.tills.list(storeId);
-            const res = await api.tills.list(storeId);
             // Show ALL tills so users see what's happening. Filter logic moved to Render.
             setAvailableTills(res);
 
