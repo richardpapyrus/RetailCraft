@@ -7,23 +7,25 @@ const prisma = new PrismaClient();
 export class SalesService {
   async processSale(data: {
     items: { productId: string; quantity: number }[];
-    paymentMethod: string; // 'CASH' | 'CARD'
+    paymentMethod?: string; // Legacy/Fallback
+    payments?: { method: string; amount: number; reference?: string }[]; // New Multi-Tender
     tenantId: string;
     storeId: string;
     userId: string;
-    tillSessionId?: string; // Optional for now, but should be enforced
+    tillSessionId?: string;
     customerId?: string;
     discount?: {
       id?: string;
       name?: string;
       type: "PERCENTAGE" | "FIXED";
       value: number;
-    }; // Manual or System
-    redeemPoints?: number; // New: Points to redeem
+    };
+    redeemPoints?: number;
   }) {
     const {
       items,
       paymentMethod,
+      payments,
       tenantId,
       storeId,
       userId,
@@ -49,29 +51,28 @@ export class SalesService {
       if (tillSessionId) {
         const session = await tx.tillSession.findUnique({
           where: { id: tillSessionId },
-          include: { till: true } // Need to check storeId
+          include: { till: true },
         });
         if (!session) throw new BadRequestException("Invalid Till Session ID");
         if (session.status !== "OPEN")
           throw new BadRequestException("Till Session is not OPEN");
 
-        // STRICT ISOLATION CHECK
         if (session.till.storeId !== storeId) {
-          throw new BadRequestException(`Till Session belongs to a different store (${session.till.name}). Please switch stores or close the remote session.`);
+          throw new BadRequestException(
+            `Till Session belongs to a different store (${session.till.name}). Please switch stores or close the remote session.`,
+          );
         }
       }
 
-      // 1. Resolve Discount (Securely)
+      // 1. Resolve Discount
       let resolvedDiscount = null;
       if (discount) {
         if (discount.id) {
-          // System Discount: Fetch from DB to ensure validity and targeting
           const dbDiscount = await tx.discount.findUnique({
             where: { id: discount.id },
           });
           if (dbDiscount && dbDiscount.active) {
             const now = new Date();
-            // Validation: Check validity dates
             const isValid =
               (!dbDiscount.startDate || now >= dbDiscount.startDate) &&
               (!dbDiscount.endDate || now <= dbDiscount.endDate);
@@ -86,7 +87,6 @@ export class SalesService {
             }
           }
         } else {
-          // Manual Discount: Applies to ALL by default
           resolvedDiscount = {
             type: discount.type,
             value: discount.value,
@@ -111,7 +111,6 @@ export class SalesService {
         const lineTotal = Number(product.price) * item.quantity;
         subtotal += lineTotal;
 
-        // Check eligibility for discount
         let isEligible = false;
         if (resolvedDiscount) {
           if (resolvedDiscount.targetType === "ALL") {
@@ -119,8 +118,6 @@ export class SalesService {
           } else if (resolvedDiscount.targetType === "PRODUCT") {
             isEligible = resolvedDiscount.targetValues.includes(product.id);
           } else if (resolvedDiscount.targetType === "CATEGORY") {
-            // Check if product category matches any target value
-            // Assuming targetValues contains category names
             if (
               product.category &&
               resolvedDiscount.targetValues.includes(product.category)
@@ -141,14 +138,10 @@ export class SalesService {
           costAtSale: product.costPrice || 0,
         });
 
-        // NEW: Inventory Check
-        // Note: This does not lock the row, so race conditions are possible in high-concurrency.
-        // For a robust system, we should use Optimistic Concurrency Control or SELECT FOR UPDATE.
-        // Given the current scope, a simple check is sufficient.
+        // Inventory Check
         const inventory = await tx.inventory.findUnique({
           where: { storeId_productId: { storeId, productId: item.productId } },
         });
-
         const currentStock = inventory?.quantity || 0;
         if (currentStock < item.quantity) {
           throw new BadRequestException(
@@ -163,12 +156,11 @@ export class SalesService {
         if (resolvedDiscount.type === "PERCENTAGE") {
           discountAmount = eligibleSubtotal * (resolvedDiscount.value / 100);
         } else {
-          // Fixed amount: cap at eligible subtotal (can't discount more than the items worth)
           discountAmount = Math.min(resolvedDiscount.value, eligibleSubtotal);
         }
       }
 
-      // Loyalty Redemption Logic
+      // Loyalty Redemption
       let pointsUsed = 0;
       if (redeemPoints && redeemPoints > 0) {
         if (!customerId)
@@ -180,30 +172,26 @@ export class SalesService {
         if (customer.loyaltyPoints < redeemPoints)
           throw new BadRequestException("Insufficient loyalty points");
 
-        // Redemption Value: 1 Point = $0.10 (Hardcoded for now)
         const pointValue = 0.1;
         const redemptionValue = redeemPoints * pointValue;
 
         discountAmount += redemptionValue;
         pointsUsed = redeemPoints;
 
-        // Deduct points
         await tx.customer.update({
           where: { id: customerId },
           data: { loyaltyPoints: { decrement: redeemPoints } },
         });
       }
 
-      // Final safety cap (should already be handled by logic above but good to be safe)
       if (discountAmount > subtotal) discountAmount = subtotal;
 
       const taxableAmount = subtotal - discountAmount;
 
-      // Loyalty Accrual Logic (Earn on Subtotal before tax, but after discount? Standard is usually effective spend)
-      // Let's earn on taxableAmount (Spend after discounts). Rate: 1 Point per $1.
+      // Loyalty Accrual
       let pointsEarned = 0;
       if (customerId) {
-        pointsEarned = Math.floor(taxableAmount); // 1 point per $1.00
+        pointsEarned = Math.floor(taxableAmount);
         if (pointsEarned > 0) {
           await tx.customer.update({
             where: { id: customerId },
@@ -213,7 +201,6 @@ export class SalesService {
       }
 
       // 4. Calculate Taxes
-      // Fetch all active taxes for this tenant
       const activeTaxes = await tx.tax.findMany({
         where: { tenantId, active: true },
       });
@@ -222,17 +209,45 @@ export class SalesService {
         0,
       );
       const taxAmount = taxableAmount * totalTaxRate;
-
       const finalTotal = taxableAmount + taxAmount;
 
-      // 5. Create Sale Record
+      // 5. Payment Logic (Multi-Tender)
+      let finalPayments = payments || [];
+
+      // If no explicit payments array, fallback to legacy method with Full Amount
+      if (finalPayments.length === 0) {
+        if (!paymentMethod) throw new BadRequestException("Payment Method required");
+        finalPayments = [{ method: paymentMethod, amount: finalTotal }];
+      }
+
+      // Validate Totals (Allow tolerance for float math)
+      const totalPaid = finalPayments.reduce((sum, p) => sum + Number(p.amount), 0);
+
+      // Allow overpayment (Change), but reject underpayment
+      // Tolerance 0.01
+      if (totalPaid < finalTotal - 0.01) {
+        throw new BadRequestException(`Insufficient Payment. Total: ${finalTotal.toFixed(2)}, Paid: ${totalPaid.toFixed(2)}`);
+      }
+
+      // Determine Summary Method
+      const isSplit = finalPayments.length > 1;
+      const summaryMethod = isSplit ? "SPLIT" : finalPayments[0].method;
+
+      // 6. Create Sale
       const sale = await tx.sale.create({
         data: {
           total: finalTotal,
           subtotal: subtotal,
           discountTotal: discountAmount,
           taxTotal: taxAmount,
-          paymentMethod: paymentMethod,
+          paymentMethod: summaryMethod,
+          payments: {
+            create: finalPayments.map(p => ({
+              method: p.method,
+              amount: p.amount,
+              reference: p.reference
+            }))
+          },
           status: "COMPLETED",
           tenantId,
           storeId,
@@ -244,7 +259,7 @@ export class SalesService {
         },
       });
 
-      // 6. Create SaleItems and Update Inventory
+      // 7. Create SaleItems and Update Inventory
       for (const item of itemSnapshots) {
         await tx.saleItem.create({
           data: {
@@ -294,9 +309,10 @@ export class SalesService {
             product: true,
           },
         },
+        payments: true, // Include split details
         customer: true,
         user: {
-          select: { email: true, name: true }, // Include name
+          select: { email: true, name: true },
         },
       },
       orderBy: { createdAt: "desc" },
@@ -309,7 +325,6 @@ export class SalesService {
     to?: string,
     storeId?: string,
   ) {
-    // Parse dates or default to "This Month"
     const now = new Date();
     const startOfPeriod = from
       ? new Date(from)
@@ -330,12 +345,10 @@ export class SalesService {
       );
     }
 
-    // Calculate "Previous Period" for comparison (Same duration)
     const duration = endOfPeriod.getTime() - startOfPeriod.getTime();
     const startOfPrev = new Date(startOfPeriod.getTime() - duration);
-    const endOfPrev = new Date(startOfPeriod.getTime()); // Approximately
+    const endOfPrev = new Date(startOfPeriod.getTime());
 
-    // Helper: Fetch aggregates for a range
     const getAggregates = async (start: Date, end: Date) => {
       const data = await prisma.sale.findMany({
         where: {
@@ -344,7 +357,7 @@ export class SalesService {
           status: "COMPLETED",
           createdAt: { gte: start, lte: end },
         },
-        include: { items: true },
+        include: { items: true, payments: true }, // Include payments
       });
 
       let revenue = 0;
@@ -357,8 +370,17 @@ export class SalesService {
         revenue += total;
         tax += Number(sale.taxTotal || 0);
 
-        const method = sale.paymentMethod || "UNKNOWN";
-        paymentBreakdown[method] = (paymentBreakdown[method] || 0) + total;
+        // Logic for Payment Breakdown using SalePayment
+        if (sale.payments && sale.payments.length > 0) {
+          sale.payments.forEach(p => {
+            const m = p.method;
+            paymentBreakdown[m] = (paymentBreakdown[m] || 0) + Number(p.amount);
+          });
+        } else {
+          // Fallback for legacy
+          const method = sale.paymentMethod || "UNKNOWN";
+          paymentBreakdown[method] = (paymentBreakdown[method] || 0) + total;
+        }
 
         sale.items.forEach((item) => {
           cost += Number(item.costAtSale) * item.quantity;

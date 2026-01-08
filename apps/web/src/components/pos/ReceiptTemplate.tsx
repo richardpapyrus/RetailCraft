@@ -130,10 +130,22 @@ export default function ReceiptTemplate({ sale, user, store: propStore }: Receip
 
                 <div className="border-b border-black mb-2"></div>
 
-                <div className="flex justify-between font-bold">
-                    <span>{sale.paymentMethod || 'CASH'}</span>
-                    <span>{formatCurrency(sale.tendered, user?.currency, user?.locale)}</span>
-                </div>
+                {sale.payments && sale.payments.length > 0 ? (
+                    <div className="space-y-1 mb-2">
+                        {sale.payments.map((p: any, i: number) => (
+                            <div key={i} className="flex justify-between font-bold">
+                                <span>{p.method}</span>
+                                <span>{formatCurrency(p.amount, user?.currency, user?.locale)}</span>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="flex justify-between font-bold">
+                        <span>{sale.paymentMethod || 'CASH'}</span>
+                        <span>{formatCurrency(sale.tendered, user?.currency, user?.locale)}</span>
+                    </div>
+                )}
+
                 <div className="flex justify-between">
                     <span>Change</span>
                     <span>{formatCurrency(sale.change, user?.currency, user?.locale)}</span>

@@ -208,7 +208,8 @@ model Sale {
 
   taxTotal      Decimal    @default(0.0)
   discountTotal Decimal    @default(0.0)
-  paymentMethod String     @default("CASH") // CASH, CARD
+  paymentMethod String     @default("CASH") // Primary/Summary method
+  payments      SalePayment[]
   status        String     @default("COMPLETED")
   
   tenantId      String
@@ -234,6 +235,16 @@ model Sale {
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
   returns       SalesReturn[]
+}
+
+model SalePayment {
+  id        String   @id @default(uuid())
+  saleId    String
+  sale      Sale     @relation(fields: [saleId], references: [id])
+  method    String   // CASH, CARD, TRANSFER
+  amount    Decimal
+  reference String?  // Transaction ID
+  createdAt DateTime @default(now())
 }
 
 model Customer {

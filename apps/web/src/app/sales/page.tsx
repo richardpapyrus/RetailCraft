@@ -233,6 +233,16 @@ export default function SalesHistoryPage() {
                                         <span>Payment Method</span>
                                         <span>{selectedSale.paymentMethod}</span>
                                     </div>
+                                    {(selectedSale as any).payments && (selectedSale as any).payments.length > 0 && (
+                                        <div className="mt-2 bg-gray-50 p-2 rounded text-xs space-y-1">
+                                            {(selectedSale as any).payments.map((p: any, i: number) => (
+                                                <div key={i} className="flex justify-between">
+                                                    <span className="font-bold">{p.method}</span>
+                                                    <span>${Number(p.amount).toFixed(2)}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                     <div className="flex justify-between text-sm text-gray-500">
                                         <span>Cashier</span>
                                         <span>{selectedSale.user?.email || 'N/A'}</span>

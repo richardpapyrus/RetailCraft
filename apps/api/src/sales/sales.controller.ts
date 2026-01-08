@@ -170,6 +170,7 @@ export class SalesController {
     return this.salesService.processSale({
       items: body.items,
       paymentMethod: body.paymentMethod,
+      payments: body.payments, // Multi-Tender Support
       tenantId,
       storeId,
       userId,

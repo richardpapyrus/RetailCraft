@@ -45,6 +45,10 @@ export default function POSPage() {
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'CASH' | 'CARD' | 'BANK_TRANSFER'>('CASH');
     const [printerConnected, setPrinterConnected] = useState(false);
 
+    // Split Payment State
+    const [splitPayments, setSplitPayments] = useState<{ id: string, method: string, amount: number }[]>([]);
+    const [splitModalOpen, setSplitModalOpen] = useState(false);
+
     // Taxes and Discounts
     const [taxes, setTaxes] = useState<any[]>([]);
     const [discounts, setDiscounts] = useState<any[]>([]);
@@ -312,7 +316,8 @@ export default function POSPage() {
                 date: new Date(),
                 ...result.data, // Merge ID
                 total: Number(cartTotal),
-                customerName: selectedCustomer?.name
+                customerName: selectedCustomer?.name,
+                payments: isSplit ? splitPayments.map(p => ({ method: p.method, amount: p.amount })) : undefined
             });
             setLastSaleExt({ subtotal, tax: taxAmount, discount: discountAmount });
 
@@ -778,23 +783,40 @@ export default function POSPage() {
                                     <div className="text-3xl mb-2">🏦</div>
                                     <span className={`font-bold ${selectedPaymentMethod === 'BANK_TRANSFER' ? 'text-indigo-800' : 'text-gray-600'}`}>Transfer</span>
                                 </button>
+                                <button
+                                    onClick={() => setSplitModalOpen(true)}
+                                    className={`p-4 border-2 rounded-2xl flex flex-col items-center relative transition-all border-dashed border-indigo-300 hover:bg-indigo-50`}>
+                                    <div className="text-3xl mb-2">✂️</div>
+                                    <span className="font-bold text-indigo-600">Split / Multi</span>
+                                </button>
                             </div>
 
                             <div className="mb-6">
                                 <label className="block text-sm font-bold text-gray-700 mb-2">
-                                    {selectedPaymentMethod === 'CASH' ? 'Amount Tendered' : 'Transaction Amount'}
+                                    {splitPayments.length > 0 ? 'Split Payment Configured' : (selectedPaymentMethod === 'CASH' ? 'Amount Tendered' : 'Transaction Amount')}
                                 </label>
-                                <div className="relative">
-                                    <span className="absolute left-4 top-4 text-gray-400 text-lg">$</span>
-                                    <input
-                                        type="number"
-                                        autoFocus
-                                        className="w-full text-3xl py-3 pl-8 pr-4 border-2 border-gray-200 rounded-xl text-right font-bold focus:border-indigo-500 focus:outline-none text-gray-800"
-                                        placeholder="0.00"
-                                        value={tendered}
-                                        onChange={e => setTendered(e.target.value)}
-                                    />
-                                </div>
+                                {splitPayments.length > 0 ? (
+                                    <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex justify-between items-center cursor-pointer hover:bg-green-100" onClick={() => setSplitModalOpen(true)}>
+                                        <div className="font-bold text-green-800">
+                                            {splitPayments.length} Payments Added
+                                        </div>
+                                        <div className="font-mono font-bold text-green-700">
+                                            ${splitPayments.reduce((s, p) => s + p.amount, 0).toFixed(2)}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="relative">
+                                        <span className="absolute left-4 top-4 text-gray-400 text-lg">$</span>
+                                        <input
+                                            type="number"
+                                            autoFocus
+                                            className="w-full text-3xl py-3 pl-8 pr-4 border-2 border-gray-200 rounded-xl text-right font-bold focus:border-indigo-500 focus:outline-none text-gray-800"
+                                            placeholder="0.00"
+                                            value={tendered}
+                                            onChange={e => setTendered(e.target.value)}
+                                        />
+                                    </div>
+                                )}
                             </div>
 
                             {/* Loyalty Redemption UI */}

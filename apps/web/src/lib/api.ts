@@ -193,7 +193,7 @@ export const api = {
             params.append('take', take.toString());
             return fetchClient(`/sales?${params.toString()}`);
         },
-        create: (data: { items: { productId: string; quantity: number }[]; paymentMethod: string; customerId?: string; discount?: any; tillSessionId?: string; redeemPoints?: number; storeId?: string }) =>
+        create: (data: { items: { productId: string; quantity: number }[]; paymentMethod?: string; payments?: { method: string; amount: number; reference?: string }[]; customerId?: string; discount?: any; tillSessionId?: string; redeemPoints?: number; storeId?: string }) =>
             fetchClient('/sales', {
                 method: 'POST',
                 body: JSON.stringify(data)
