@@ -11,8 +11,9 @@ export default function ReceiptTemplate({ sale, user }: ReceiptTemplateProps) {
 
 
     const store = user?.store || {};
-    // Fallback to tenant name if store name is missing, but prefer store name.
-    const siteName = store.name || user?.tenantName || user?.tenant?.name || 'My Store';
+    const store = user?.store || {};
+    // Use Business Name (Tenant) as the main header, fallback to Store Name.
+    const siteName = user?.tenant?.name || user?.tenantName || store.name || 'My Store';
 
     // Receipt width: 80mm is standard thermal paper width.
     // Tailwind 'print:block' ensures it only shows when printing.

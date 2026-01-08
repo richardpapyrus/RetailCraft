@@ -342,8 +342,9 @@ export default function POSPage() {
         if (printerService.isConnected()) {
             console.log('Attempting USB Print...');
             try {
+                const businessName = user?.tenant?.name || user?.tenantName || 'My Store';
                 const receipt = PrinterService.createReceipt(
-                    'My Store', // TODO: Get from store context
+                    businessName,
                     lastSale?.items || [],
                     formatCurrency(lastSale?.total, user?.currency, user?.locale)
                 );
