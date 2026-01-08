@@ -11,7 +11,6 @@ export default function ReceiptTemplate({ sale, user }: ReceiptTemplateProps) {
 
 
     const store = user?.store || {};
-    const store = user?.store || {};
     // Use Business Name (Tenant) as the main header, fallback to Store Name.
     const siteName = user?.tenant?.name || user?.tenantName || store.name || 'My Store';
 
