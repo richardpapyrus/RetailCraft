@@ -43,6 +43,7 @@ export default function POSPage() {
     const [receiptModalOpen, setReceiptModalOpen] = useState(false);
 
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'CASH' | 'CARD' | 'BANK_TRANSFER'>('CASH');
+    const [printerConnected, setPrinterConnected] = useState(false);
 
     // Taxes and Discounts
     const [taxes, setTaxes] = useState<any[]>([]);
@@ -400,8 +401,28 @@ export default function POSPage() {
 
                         <div className="flex justify-between items-center text-xs font-bold text-gray-400 bg-gray-50 p-4 rounded-xl border border-gray-100">
                             <div className="flex items-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                {new Date().toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                                {/* PRINTER CONNECT BUTTON */}
+                                <button
+                                    onClick={async () => {
+                                        if (printerConnected) return;
+                                        try {
+                                            await printerService.connect();
+                                            setPrinterConnected(true);
+                                            toast.success('Printer Connected! Silent printing enabled.');
+                                        } catch (e: any) {
+                                            toast.error('Connection failed: ' + e.message);
+                                        }
+                                    }}
+                                    className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-bold transition-colors ${printerConnected
+                                        ? 'bg-green-100 text-green-700 cursor-default'
+                                        : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200'
+                                        }`}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                                    </svg>
+                                    {printerConnected ? 'Printer Ready' : 'Connect Printer'}
+                                </button>
                             </div>
                             <div className="flex items-center gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>

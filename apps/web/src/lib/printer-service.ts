@@ -9,8 +9,13 @@ export class PrinterService {
         }
 
         try {
-            // Request device - Filter for Printer Class (7)
-            this.device = await (navigator as any).usb.requestDevice({ filters: [{ vendorId: 0x04b8 }] }); // Example: Epson
+            // Request device - Filter for Printer Class (7), Epson (0x04b8), Star Micronics (0x0519)
+            this.device = await (navigator as any).usb.requestDevice({
+                filters: [
+                    { vendorId: 0x04b8 }, // Epson
+                    { vendorId: 0x0519 }  // Star Micronics
+                ]
+            });
             await this.device.open();
             await this.device.selectConfiguration(1);
 
