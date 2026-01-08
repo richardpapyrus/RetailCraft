@@ -1,6 +1,6 @@
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
-
+import { PrismaService } from "./prisma/prisma.service";
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors({
@@ -9,12 +9,60 @@ async function bootstrap() {
       "https://app.retailcraft.com.ng",
       "https://retailcraft.com.ng",
       "https://www.retailcraft.com.ng",
-      /\.retailcraft\.com\.ng$/, // Allow all subdomains
+      /\.retailcraft\.com\.ng$/,
     ],
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
     credentials: true,
     allowedHeaders: "Content-Type, Key, Authorization, X-Requested-With",
   });
+  // --- SELF HEALING LOGIC ---
+  try {
+    const prisma = app.get(PrismaService);
+    // 1. Ensure Tenant
+    const tenant = await prisma.tenant.upsert({
+        where: { id: 'default-tenant-id' },
+        update: {},
+        create: { id: 'default-tenant-id', name: 'Local Demo Tenant' },
+    });
+    // 2. Ensure Store
+    const store = await prisma.store.upsert({
+        where: { id: 'default-store-id' },
+        update: {},
+        create: { id: 'default-store-id', name: 'Main Store - Local', tenantId: tenant.id },
+    });
+    // 3. Ensure Admin Role
+    const adminRole = await prisma.role.upsert({
+        where: { tenantId_name: { tenantId: tenant.id, name: 'Administrator' } },
+        update: {},
+        create: {
+            name: 'Administrator',
+            description: 'System Administrator - Full Access',
+            permissions: ['*'],
+            isSystem: true,
+            tenantId: tenant.id
+        }
+    });
+    // 4. Ensure Admin User
+    // Password is "password"
+    const hash = '$2b$10$CmG.jD/lCrNS.PlApZYUYOWNTCBt7pnW0GFzpWsnRlSQUcOQcLMKu';
+    const adminEmail = 'admin@pos.local'; 
+    await prisma.user.upsert({
+        where: { email: adminEmail },
+        update: { roleId: adminRole.id }, 
+        create: {
+            email: adminEmail,
+            password: hash,
+            name: 'System Admin',
+            roleId: adminRole.id,
+            tenantId: tenant.id,
+            storeId: store.id
+        }
+    });
+    console.log('✅ [Self-Heal] Connectivity & Admin User Verified.');
+  } catch (e) {
+    console.error('⚠️ [Self-Heal] Warning:', e);
+  }
+  // --- END SELF HEALING ---
   await app.listen(process.env.PORT || 4000);
   console.log(`Application is running on: ${await app.getUrl()}`);
   console.log("✅ Backend Ready & Watching (Reset)");
