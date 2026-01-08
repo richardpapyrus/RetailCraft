@@ -51,7 +51,13 @@ export default function DashboardPage() {
             router.push('/login');
             return;
         }
-    }, [token, isHydrated, router]);
+
+        // Access Control
+        const hasAccess = user?.permissions?.includes('VIEW_DASHBOARD') || user?.permissions?.includes('*') || user?.role === 'ADMIN' || user?.role === 'Administrator';
+        if (!hasAccess) {
+            router.replace('/pos');
+        }
+    }, [token, isHydrated, router, user]);
 
     useEffect(() => {
         if (isAdmin) {

@@ -26,10 +26,10 @@ export default function LoginPage() {
             // Get user from store to check role
             const user = useAuth.getState().user;
 
-            if (user?.role === 'SALES_AGENT') {
-                router.push('/pos');
-            } else {
+            if (user?.permissions?.includes('VIEW_DASHBOARD') || user?.permissions?.includes('*')) {
                 router.push('/dashboard');
+            } else {
+                router.push('/pos');
             }
         } catch (err: any) {
             console.error('Login Error:', err);

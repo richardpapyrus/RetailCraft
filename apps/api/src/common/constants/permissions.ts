@@ -1,4 +1,7 @@
 export const PERMISSIONS = {
+  // Dashboard
+  VIEW_DASHBOARD: "VIEW_DASHBOARD",
+
   // Products
   VIEW_PRODUCTS: "VIEW_PRODUCTS",
   MANAGE_PRODUCTS: "MANAGE_PRODUCTS", // Create, Edit, Delete
@@ -74,6 +77,6 @@ export const PERMISSION_GROUPS = [
   },
   {
     label: "Administration",
-    permissions: [PERMISSIONS.MANAGE_USERS, PERMISSIONS.MANAGE_SETTINGS],
+    permissions: [PERMISSIONS.VIEW_DASHBOARD, PERMISSIONS.MANAGE_USERS, PERMISSIONS.MANAGE_SETTINGS],
   },
 ];

@@ -46,7 +46,7 @@ export function Sidebar() {
     if (pathname === '/login') return null;
 
     const allMenuItems = [
-        { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, permission: null },
+        { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, permission: 'VIEW_DASHBOARD' },
         { name: 'POS', href: '/pos', icon: ShoppingCart, permission: 'PROCESS_SALES' },
         { name: 'Products', href: '/products', icon: Tags, permission: 'VIEW_PRODUCTS' },
         { name: 'Customers', href: '/customers', icon: Users, permission: 'MANAGE_CUSTOMERS' },
