@@ -31,43 +31,48 @@ body {
 
 /* --- THERMAL RECEIPT PRINTING STYLES --- */
 @media print {
-    /* Reset margins for thermal paper */
-    @page {
-        size: auto;
-        margin: 0;
-    }
 
-    /* Hide everything by default using visibility to preserve portals */
-    body {
-        visibility: hidden;
-        background: white; /* Ensure clean background */
-        height: auto;
-    }
+  /* Reset margins for thermal paper */
+  @page {
+    size: 80mm auto;
+    /* Explicitly tell browser this is a thermal receipt */
+    margin: 0;
+  }
 
-    /* Aggressively hide floating elements, toasts, and headers */
-    div[role="status"], /* React Hot Toast */
-    header, 
-    nav,
-    aside,
-    .toast-container {
-        display: none !important;
-    }
+  /* Hide everything by default using visibility to preserve portals */
+  body {
+    visibility: hidden;
+    background: white;
+    /* Ensure clean background */
+    height: auto;
+  }
 
-    /* Show ONLY the receipt container */
-    #receipt-print-area,
-    #receipt-print-area * {
-        visibility: visible;
-    }
+  /* Aggressively hide floating elements, toasts, and headers */
+  div[role="status"],
+  /* React Hot Toast */
+  header,
+  nav,
+  aside,
+  .toast-container {
+    display: none !important;
+  }
 
-    /* Position the receipt at the exact top-left of the page */
-    #receipt-print-area {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100% !important; /* Let container control max-width */
-        margin: 0 !important;
-        padding: 0 !important;
-        box-shadow: none !important;
-        border: none !important;
-    }
+  /* Show ONLY the receipt container */
+  #receipt-print-area,
+  #receipt-print-area * {
+    visibility: visible;
+  }
+
+  /* Position the receipt at the exact top-left of the page */
+  #receipt-print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    /* Let container control max-width */
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
 }
