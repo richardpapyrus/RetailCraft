@@ -38,8 +38,8 @@ export default function OpenTillModal({ isOpen, onClose, onSuccess }: OpenTillMo
             // Show ALL tills so users see what's happening. Filter logic moved to Render.
             setAvailableTills(res);
 
-            // Auto-select first AVAILABLE till
-            const firstAvailable = res.find((t: any) => t.status === 'CLOSED');
+            // Auto-select first AVAILABLE till (No active sessions)
+            const firstAvailable = res.find((t: any) => !t.sessions || t.sessions.length === 0);
             if (firstAvailable) setSelectedTillId(firstAvailable.id);
         } catch (e) {
             console.error(e);
@@ -96,16 +96,20 @@ export default function OpenTillModal({ isOpen, onClose, onSuccess }: OpenTillMo
                             required
                         >
                             {availableTills.length === 0 && <option value="">No available tills</option>}
-                            {availableTills.map(till => (
-                                <option
-                                    key={till.id}
-                                    value={till.id}
-                                    disabled={till.status === 'OPEN'}
-                                    className={till.status === 'OPEN' ? 'text-gray-400 bg-gray-100' : 'font-bold'}
-                                >
-                                    {till.name} {till.status === 'OPEN' ? '(In Use)' : '(Available)'}
-                                </option>
-                            ))}
+                            {availableTills.map(till => {
+                                // Rely on active sessions count for truth, as 'status' flag can desync.
+                                const isBusy = till.sessions && till.sessions.length > 0;
+                                return (
+                                    <option
+                                        key={till.id}
+                                        value={till.id}
+                                        disabled={isBusy}
+                                        className={isBusy ? 'text-gray-400 bg-gray-100' : 'font-bold'}
+                                    >
+                                        {till.name} {isBusy ? '(In Use)' : '(Available)'}
+                                    </option>
+                                );
+                            })}
                         </select>
                     </div>
 
