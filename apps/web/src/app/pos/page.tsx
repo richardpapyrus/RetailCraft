@@ -298,9 +298,11 @@ export default function POSPage() {
         const change = tenderedVal - cartTotal;
 
         try {
+            const isSplit = splitPayments.length > 0;
             const result = await DataService.saveSale({
                 items: cart.map(i => ({ productId: i.id, quantity: i.cartQty })),
-                paymentMethod: selectedPaymentMethod,
+                paymentMethod: isSplit ? 'SPLIT' : selectedPaymentMethod,
+                payments: isSplit ? splitPayments : undefined,
                 total: cartTotal,
                 customerId: selectedCustomer?.id,
                 tillSessionId: activeSession?.id,
