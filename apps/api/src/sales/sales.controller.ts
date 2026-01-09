@@ -52,8 +52,7 @@ export class SalesController {
     @Query("to") to?: string,
     @Query("storeId") queryStoreId?: string,
   ) {
-    console.log(`[SalesController] getStats params: from=${from}, to=${to}, queryStoreId=${queryStoreId}`);
-    console.log(`[SalesController] User: ${req.user.email}, Role: ${req.user.role}, StoreId: ${req.user.storeId}, Permissions: ${req.user.permissions}`);
+
 
     let storeId = queryStoreId;
 

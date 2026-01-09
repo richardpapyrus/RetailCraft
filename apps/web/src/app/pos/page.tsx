@@ -79,7 +79,7 @@ export default function POSPage() {
     const [usePoints, setUsePoints] = useState(false);
 
     useBarcodeScanner((barcode) => {
-        console.log('Scanned:', barcode);
+
         const match = products.find(p =>
             p.sku === barcode ||
             p.barcode === barcode ||
@@ -359,9 +359,9 @@ export default function POSPage() {
 
     const handlePrint = async () => {
         if (printerService.isConnected()) {
-            console.log('Attempting USB Print...');
+
             try {
-                const businessName = user?.tenant?.name || user?.tenantName || 'My Store';
+                const businessName = user?.tenantName || 'My Store';
                 const receipt = PrinterService.createReceipt(
                     businessName,
                     lastSale?.items || [],
