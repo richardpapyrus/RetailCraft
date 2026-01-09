@@ -103,8 +103,8 @@ export default function GeneralSettings() {
                 await api.tenants.update(user.tenantId, {
                     currency: selectedCountry.currency,
                     locale: selectedCountry.locale,
-                    logoUrl: logoUrl || null,
-                    brandColor: brandColor || null
+                    logoUrl: logoUrl || undefined,
+                    brandColor: brandColor || undefined
                 });
                 await refreshProfile();
                 toast.success('Organization Settings Saved');

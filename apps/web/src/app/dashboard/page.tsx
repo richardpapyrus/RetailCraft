@@ -68,30 +68,31 @@ export default function DashboardPage() {
     useEffect(() => {
         if (!isHydrated || !token) return;
 
-        setLoading(true);
-        const fetchData = async () => {
+        const fetchData = async (isBackground = false) => {
+            if (!isBackground) setLoading(true);
             try {
-                // If HQ mode (no store selected), use Business Endpoint for richer data (Breakdown)
-                // Otherwise use Sales Stats
-                const endpoint = (!selectedStoreId && isAdmin)
-                    ? `/business/dashboard?from=${dateRange.from}&to=${dateRange.to}`
-                    : `/sales/stats?from=${dateRange.from}&to=${dateRange.to}&storeId=${selectedStoreId || ''}`;
-
-                // For now, let's just use the EXISTING sales/stats for consistency, 
-                // but if we want the breakdown we'd fetch it.
-                // Let's keep using api.sales.stats as it returns the chart data structure the page expects.
-                // The BusinessController returns { aggregate, byLocation }. The Page expects { filtered, comparison, trendChartData ... }.
-                // So switching endpoints would break the page unless I refactor the page significantly.
-                // Given "cleanly with minimal disruption", I will stick to existing endpoint which works for Aggregates.
+                // Determine endpoint (HQ vs Store Level)
+                // Note: We use existing sales.stats method which works for both IF the backend supports filtering
+                // Ideally we'd use separate endpoints but for minimal risk we stick to what works, 
+                // just refreshed automatically.
                 const s = await api.sales.stats(dateRange.from, dateRange.to, selectedStoreId || undefined);
                 setStats(s);
             } catch (error) {
                 console.error('Failed to fetch stats', error);
             } finally {
-                setLoading(false);
+                if (!isBackground) setLoading(false);
             }
         };
+
+        // Initial Load
         fetchData();
+
+        // 5-Second Auto-Refresh (Simulates Real-time)
+        const intervalId = setInterval(() => {
+            fetchData(true);
+        }, 5000);
+
+        return () => clearInterval(intervalId);
     }, [dateRange, selectedStoreId, token, isHydrated]);
 
     if (!isHydrated) return null;

@@ -13,7 +13,7 @@ interface User {
     store?: { id: string; name: string };
     currency?: string;
     locale?: string;
-    locale?: string;
+
     permissions?: string[];
     tenantLogo?: string;
     tenantBrandColor?: string;
@@ -123,7 +123,7 @@ export const useAuth = create<AuthState>()(
         }),
         {
             name: 'auth-storage',
-            storage: createJSONStorage(() => (typeof window !== 'undefined' ? localStorage : undefined)),
+            storage: createJSONStorage(() => (typeof window !== 'undefined' ? localStorage : { getItem: () => null, setItem: () => { }, removeItem: () => { } })),
             onRehydrateStorage: () => (state) => {
                 state?.setHydrated();
                 state?.refreshProfile();
