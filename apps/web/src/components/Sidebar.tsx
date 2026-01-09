@@ -132,7 +132,7 @@ export function Sidebar() {
             </div>
 
             {/* Menu Items */}
-            <nav className="flex-1 w-full space-y-2 px-3">
+            <nav className="flex-1 w-full space-y-2 px-3 overflow-y-auto overflow-x-hidden custom-scrollbar">
                 {menuItems.map((item) => {
                     const isActive = pathname === item.href;
                     const Icon = item.icon;
