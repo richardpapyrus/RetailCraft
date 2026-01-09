@@ -48,6 +48,7 @@ export default function POSPage() {
     // Split Payment State
     const [splitPayments, setSplitPayments] = useState<{ id: string, method: string, amount: number }[]>([]);
     const [splitModalOpen, setSplitModalOpen] = useState(false);
+    const [splitAmount, setSplitAmount] = useState<string>(''); // Manual Input State
 
     // Taxes and Discounts
     const [taxes, setTaxes] = useState<any[]>([]);
@@ -285,6 +286,15 @@ export default function POSPage() {
     const taxAmount = taxableAmount * totalTaxRate;
 
     const cartTotal = taxableAmount + taxAmount;
+
+    // Auto-fill split amount when remaining changes
+    useEffect(() => {
+        if (splitModalOpen) {
+            const paid = splitPayments.reduce((s, p) => s + p.amount, 0);
+            const remaining = Math.max(0, cartTotal - paid);
+            setSplitAmount(remaining.toFixed(2));
+        }
+    }, [splitModalOpen, splitPayments, cartTotal]);
 
     const handleCheckout = async () => {
         if (!activeSession) {
@@ -916,69 +926,121 @@ export default function POSPage() {
 
 
 
-                {/* Split Payment Modal */}
+                {/* Split Payment Modal (Premium Design) */}
                 {splitModalOpen && (
-                    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[60] backdrop-blur-sm">
-                        <div className="bg-white p-6 rounded-2xl shadow-2xl w-[450px]">
-                            <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-xl font-bold">Split Payment</h3>
-                                <button onClick={() => { setSplitPayments([]); setSplitModalOpen(false); }} className="text-gray-400 hover:text-gray-600">✕</button>
-                            </div>
-
-                            <div className="bg-gray-50 p-4 rounded-xl mb-6 flex justify-between items-center">
+                    <div className="fixed inset-0 bg-gray-900/60 flex items-center justify-center z-[60] backdrop-blur-md transition-all duration-300">
+                        <div className="bg-white p-0 rounded-3xl shadow-2xl w-[500px] overflow-hidden transform scale-100 border border-gray-100">
+                            {/* Header */}
+                            <div className="bg-gray-50/50 p-6 flex justify-between items-center border-b border-gray-100">
                                 <div>
-                                    <div className="text-xs text-gray-500 uppercase font-bold">Total Due</div>
-                                    <div className="text-2xl font-bold text-gray-900">${cartTotal.toFixed(2)}</div>
+                                    <h3 className="text-xl font-black text-gray-900 tracking-tight">Split Payment</h3>
+                                    <p className="text-sm text-gray-500 font-medium mt-1">Add multiple tender types</p>
                                 </div>
-                                <div className="text-right">
-                                    <div className="text-xs text-gray-500 uppercase font-bold">Remaining</div>
-                                    <div className={`text-2xl font-bold ${cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0) <= 0.01 ? 'text-green-600' : 'text-orange-600'}`}>
-                                        ${Math.max(0, cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0)).toFixed(2)}
-                                    </div>
-                                </div>
+                                <button onClick={() => { setSplitPayments([]); setSplitModalOpen(false); }} className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                                </button>
                             </div>
 
-                            <div className="space-y-3 mb-6 max-h-[200px] overflow-y-auto">
-                                {splitPayments.map((p, idx) => (
-                                    <div key={idx} className="flex justify-between items-center bg-white border p-3 rounded-lg">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-lg">{p.method === 'CASH' ? '💵' : p.method === 'CARD' ? '💳' : '🏦'}</span>
-                                            <span className="font-bold text-gray-700">{p.method}</span>
-                                        </div>
-                                        <div className="flex items-center gap-3">
-                                            <span className="font-mono font-bold">${p.amount.toFixed(2)}</span>
-                                            <button onClick={() => setSplitPayments(prev => prev.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-600">✕</button>
+                            <div className="p-8">
+                                {/* Summary Cards */}
+                                <div className="grid grid-cols-2 gap-4 mb-8">
+                                    <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                                        <div className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Total Due</div>
+                                        <div className="text-2xl font-black text-gray-900">${cartTotal.toFixed(2)}</div>
+                                    </div>
+                                    <div className={`p-4 rounded-2xl border ${cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0) <= 0.01 ? 'bg-green-50 border-green-100' : 'bg-orange-50 border-orange-100'}`}>
+                                        <div className={`text-xs font-bold uppercase tracking-wider mb-1 ${cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0) <= 0.01 ? 'text-green-600' : 'text-orange-600'}`}>Remaining</div>
+                                        <div className={`text-2xl font-black ${cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0) <= 0.01 ? 'text-green-700' : 'text-orange-700'}`}>
+                                            ${Math.max(0, cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0)).toFixed(2)}
                                         </div>
                                     </div>
-                                ))}
-                                {splitPayments.length === 0 && <div className="text-center text-gray-400 py-4 italic">No payments added yet</div>}
-                            </div>
+                                </div>
 
-                            <div className="grid grid-cols-2 gap-3 mb-4">
-                                {(['CASH', 'CARD', 'BANK_TRANSFER'] as const).map(method => (
-                                    <button
-                                        key={method}
-                                        onClick={() => {
-                                            const remaining = cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0);
-                                            if (remaining <= 0) return toast.error('Total already covered');
-                                            setSplitPayments([...splitPayments, { method, amount: parseFloat(remaining.toFixed(2)) }]); // Default to remaining
-                                        }}
-                                        className="p-3 border rounded-xl hover:bg-indigo-50 hover:border-indigo-500 text-sm font-bold text-gray-600 transition-colors"
-                                    >
-                                        Add {method}
-                                    </button>
-                                ))}
-                            </div>
+                                {/* Input Section */}
+                                <div className="mb-8">
+                                    <label className="block text-sm font-bold text-gray-700 mb-3 ml-1">Enter Amount to Pay</label>
+                                    <div className="relative">
+                                        <span className="absolute left-6 top-1/2 transform -translate-y-1/2 text-gray-400 text-2xl font-medium">$</span>
+                                        <input
+                                            type="number"
+                                            value={splitAmount}
+                                            onChange={(e) => setSplitAmount(e.target.value)}
+                                            className="w-full h-16 pl-12 pr-4 bg-white border-2 border-gray-200 rounded-2xl text-3xl font-bold text-gray-900 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-left outline-none"
+                                            placeholder="0.00"
+                                            autoFocus
+                                        />
+                                        <button
+                                            onClick={() => setSplitAmount(Math.max(0, cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0)).toFixed(2))}
+                                            className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-gray-100 hover:bg-gray-200 text-xs font-bold px-3 py-1.5 rounded-lg text-gray-600 transition-colors"
+                                        >
+                                            MAX
+                                        </button>
+                                    </div>
+                                </div>
 
-                            <button
-                                onClick={() => handleCheckout()}
-                                disabled={cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0) > 0.01}
-                                className={`w-full py-4 rounded-xl font-bold text-white shadow-lg transition-all ${cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0) > 0.01
-                                    ? 'bg-gray-300 cursor-not-allowed shadow-none'
-                                    : 'bg-green-600 hover:bg-green-500 shadow-green-600/30'}`}
-                            >
-                                Complete Sale
-                            </button>
+                                {/* Method Selector */}
+                                <div className="grid grid-cols-3 gap-3 mb-8">
+                                    {([
+                                        { id: 'CASH', icon: '💵', label: 'Cash' },
+                                        { id: 'CARD', icon: '💳', label: 'Card' },
+                                        { id: 'BANK_TRANSFER', icon: '🏦', label: 'Transfer' }
+                                    ]).map(m => (
+                                        <button
+                                            key={m.id}
+                                            onClick={() => {
+                                                const val = parseFloat(splitAmount);
+                                                if (!val || val <= 0) return toast.error('Enter valid amount');
+                                                // Allow over-tender only for CASH
+                                                const remaining = cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0);
+                                                if (m.id !== 'CASH' && val > remaining + 0.01) return toast.error(`Max ${m.label} is $${remaining.toFixed(2)}`);
+
+                                                setSplitPayments([...splitPayments, { id: Date.now().toString(), method: m.id, amount: val }]);
+                                                // Logic updates 'splitAmount' via useEffect automatically
+                                            }}
+                                            className="group flex flex-col items-center justify-center p-4 rounded-xl border-2 border-dashed border-gray-200 hover:border-indigo-500 hover:bg-indigo-50 transition-all active:scale-95"
+                                        >
+                                            <span className="text-3xl mb-1 group-hover:scale-110 transition-transform duration-300">{m.icon}</span>
+                                            <span className="font-bold text-gray-600 group-hover:text-indigo-700 text-sm">{m.label}</span>
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {/* List */}
+                                <div className="space-y-2 mb-8 max-h-[150px] overflow-y-auto pr-1 custom-scrollbar">
+                                    {splitPayments.map((p, idx) => (
+                                        <div key={idx} className="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-100 group hover:border-indigo-200 transition-colors">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center text-sm shadow-sm">
+                                                    {p.method === 'CASH' ? '💵' : p.method === 'CARD' ? '💳' : '🏦'}
+                                                </div>
+                                                <div className="font-bold text-gray-700 text-sm">{p.method}</div>
+                                            </div>
+                                            <div className="flex items-center gap-4">
+                                                <div className="font-mono font-bold text-gray-900">${p.amount.toFixed(2)}</div>
+                                                <button onClick={() => setSplitPayments(prev => prev.filter((_, i) => i !== idx))} className="text-gray-400 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-red-50">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {splitPayments.length === 0 && (
+                                        <div className="text-center py-6 text-gray-400 text-sm font-medium border-2 border-dashed border-gray-100 rounded-xl">
+                                            Add payments to proceed
+                                        </div>
+                                    )}
+                                </div>
+
+                                <button
+                                    onClick={() => handleCheckout()}
+                                    disabled={cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0) > 0.01}
+                                    className={`w-full py-5 rounded-2xl font-bold text-white shadow-xl transition-all transform active:scale-[0.98] flex justify-center items-center gap-2 ${cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0) > 0.01
+                                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
+                                        : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-green-500/30'}`}
+                                >
+                                    <span>Complete Sale</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}
