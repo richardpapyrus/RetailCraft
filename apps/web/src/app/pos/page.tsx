@@ -346,6 +346,8 @@ export default function POSPage() {
             setUsePoints(false);
             setPointsToRedeem(0);
             setCheckoutModalOpen(false);
+            setSplitModalOpen(false);
+            setSplitPayments([]);
             setSelectedPaymentMethod('CASH'); // Reset to default
             setReceiptModalOpen(true); // Show Receipt
             loadProducts(true);
@@ -1062,8 +1064,8 @@ export default function POSPage() {
                                         onClick={() => handleCheckout()}
                                         disabled={Math.max(0, cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0)) > 0.01}
                                         className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg transition-all flex justify-center items-center gap-2 ${Math.max(0, cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0)) > 0.01
-                                                ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
-                                                : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200 active:scale-[0.99]'
+                                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
+                                            : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200 active:scale-[0.99]'
                                             }`}
                                     >
                                         <span>Finalize Sale</span>
