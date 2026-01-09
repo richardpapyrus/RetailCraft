@@ -926,120 +926,150 @@ export default function POSPage() {
 
 
 
-                {/* Split Payment Modal (Premium Design) */}
+                {/* Split Payment Modal (World-Class Design V2) */}
                 {splitModalOpen && (
-                    <div className="fixed inset-0 bg-gray-900/60 flex items-center justify-center z-[60] backdrop-blur-md transition-all duration-300">
-                        <div className="bg-white p-0 rounded-3xl shadow-2xl w-[500px] overflow-hidden transform scale-100 border border-gray-100">
-                            {/* Header */}
-                            <div className="bg-gray-50/50 p-6 flex justify-between items-center border-b border-gray-100">
+                    <div className="fixed inset-0 bg-gray-900/80 flex items-center justify-center z-[60] backdrop-blur transition-all duration-300">
+                        <div className="bg-white rounded-3xl shadow-2xl w-[800px] h-[600px] overflow-hidden flex transform scale-100 ring-1 ring-white/10">
+
+                            {/* Left Panel: Summary (Dark) */}
+                            <div className="w-[300px] bg-slate-900 p-8 flex flex-col justify-between text-white relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-indigo-500/10 to-transparent pointer-events-none"></div>
+
                                 <div>
-                                    <h3 className="text-xl font-black text-gray-900 tracking-tight">Split Payment</h3>
-                                    <p className="text-sm text-gray-500 font-medium mt-1">Add multiple tender types</p>
+                                    <h3 className="text-xl font-bold tracking-tight mb-8 flex items-center gap-2">
+                                        <div className="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center">✂️</div>
+                                        Split Pay
+                                    </h3>
+
+                                    <div className="space-y-6">
+                                        <div>
+                                            <div className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Total Amount</div>
+                                            <div className="text-3xl font-mono font-bold tracking-tight">${cartTotal.toFixed(2)}</div>
+                                        </div>
+
+                                        <div className="h-px bg-slate-800"></div>
+
+                                        <div>
+                                            <div className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Paid So Far</div>
+                                            <div className="text-2xl font-mono text-green-400 font-bold">
+                                                ${splitPayments.reduce((s, p) => s + p.amount, 0).toFixed(2)}
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <div className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Remaining</div>
+                                            <div className={`text-4xl font-mono font-bold tracking-tighter ${cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0) <= 0.01 ? 'text-green-400' : 'text-orange-400'}`}>
+                                                ${Math.max(0, cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0)).toFixed(2)}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <button onClick={() => { setSplitPayments([]); setSplitModalOpen(false); }} className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600 transition-colors">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
-                                </button>
+
+                                <div className="space-y-2">
+                                    <div className="text-slate-500 text-xs font-medium">Customer</div>
+                                    <div className="font-semibold text-slate-200">{selectedCustomer ? selectedCustomer.name : 'Walk-in Customer'}</div>
+                                    <div className="text-slate-500 text-xs font-medium mt-4">Transaction ID</div>
+                                    <div className="font-mono text-xs text-slate-400">#{Date.now().toString().slice(-6)}</div>
+                                </div>
                             </div>
 
-                            <div className="p-8">
-                                {/* Summary Cards */}
-                                <div className="grid grid-cols-2 gap-4 mb-8">
-                                    <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                                        <div className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Total Due</div>
-                                        <div className="text-2xl font-black text-gray-900">${cartTotal.toFixed(2)}</div>
-                                    </div>
-                                    <div className={`p-4 rounded-2xl border ${cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0) <= 0.01 ? 'bg-green-50 border-green-100' : 'bg-orange-50 border-orange-100'}`}>
-                                        <div className={`text-xs font-bold uppercase tracking-wider mb-1 ${cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0) <= 0.01 ? 'text-green-600' : 'text-orange-600'}`}>Remaining</div>
-                                        <div className={`text-2xl font-black ${cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0) <= 0.01 ? 'text-green-700' : 'text-orange-700'}`}>
-                                            ${Math.max(0, cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0)).toFixed(2)}
+                            {/* Right Panel: Actions (Light) */}
+                            <div className="flex-1 bg-white flex flex-col relative">
+                                <button onClick={() => { setSplitPayments([]); setSplitModalOpen(false); }} className="absolute top-6 right-6 w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-900 transition-colors z-10">✕</button>
+
+                                <div className="p-8 pb-0 flex-1 overflow-y-auto custom-scrollbar">
+                                    <h4 className="text-gray-900 font-bold mb-4 flex items-center justify-between">
+                                        <span>Add Payment</span>
+                                        {splitPayments.length > 0 && <span className="text-xs bg-gray-100 px-2 py-1 rounded-md text-gray-500">{splitPayments.length} Added</span>}
+                                    </h4>
+
+                                    {/* Input Amount */}
+                                    <div className="mb-6">
+                                        <div className="relative group">
+                                            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl pointer-events-none group-focus-within:text-indigo-500 transition-colors">$</span>
+                                            <input
+                                                type="number"
+                                                value={splitAmount}
+                                                onChange={(e) => setSplitAmount(e.target.value)}
+                                                className="w-full h-14 pl-10 pr-20 bg-gray-50 border border-gray-200 rounded-xl text-2xl font-bold text-gray-900 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
+                                                placeholder="0.00"
+                                                autoFocus
+                                            />
+                                            <button
+                                                onClick={() => setSplitAmount(Math.max(0, cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0)).toFixed(2))}
+                                                className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white shadow-sm border border-gray-200 hover:border-indigo-300 text-[10px] font-bold px-3 py-1.5 rounded-lg text-gray-600 uppercase tracking-wider transition-all"
+                                            >
+                                                Max
+                                            </button>
                                         </div>
                                     </div>
-                                </div>
 
-                                {/* Input Section */}
-                                <div className="mb-8">
-                                    <label className="block text-sm font-bold text-gray-700 mb-3 ml-1">Enter Amount to Pay</label>
-                                    <div className="relative">
-                                        <span className="absolute left-6 top-1/2 transform -translate-y-1/2 text-gray-400 text-2xl font-medium">$</span>
-                                        <input
-                                            type="number"
-                                            value={splitAmount}
-                                            onChange={(e) => setSplitAmount(e.target.value)}
-                                            className="w-full h-16 pl-12 pr-4 bg-white border-2 border-gray-200 rounded-2xl text-3xl font-bold text-gray-900 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-left outline-none"
-                                            placeholder="0.00"
-                                            autoFocus
-                                        />
-                                        <button
-                                            onClick={() => setSplitAmount(Math.max(0, cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0)).toFixed(2))}
-                                            className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-gray-100 hover:bg-gray-200 text-xs font-bold px-3 py-1.5 rounded-lg text-gray-600 transition-colors"
-                                        >
-                                            MAX
-                                        </button>
+                                    {/* Buttons Grid */}
+                                    <div className="grid grid-cols-3 gap-3 mb-8">
+                                        {([
+                                            { id: 'CASH', icon: '💵', label: 'Cash', color: 'hover:bg-green-50 hover:border-green-200' },
+                                            { id: 'CARD', icon: '💳', label: 'Card', color: 'hover:bg-blue-50 hover:border-blue-200' },
+                                            { id: 'BANK_TRANSFER', icon: '🏦', label: 'Transfer', color: 'hover:bg-purple-50 hover:border-purple-200' }
+                                        ]).map(m => (
+                                            <button
+                                                key={m.id}
+                                                onClick={() => {
+                                                    const val = parseFloat(splitAmount);
+                                                    if (!val || val <= 0) return toast.error('Enter a valid amount');
+                                                    const paid = splitPayments.reduce((s, p) => s + p.amount, 0);
+                                                    const remaining = cartTotal - paid;
+                                                    // Allow Cash to exceed (for change)
+                                                    if (m.id !== 'CASH' && val > remaining + 0.01) return toast.error('Amount exceeds remaining balance');
+
+                                                    setSplitPayments([...splitPayments, { id: Date.now().toString(), method: m.id, amount: val }]);
+                                                }}
+                                                className={`flex flex-col items-center justify-center p-3 rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-all active:scale-95 ${m.color}`}
+                                            >
+                                                <div className="text-2xl mb-1">{m.icon}</div>
+                                                <div className="text-xs font-bold text-gray-600">{m.label}</div>
+                                            </button>
+                                        ))}
                                     </div>
-                                </div>
 
-                                {/* Method Selector */}
-                                <div className="grid grid-cols-3 gap-3 mb-8">
-                                    {([
-                                        { id: 'CASH', icon: '💵', label: 'Cash' },
-                                        { id: 'CARD', icon: '💳', label: 'Card' },
-                                        { id: 'BANK_TRANSFER', icon: '🏦', label: 'Transfer' }
-                                    ]).map(m => (
-                                        <button
-                                            key={m.id}
-                                            onClick={() => {
-                                                const val = parseFloat(splitAmount);
-                                                if (!val || val <= 0) return toast.error('Enter valid amount');
-                                                // Allow over-tender only for CASH
-                                                const remaining = cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0);
-                                                if (m.id !== 'CASH' && val > remaining + 0.01) return toast.error(`Max ${m.label} is $${remaining.toFixed(2)}`);
-
-                                                setSplitPayments([...splitPayments, { id: Date.now().toString(), method: m.id, amount: val }]);
-                                                // Logic updates 'splitAmount' via useEffect automatically
-                                            }}
-                                            className="group flex flex-col items-center justify-center p-4 rounded-xl border-2 border-dashed border-gray-200 hover:border-indigo-500 hover:bg-indigo-50 transition-all active:scale-95"
-                                        >
-                                            <span className="text-3xl mb-1 group-hover:scale-110 transition-transform duration-300">{m.icon}</span>
-                                            <span className="font-bold text-gray-600 group-hover:text-indigo-700 text-sm">{m.label}</span>
-                                        </button>
-                                    ))}
-                                </div>
-
-                                {/* List */}
-                                <div className="space-y-2 mb-8 max-h-[150px] overflow-y-auto pr-1 custom-scrollbar">
-                                    {splitPayments.map((p, idx) => (
-                                        <div key={idx} className="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-100 group hover:border-indigo-200 transition-colors">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center text-sm shadow-sm">
-                                                    {p.method === 'CASH' ? '💵' : p.method === 'CARD' ? '💳' : '🏦'}
+                                    {/* List */}
+                                    <div className="flex-1">
+                                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Allocated Payments</h4>
+                                        <div className="space-y-2">
+                                            {splitPayments.map((p, idx) => (
+                                                <div key={idx} className="flex justify-between items-center p-3 bg-white border border-gray-100 rounded-lg shadow-sm group hover:border-gray-300 transition-colors">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center text-sm">{p.method === 'CASH' ? '💵' : p.method === 'CARD' ? '💳' : '🏦'}</div>
+                                                        <span className="font-bold text-gray-700 text-sm">{p.method}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-3">
+                                                        <span className="font-mono font-bold text-gray-900">${p.amount.toFixed(2)}</span>
+                                                        <button onClick={() => setSplitPayments(prev => prev.filter((_, i) => i !== idx))} className="text-gray-300 hover:text-red-500 transition-colors">✕</button>
+                                                    </div>
                                                 </div>
-                                                <div className="font-bold text-gray-700 text-sm">{p.method}</div>
-                                            </div>
-                                            <div className="flex items-center gap-4">
-                                                <div className="font-mono font-bold text-gray-900">${p.amount.toFixed(2)}</div>
-                                                <button onClick={() => setSplitPayments(prev => prev.filter((_, i) => i !== idx))} className="text-gray-400 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-red-50">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
-                                                </button>
-                                            </div>
+                                            ))}
+                                            {splitPayments.length === 0 && (
+                                                <div className="border-2 border-dashed border-gray-100 rounded-xl p-6 text-center">
+                                                    <p className="text-gray-400 text-sm">No payments yet</p>
+                                                </div>
+                                            )}
                                         </div>
-                                    ))}
-                                    {splitPayments.length === 0 && (
-                                        <div className="text-center py-6 text-gray-400 text-sm font-medium border-2 border-dashed border-gray-100 rounded-xl">
-                                            Add payments to proceed
-                                        </div>
-                                    )}
+                                    </div>
                                 </div>
 
-                                <button
-                                    onClick={() => handleCheckout()}
-                                    disabled={cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0) > 0.01}
-                                    className={`w-full py-5 rounded-2xl font-bold text-white shadow-xl transition-all transform active:scale-[0.98] flex justify-center items-center gap-2 ${cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0) > 0.01
-                                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
-                                        : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-green-500/30'}`}
-                                >
-                                    <span>Complete Sale</span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                                </button>
+                                {/* Footer Action */}
+                                <div className="p-6 bg-gray-50 border-t border-gray-100">
+                                    <button
+                                        onClick={() => handleCheckout()}
+                                        disabled={Math.max(0, cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0)) > 0.01}
+                                        className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg transition-all flex justify-center items-center gap-2 ${Math.max(0, cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0)) > 0.01
+                                                ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
+                                                : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200 active:scale-[0.99]'
+                                            }`}
+                                    >
+                                        <span>Finalize Sale</span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
