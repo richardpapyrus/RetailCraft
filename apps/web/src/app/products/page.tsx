@@ -63,12 +63,9 @@ export default function ProductsPage() {
             router.push('/login');
             return;
         }
-        // Initial load only if we haven't loaded yet
-        if (products.length === 0) {
-            loadProducts(true);
-            loadSuppliers();
-            loadStats();
-        }
+        loadProducts(true);
+        loadSuppliers();
+        loadStats();
     }, [token, router, isHydrated, selectedStoreId]);
 
     const loadStats = async () => {
