@@ -46,6 +46,7 @@ services:
     environment:
       DATABASE_URL: postgresql://admin:password@postgres:5432/pos_db
       APP_URL: https://app.retailcraft.com.ng
+      API_URL: https://app.retailcraft.com.ng/api
     volumes:
       - ./:/app
       - /app/node_modules

@@ -46,6 +46,7 @@ services:
     environment:
       DATABASE_URL: postgresql://admin:password@staging_postgres:5432/pos_db_staging
       APP_URL: https://staging.retailcraft.com.ng
+      API_URL: https://staging.retailcraft.com.ng/api
       PORT: 4000
     volumes:
       - ./:/app
