@@ -31,7 +31,8 @@ async function bootstrap() {
   }
 
   app.enableCors({
-    origin: allowedOrigins,
+    // ALLOW ALL (Reflect Origin) to permit Staging/Prod/Custom domains without config
+    origin: true,
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
     credentials: true,
     allowedHeaders: "Content-Type, Key, Authorization, X-Requested-With",
