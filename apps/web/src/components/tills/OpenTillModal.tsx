@@ -41,9 +41,9 @@ export default function OpenTillModal({ isOpen, onClose, onSuccess }: OpenTillMo
             // Auto-select first AVAILABLE till (No active sessions)
             const firstAvailable = res.find((t: any) => !t.sessions || t.sessions.length === 0);
             if (firstAvailable) setSelectedTillId(firstAvailable.id);
-        } catch (e) {
+        } catch (e: any) {
             console.error(e);
-            setError('Failed to load tills');
+            setError(e.message || 'Failed to load tills');
         }
     };
 
@@ -95,9 +95,12 @@ export default function OpenTillModal({ isOpen, onClose, onSuccess }: OpenTillMo
                             onChange={(e) => setSelectedTillId(e.target.value)}
                             required
                         >
-                            {availableTills.length === 0 && <option value="">No available tills</option>}
+                            {availableTills.length === 0 && <option value="">No tills found for this store</option>}
+                            {availableTills.length > 0 && availableTills.every(t => t.sessions && t.sessions.length > 0) && (
+                                <option value="" disabled>All tills are currently in use</option>
+                            )}
+
                             {availableTills.map(till => {
-                                // Rely on active sessions count for truth, as 'status' flag can desync.
                                 const isBusy = till.sessions && till.sessions.length > 0;
                                 return (
                                     <option
@@ -111,6 +114,16 @@ export default function OpenTillModal({ isOpen, onClose, onSuccess }: OpenTillMo
                                 );
                             })}
                         </select>
+                        {availableTills.length === 0 && (
+                            <p className="text-xs text-red-500 mt-1">
+                                No tills are assigned to this store location. Please contact your manager.
+                            </p>
+                        )}
+                        {availableTills.length > 0 && availableTills.every(t => t.sessions && t.sessions.length > 0) && (
+                            <p className="text-xs text-amber-600 mt-1">
+                                All tills have active sessions. You must close them from the Manager Dashboard or asking the active cashier to sign out.
+                            </p>
+                        )}
                     </div>
 
                     <div className="space-y-2">

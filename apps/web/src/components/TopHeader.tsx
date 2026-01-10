@@ -16,13 +16,29 @@ export function TopHeader() {
     const loadStores = async () => {
         try {
             setError(null);
-            console.log("Fetching stores for tenant:", user?.tenantId);
-            const data = await api.stores.list();
-            console.log("Stores fetched:", data);
-            setStores(Array.isArray(data) ? data : []);
+            // If user is restricted, we might fail to list all stores.
+            // We should try to use user.store if list fails or is empty.
+            let data = [];
+            try {
+                data = await api.stores.list();
+            } catch (listErr) {
+                console.warn("Could not list all stores (likely permission), using assigned store only.");
+            }
+
+            const storeList = Array.isArray(data) ? data : [];
+
+            // Fallback: If list is empty but user is assigned a store, use it.
+            if (storeList.length === 0 && user?.store) {
+                storeList.push(user.store);
+            }
+
+            setStores(storeList);
         } catch (err: any) {
             console.error("Store Fetch Error:", err);
-            setError(err.message || "Failed to load stores");
+            // Only show error if we heavily failed and have no fallback
+            if (!user?.store) {
+                setError(err.message || "Failed to load stores");
+            }
         }
     };
 

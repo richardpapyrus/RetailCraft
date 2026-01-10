@@ -8,6 +8,7 @@ export function ToastProvider() {
             position="top-right"
             reverseOrder={false}
             gutter={8}
+            containerClassName="no-print"
             toastOptions={{
                 duration: 8000,
                 style: {
