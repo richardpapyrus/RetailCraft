@@ -76,7 +76,8 @@ async function bootstrap() {
   // --- END SELF HEALING ---
 
   await app.listen(process.env.PORT || 4000, '0.0.0.0');
+  // Force Restart for Reports Module
   console.log(`Application is running on: ${await app.getUrl()}`);
-  console.log("✅ Backend Ready & Watching (Reset)");
+  console.log("✅ Backend Ready & Watching (Attempts: 2)");
 }
 bootstrap();

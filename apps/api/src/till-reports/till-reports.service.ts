@@ -8,8 +8,7 @@ export class TillReportsService {
 
     async getDashboardStats(tenantId: string, storeId: string, from: Date, to: Date, tillId?: string) {
         const where = {
-            tenantId,
-            storeId,
+            till: { tenantId, storeId },
             openedAt: { gte: from, lte: to },
             ...(tillId ? { tillId } : {})
         };
@@ -33,16 +32,16 @@ export class TillReportsService {
             _sum: {
                 total: true,
                 subtotal: true,
-                tax: true,
-                discount: true
+                taxTotal: true,
+                discountTotal: true
             },
-            _count: { id: true }
+            _count: { _all: true }
         });
 
         const refundAgg = await this.prisma.sale.aggregate({
             where: { tillSessionId: { in: sessionIds }, status: 'REFUNDED' }, // Or partial? Logic usually separate table or status
             _sum: { total: true },
-            _count: { id: true }
+            _count: { _all: true }
         });
 
         return {
@@ -66,19 +65,18 @@ export class TillReportsService {
                 // Better def: Gross = Total collected. Net = Subtotal. 
                 // Let's stick to: Total (Final), Tax, Discount.
                 totalCollected: Number(salesAgg._sum.total || 0),
-                totalTax: Number(salesAgg._sum.tax || 0),
-                totalDiscount: Number(salesAgg._sum.discount || 0),
-                transactionCount: Number(salesAgg._count.id || 0),
+                totalTax: Number(salesAgg._sum.taxTotal || 0),
+                totalDiscount: Number(salesAgg._sum.discountTotal || 0),
+                transactionCount: Number(salesAgg._count._all || 0),
                 refundTotal: Number(refundAgg._sum.total || 0),
-                refundCount: Number(refundAgg._count.id || 0)
+                refundCount: Number(refundAgg._count._all || 0)
             }
         };
     }
 
     async getPaymentBreakdown(tenantId: string, storeId: string, from: Date, to: Date, tillId?: string) {
         const whereSession = {
-            tenantId,
-            storeId,
+            till: { tenantId, storeId },
             openedAt: { gte: from, lte: to },
             ...(tillId ? { tillId } : {})
         };
@@ -100,20 +98,19 @@ export class TillReportsService {
             by: ['paymentMethod'],
             where: { tillSessionId: { in: sessionIds }, status: 'COMPLETED' },
             _sum: { total: true },
-            _count: { id: true }
+            _count: { _all: true }
         });
 
         return byMethod.map(g => ({
             method: g.paymentMethod,
             amount: Number(g._sum.total || 0),
-            count: Number(g._count.id || 0)
+            count: Number(g._count._all || 0)
         }));
     }
 
     async getExceptions(tenantId: string, storeId: string, from: Date, to: Date, tillId?: string) {
         const whereSession = {
-            tenantId,
-            storeId,
+            till: { tenantId, storeId },
             openedAt: { gte: from, lte: to },
             ...(tillId ? { tillId } : {})
         };
@@ -145,5 +142,42 @@ export class TillReportsService {
             voids,
             cashEvents: cashTx
         };
+    }
+    async getInventoryImpact(tenantId: string, storeId: string, from: Date, to: Date, tillId?: string) {
+        const whereSession = {
+            till: { tenantId, storeId },
+            openedAt: { gte: from, lte: to },
+            ...(tillId ? { tillId } : {})
+        };
+        const sessions = await this.prisma.tillSession.findMany({ where: whereSession, select: { id: true } });
+        const sessionIds = sessions.map(s => s.id);
+
+        // Aggregate Sales Items
+        const items = await this.prisma.saleItem.groupBy({
+            by: ['productId'],
+            where: {
+                sale: {
+                    tillSessionId: { in: sessionIds },
+                    status: 'COMPLETED'
+                }
+            },
+            _sum: { quantity: true }
+        });
+
+        // Enrich with Product Info
+        const productIds = items.map(i => i.productId);
+        const products = await this.prisma.product.findMany({
+            where: { id: { in: productIds } },
+            select: { id: true, name: true, sku: true }
+        });
+
+        const productsMap = new Map(products.map(p => [p.id, p]));
+
+        return items.map(i => ({
+            productId: i.productId,
+            name: productsMap.get(i.productId)?.name || 'Unknown Product',
+            sku: productsMap.get(i.productId)?.sku || 'N/A',
+            quantitySold: Number(i._sum.quantity || 0)
+        })).sort((a, b) => b.quantitySold - a.quantitySold);
     }
 }

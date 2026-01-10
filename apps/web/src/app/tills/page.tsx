@@ -1,17 +1,21 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/useAuth';
 import { api } from '@/lib/api';
 import { Sidebar } from '@/components/Sidebar';
 import { toast } from 'react-hot-toast';
+import { FileText } from 'lucide-react';
 
 export default function TillsPage() {
-    const { isHydrated, token, user, selectedStoreId } = useAuth();
+    const router = useRouter();
+    const { isHydrated, token, user, selectedStoreId, hasPermission } = useAuth();
     const [tills, setTills] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [newTillName, setNewTillName] = useState('');
     const [creating, setCreating] = useState(false);
+
     useEffect(() => {
         if (isHydrated && token) {
             fetchTills();
@@ -24,9 +28,10 @@ export default function TillsPage() {
             // Fetch tills for selected store (or all if HQ/Global not enforced, but now backend enforces stricter logic)
             // If selectedStoreId is present, we MUST send it to filter.
             const res = await api.tills.list(selectedStoreId || '');
-            setTills(res);
+            setTills(Array.isArray(res) ? res : []);
         } catch (e) {
             console.error(e);
+            setTills([]);
         } finally {
             setLoading(false);
         }
@@ -92,7 +97,18 @@ export default function TillsPage() {
 
     return (
         <div className="max-w-4xl mx-auto p-8">
-            <h1 className="text-3xl font-bold mb-8">Till Management</h1>
+            <div className="flex justify-between items-center mb-8">
+                <h1 className="text-3xl font-bold">Till Management</h1>
+                {hasPermission('VIEW_TILL_REPORTS') && (
+                    <button
+                        onClick={() => router.push('/tills/reports')}
+                        className="flex items-center gap-2 px-4 py-2 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-xl hover:bg-indigo-100 font-bold shadow-sm transition-colors"
+                    >
+                        <FileText className="w-5 h-5" />
+                        Activity Dashboard
+                    </button>
+                )}
+            </div>
 
             {/* Create Till Card */}
             <div className="bg-white p-6 rounded-2xl shadow-sm mb-8">

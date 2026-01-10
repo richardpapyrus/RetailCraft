@@ -2,7 +2,7 @@
 import { Controller, Get, Query, UseGuards, Request, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { TillReportsService } from './till-reports.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { PermissionsGuard } from '../auth/permissions.guard';
+import { PermissionsGuard } from '../common/guards/permissions.guard';
 import { RequirePermissions } from '../auth/permissions.decorator';
 
 @Controller('till-reports')
@@ -54,6 +54,25 @@ export class TillReportsController {
         const endDate = to ? new Date(to) : new Date();
 
         return this.reportsService.getExceptions(
+            req.user.tenantId,
+            req.user.storeId, // Strict Store Scope
+            startDate,
+            endDate,
+            tillId
+        );
+    }
+    @Get('inventory')
+    @RequirePermissions('VIEW_TILL_REPORTS')
+    async getInventory(
+        @Request() req,
+        @Query('from') from: string,
+        @Query('to') to: string,
+        @Query('tillId') tillId?: string
+    ) {
+        const startDate = from ? new Date(from) : new Date(new Date().setHours(0, 0, 0, 0));
+        const endDate = to ? new Date(to) : new Date();
+
+        return this.reportsService.getInventoryImpact(
             req.user.tenantId,
             req.user.storeId, // Strict Store Scope
             startDate,

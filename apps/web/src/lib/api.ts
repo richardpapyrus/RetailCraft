@@ -338,6 +338,29 @@ export const api = {
             return fetchClient(`/grn?${params.toString()}`).then(res => res as any[]);
         },
         receive: (data: { poId: string; storeId?: string; items: { productId: string; quantityReceived: number; batchNumber?: string; expiryDate?: string }[]; notes?: string }) => fetchClient('/grn', { method: 'POST', body: JSON.stringify(data) }),
+    },
+    tillReports: {
+        getDashboard: (from: string, to: string, tillId?: string) => {
+            const params = new URLSearchParams();
+            if (from) params.append('from', from);
+            if (to) params.append('to', to);
+            if (tillId) params.append('tillId', tillId);
+            return fetchClient(`/till-reports/dashboard?${params.toString()}`).then(res => res as any);
+        },
+        getExceptions: (from: string, to: string, tillId?: string) => {
+            const params = new URLSearchParams();
+            if (from) params.append('from', from);
+            if (to) params.append('to', to);
+            if (tillId) params.append('tillId', tillId);
+            return fetchClient(`/till-reports/exceptions?${params.toString()}`).then(res => res as any);
+        },
+        getInventory: (from: string, to: string, tillId?: string) => {
+            const params = new URLSearchParams();
+            if (from) params.append('from', from);
+            if (to) params.append('to', to);
+            if (tillId) params.append('tillId', tillId);
+            return fetchClient(`/till-reports/inventory?${params.toString()}`).then(res => res as any[]);
+        }
     }
 };
 

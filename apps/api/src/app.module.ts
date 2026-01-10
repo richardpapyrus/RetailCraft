@@ -24,6 +24,7 @@ import { BusinessModule } from "./business/business.module";
 import { UploadsModule } from "./uploads/uploads.module";
 import { PurchaseOrdersModule } from "./purchase-orders/purchase-orders.module";
 import { GrnModule } from "./grn/grn.module";
+import { TillReportsModule } from "./till-reports/till-reports.module";
 import { join } from 'path';
 
 import { LoggerMiddleware } from "./common/middleware/logger.middleware";
@@ -52,7 +53,9 @@ import { LoggerMiddleware } from "./common/middleware/logger.middleware";
     BusinessModule,
     UploadsModule,
     PurchaseOrdersModule,
+    PurchaseOrdersModule,
     GrnModule,
+    TillReportsModule,
   ],
   controllers: [],
   providers: [],
