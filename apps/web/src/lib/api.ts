@@ -7,8 +7,9 @@ if (typeof window !== 'undefined') {
 
     // Fallback logic ONLY if Env Var is missing
     if (hostname.includes('retailcraft.com.ng')) {
-        // Guessing production API - but allow override via Env Var
-        computedUrl = 'https://api.retailcraft.com.ng';
+        // Production/Staging use path-based routing (Nginx /api proxy)
+        // This avoids CORS issues by keeping requests Same-Origin
+        computedUrl = '/api';
     } else if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
         // LAN / IP Access (Assume Backend is on same host, port 4000)
         computedUrl = `${protocol}//${hostname}:4000`;
