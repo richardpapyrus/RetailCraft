@@ -14,6 +14,7 @@ export const PERMISSIONS = {
   process_sales: "PROCESS_SALES", // Run the POS
   view_sales: "VIEW_SALES", // View history
   manage_sales: "MANAGE_SALES", // Void, Refund (High privilege)
+  MANAGE_DISCOUNTS: "MANAGE_DISCOUNTS", // Apply Manual Discounts
 
   // Customers
   VIEW_CUSTOMERS: "VIEW_CUSTOMERS",
@@ -22,6 +23,8 @@ export const PERMISSIONS = {
   // Suppliers
   VIEW_SUPPLIERS: "VIEW_SUPPLIERS",
   MANAGE_SUPPLIERS: "MANAGE_SUPPLIERS",
+  RAISE_PURCHASE_ORDER: "RAISE_PURCHASE_ORDER",
+  RECEIVE_GOODS: "RECEIVE_GOODS",
 
   // Tills
   OPEN_TILL: "OPEN_TILL",
@@ -53,6 +56,7 @@ export const PERMISSION_GROUPS = [
       PERMISSIONS.process_sales,
       PERMISSIONS.view_sales,
       PERMISSIONS.manage_sales,
+      PERMISSIONS.MANAGE_DISCOUNTS,
     ],
   },
   {
@@ -60,8 +64,13 @@ export const PERMISSION_GROUPS = [
     permissions: [PERMISSIONS.VIEW_CUSTOMERS, PERMISSIONS.MANAGE_CUSTOMERS],
   },
   {
-    label: "Suppliers",
-    permissions: [PERMISSIONS.VIEW_SUPPLIERS, PERMISSIONS.MANAGE_SUPPLIERS],
+    label: "Suppliers & Purchasing", // Renaming for clarity implies POs
+    permissions: [
+      PERMISSIONS.VIEW_SUPPLIERS,
+      PERMISSIONS.MANAGE_SUPPLIERS,
+      PERMISSIONS.RAISE_PURCHASE_ORDER,
+      PERMISSIONS.RECEIVE_GOODS
+    ],
   },
   {
     label: "Tills",

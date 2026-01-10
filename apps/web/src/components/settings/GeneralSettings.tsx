@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/useAuth';
-import { api } from '@/lib/api';
+import { api, API_URL } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 
 const COUNTRIES = [
@@ -204,7 +204,7 @@ export default function GeneralSettings() {
                                         <div>
                                             <span className="text-[10px] uppercase text-gray-400 block mb-1">Current Logo</span>
                                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                                            <img src={logoUrl} alt="Preview" className="h-10 object-contain" />
+                                            <img src={logoUrl.startsWith('http') ? logoUrl : `${API_URL}${logoUrl}`} alt="Preview" className="h-10 object-contain" />
                                         </div>
                                         <button
                                             onClick={async () => {

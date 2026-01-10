@@ -12,6 +12,7 @@ import OpenTillModal from '@/components/tills/OpenTillModal';
 import CloseTillModal from '@/components/tills/CloseTillModal';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
+import { Package, AlertCircle } from 'lucide-react';
 import ReceiptTemplate from '@/components/pos/ReceiptTemplate';
 
 interface CartItem extends Product {
@@ -20,7 +21,7 @@ interface CartItem extends Product {
 
 
 export default function POSPage() {
-    const { user, token, logout, isHydrated, selectedStoreId } = useAuth();
+    const { user, token, logout, isHydrated, selectedStoreId, hasPermission } = useAuth();
     const router = useRouter();
 
     const [products, setProducts] = useState<Product[]>([]);
@@ -62,6 +63,12 @@ export default function POSPage() {
         targetValues?: string[]
     } | null>(null);
     const [discountModalOpen, setDiscountModalOpen] = useState(false);
+    const [manualDiscountInput, setManualDiscountInput] = useState('');
+    const [manualDiscountType, setManualDiscountType] = useState<'FIXED' | 'PERCENTAGE'>('FIXED');
+    const [supervisorMode, setSupervisorMode] = useState(false);
+    const [supervisorCreds, setSupervisorCreds] = useState({ email: '', password: '' });
+    const [verifyingSupervisor, setVerifyingSupervisor] = useState(false);
+
 
     // Receipt Extended Data
     const [lastSaleExt, setLastSaleExt] = useState<{ subtotal: number, tax: number, discount: number } | null>(null);
@@ -649,34 +656,33 @@ export default function POSPage() {
                                 <div className="flex-1 overflow-y-auto px-2 space-y-1 pb-2">
                                     {filteredProducts.map(product => {
                                         const stock = product.inventory?.reduce((acc, curr) => acc + curr.quantity, 0) || 0;
-                                        const isLowStock = stock <= (product.minStockLevel || 0);
-                                        const hasStock = stock > 0;
+                                        const isLow = stock <= (product.minStockLevel || 0);
+
                                         return (
-                                            <div
+                                            <button
                                                 key={product.id}
                                                 onClick={() => addToCart(product)}
-                                                className="bg-white border border-gray-100 rounded-xl p-3 cursor-pointer hover:shadow-md hover:border-indigo-200 transition-all group relative overflow-hidden"
+                                                className="w-full flex items-center p-2 bg-white hover:bg-indigo-50 border border-gray-100 hover:border-indigo-200 rounded-lg transition-all group text-left h-14"
                                             >
-                                                <div className="flex justify-between items-center">
-                                                    <div className="flex-1">
-                                                        <div className="font-bold text-gray-900 group-hover:text-indigo-700 transition-colors text-sm">{product.name}</div>
-                                                        <div className="text-xs text-gray-500 font-medium mb-2">{product.sku}</div>
-                                                        <div className="flex justify-between items-center">
-                                                            <div className="text-lg font-black text-indigo-600">{formatCurrency(product.price, user?.currency, user?.locale)}</div>
-                                                            {hasStock ? (
-                                                                <div className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide ${stock < (product.minStockLevel || 5) ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
-                                                                    }`}>
-                                                                    {stock} In Stock
-                                                                </div>
-                                                            ) : (
-                                                                <div className="text-[10px] font-bold bg-gray-100 text-gray-400 px-2 py-1 rounded-full uppercase tracking-wide">
-                                                                    Out of Stock
-                                                                </div>
-                                                            )}
-                                                        </div>
+                                                <div className="w-10 h-10 rounded bg-gray-50 flex items-center justify-center text-gray-300 mr-3 flex-shrink-0 group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-colors">
+                                                    <Package className="w-5 h-5" />
+                                                </div>
+                                                <div className="flex-1 min-w-0 pr-3">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="font-semibold text-gray-800 text-sm truncate group-hover:text-indigo-900">{product.name}</span>
+                                                        <span className="font-bold text-gray-900 text-sm ml-2">
+                                                            {formatCurrency(product.price, user?.currency, user?.locale)}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between mt-0.5">
+                                                        <span className="text-[10px] text-gray-400 font-mono truncate">{product.sku}</span>
+                                                        <span className={`text-[10px] font-bold ${isLow ? 'text-amber-600' : 'text-green-600'} flex items-center gap-1`}>
+                                                            {isLow && <AlertCircle size={10} />}
+                                                            {stock} units
+                                                        </span>
                                                     </div>
                                                 </div>
-                                            </div>
+                                            </button>
                                         );
                                     })}
                                     {hasMoreProducts && (
@@ -1080,50 +1086,208 @@ export default function POSPage() {
                 {/* Discount Modal */}
                 {discountModalOpen && (
                     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[70] backdrop-blur-sm">
-                        <div className="bg-white p-6 rounded-2xl shadow-2xl w-96">
-                            <h3 className="text-xl font-bold mb-4">Apply Discount</h3>
+                        <div className="bg-white p-6 rounded-2xl shadow-2xl w-96 transform transition-all">
 
-                            <div className="space-y-3 mb-6">
-                                <h4 className="text-sm font-bold text-gray-500 uppercase">System Discounts</h4>
-                                <div className="grid grid-cols-2 gap-2">
-                                    {discounts.map(d => (
-                                        <button
-                                            key={d.id}
-                                            onClick={() => {
-                                                setAppliedDiscount({
-                                                    id: d.id,
-                                                    name: d.name,
-                                                    type: d.type as any,
-                                                    value: Number(d.value),
-                                                    targetType: d.targetType,
-                                                    targetValues: d.targetValues
-                                                });
-                                                setDiscountModalOpen(false);
-                                            }}
-                                            className="p-3 border rounded-lg text-sm hover:bg-indigo-50 hover:border-indigo-500 text-left"
-                                        >
-                                            <div className="font-bold text-indigo-700">{d.name}</div>
-                                            <div className="text-xs text-gray-500">
-                                                {d.type === 'PERCENTAGE' ? `${d.value}% Off` : `-$${d.value}`}
-                                            </div>
-                                        </button>
-                                    ))}
-                                </div>
-
-                                <div className="relative flex py-2 items-center my-4">
-                                    <div className="flex-grow border-t border-gray-300"></div>
-                                    <span className="flex-shrink-0 mx-4 text-gray-400 text-xs uppercase">Or Manual</span>
-                                    <div className="flex-grow border-t border-gray-300"></div>
-                                </div>
-
+                            {/* Header */}
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-xl font-bold">
+                                    {supervisorMode ? 'Manager Override' : (manualDiscountInput !== '' || manualDiscountInput === '0') ? 'Manual Discount' : 'Apply Discount'}
+                                </h3>
                                 <button onClick={() => {
-                                    setAppliedDiscount({ name: 'Manual Discount', type: 'MANUAL', value: 0 }); // Todo: Add manual input logic
                                     setDiscountModalOpen(false);
-                                }} className="w-full py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50">
-                                    Enter Manual Amount
-                                </button>
+                                    setSupervisorMode(false);
+                                    setManualDiscountInput('');
+                                    setSupervisorCreds({ email: '', password: '' });
+                                }} className="text-gray-400 hover:text-gray-600">✕</button>
                             </div>
-                            <button onClick={() => setDiscountModalOpen(false)} className="w-full py-3 bg-gray-100 rounded-xl font-bold text-gray-600">Cancel</button>
+
+                            {/* View 1: Supervisor Login */}
+                            {supervisorMode ? (
+                                <div className="space-y-4">
+                                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-3">
+                                        <div className="text-amber-600 mt-0.5">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+                                        </div>
+                                        <div>
+                                            <h4 className="text-sm font-bold text-amber-800">Authorization Required</h4>
+                                            <p className="text-xs text-amber-700 mt-1">
+                                                A supervisor or manager must sign in to approve this manual discount.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-500 uppercase">Email</label>
+                                        <input
+                                            type="email"
+                                            autoFocus
+                                            className="w-full mt-1 p-3 border rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                                            value={supervisorCreds.email}
+                                            onChange={e => setSupervisorCreds(prev => ({ ...prev, email: e.target.value }))}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-500 uppercase">Password</label>
+                                        <input
+                                            type="password"
+                                            className="w-full mt-1 p-3 border rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                                            value={supervisorCreds.password}
+                                            onChange={e => setSupervisorCreds(prev => ({ ...prev, password: e.target.value }))}
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={async () => {
+                                            if (!supervisorCreds.email || !supervisorCreds.password) return toast.error('Please enter credentials');
+                                            setVerifyingSupervisor(true);
+                                            try {
+                                                // Verify credentials via direct fetch to avoid global auth state change
+                                                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/login`, {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify(supervisorCreds)
+                                                });
+
+                                                if (!res.ok) throw new Error('Invalid credentials');
+
+                                                const data = await res.json();
+                                                const role = data.user.role;
+                                                const permissions = data.user.permissions || [];
+
+                                                // Check permission
+                                                const authorized = role === 'ADMIN' || role === 'Administrator' || permissions.includes('MANAGE_DISCOUNTS') || permissions.includes('*');
+
+                                                if (authorized) {
+                                                    toast.success(`Override Approved by ${data.user.name}`);
+                                                    setSupervisorMode(false);
+                                                    setManualDiscountInput('0.00'); // Unlock Manual Input
+                                                } else {
+                                                    toast.error('User does not have permission to authorize discounts.');
+                                                }
+                                            } catch (e) {
+                                                console.error(e);
+                                                toast.error('Authorization Failed');
+                                            } finally {
+                                                setVerifyingSupervisor(false);
+                                            }
+                                        }}
+                                        disabled={verifyingSupervisor}
+                                        className="w-full py-3 bg-black text-white rounded-xl font-bold hover:bg-gray-800 disabled:opacity-50"
+                                    >
+                                        {verifyingSupervisor ? 'Verifying...' : 'Authorize Override'}
+                                    </button>
+                                </div>
+                            ) : (manualDiscountInput !== '') ? (
+                                /* View 2: Manual Input */
+                                <div className="space-y-6">
+                                    <div>
+                                        <div className="flex justify-between items-center mb-2">
+                                            <label className="text-sm font-bold text-gray-500 uppercase">Discount Amount</label>
+                                            <div className="flex bg-gray-100 p-1 rounded-lg">
+                                                <button
+                                                    onClick={() => setManualDiscountType('FIXED')}
+                                                    className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${manualDiscountType === 'FIXED' ? 'bg-white shadow text-gray-900' : 'text-gray-500'}`}
+                                                >
+                                                    $ Fixed
+                                                </button>
+                                                <button
+                                                    onClick={() => setManualDiscountType('PERCENTAGE')}
+                                                    className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${manualDiscountType === 'PERCENTAGE' ? 'bg-white shadow text-gray-900' : 'text-gray-500'}`}
+                                                >
+                                                    % Percent
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div className="relative">
+                                            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 font-bold">
+                                                {manualDiscountType === 'FIXED' ? '$' : '%'}
+                                            </span>
+                                            <input
+                                                type="number"
+                                                autoFocus
+                                                value={manualDiscountInput}
+                                                onChange={e => setManualDiscountInput(e.target.value)}
+                                                className="w-full pl-8 pr-4 py-4 text-3xl font-bold border rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none"
+                                                placeholder="0.00"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-3">
+                                        <button
+                                            onClick={() => setManualDiscountInput('')} // Back to List
+                                            className="flex-1 py-3 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200"
+                                        >
+                                            Back
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                const val = parseFloat(manualDiscountInput);
+                                                if (val > 0) {
+                                                    setAppliedDiscount({
+                                                        name: manualDiscountType === 'PERCENTAGE' ? `Manual (${val}%)` : 'Manual Discount',
+                                                        type: manualDiscountType, // 'FIXED' or 'PERCENTAGE'
+                                                        value: val
+                                                    });
+                                                    setDiscountModalOpen(false);
+                                                    setManualDiscountInput('');
+                                                    setManualDiscountType('FIXED');
+                                                    toast.success('Manual Discount Applied');
+                                                } else {
+                                                    toast.error('Enter a valid amount');
+                                                }
+                                            }}
+                                            className="flex-1 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-200"
+                                        >
+                                            Apply
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                /* View 3: Discount List */
+                                <div className="space-y-3">
+                                    <h4 className="text-sm font-bold text-gray-500 uppercase">System Discounts</h4>
+                                    <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto custom-scrollbar">
+                                        {discounts.map(d => (
+                                            <button
+                                                key={d.id}
+                                                onClick={() => {
+                                                    setAppliedDiscount({
+                                                        id: d.id,
+                                                        name: d.name,
+                                                        type: d.type as any,
+                                                        value: Number(d.value),
+                                                        targetType: d.targetType,
+                                                        targetValues: d.targetValues
+                                                    });
+                                                    setDiscountModalOpen(false);
+                                                }}
+                                                className="p-3 border rounded-lg text-sm hover:bg-indigo-50 hover:border-indigo-500 text-left transition-colors"
+                                            >
+                                                <div className="font-bold text-indigo-700">{d.name}</div>
+                                                <div className="text-xs text-gray-500">
+                                                    {d.type === 'PERCENTAGE' ? `${d.value}% Off` : `-$${d.value}`}
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    <div className="relative flex py-2 items-center my-4">
+                                        <div className="flex-grow border-t border-gray-300"></div>
+                                        <span className="flex-shrink-0 mx-4 text-gray-400 text-xs uppercase">Or Manual</span>
+                                        <div className="flex-grow border-t border-gray-300"></div>
+                                    </div>
+
+                                    <button onClick={() => {
+                                        // CHECK PERMISSION
+                                        if (hasPermission('MANAGE_DISCOUNTS')) {
+                                            setManualDiscountInput('0.00');
+                                        } else {
+                                            setSupervisorMode(true);
+                                        }
+                                    }} className="w-full py-3 border border-dashed border-gray-300 rounded-xl text-sm font-bold text-gray-500 hover:bg-gray-50 hover:text-indigo-600 hover:border-indigo-300 transition-all flex items-center justify-center gap-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                        Enter Manual Amount
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}

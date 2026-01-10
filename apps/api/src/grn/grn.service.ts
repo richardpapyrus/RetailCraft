@@ -26,8 +26,8 @@ export class GrnService {
 
         // Transaction: Create GRN + Update Inventory + Update PO
         return prisma.$transaction(async (tx) => {
-            // 1. Generate GRN Number
-            const count = await tx.goodsReceivedNote.count({ where: { storeId: data.storeId } });
+            // 1. Generate GRN Number (Tenant-wide to avoid collisions)
+            const count = await tx.goodsReceivedNote.count({ where: { purchaseOrder: { tenantId: po.tenantId } } });
             const grnNumber = `GRN-${new Date().getFullYear()}-${(count + 1).toString().padStart(4, '0')}`;
 
             // 2. Create GRN

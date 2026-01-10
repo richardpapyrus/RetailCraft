@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/useAuth';
-import { api } from '@/lib/api';
+import { api, API_URL } from '@/lib/api';
 
 export function TopHeader() {
     const { user, selectedStoreId, setSelectedStoreId } = useAuth();
@@ -43,7 +43,7 @@ export function TopHeader() {
                     {user?.tenantLogo ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
-                            src={user.tenantLogo}
+                            src={user.tenantLogo.startsWith('http') ? user.tenantLogo : `${API_URL}${user.tenantLogo}`}
                             alt={user.tenantName}
                             className="h-10 object-contain rounded-md"
                         />

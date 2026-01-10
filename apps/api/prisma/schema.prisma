@@ -179,6 +179,8 @@ model Supplier {
   storeId   String?
   store     Store?   @relation(fields: [storeId], references: [id])
   
+  isSystem  Boolean  @default(false)
+  
   currency  String   @default("USD")
   termDays  Int      @default(30)
 

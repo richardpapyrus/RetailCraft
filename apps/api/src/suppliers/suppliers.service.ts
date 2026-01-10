@@ -31,7 +31,13 @@ export class SuppliersService {
 
   async findAll(tenantId: string, storeId?: string) {
     const where: any = { tenantId };
-    if (storeId) where.storeId = storeId;
+
+    if (storeId) {
+      where.OR = [
+        { storeId: storeId },
+        { storeId: null } // Include Global/System Suppliers
+      ];
+    }
     return prisma.supplier.findMany({
       where,
       orderBy: { createdAt: "desc" },

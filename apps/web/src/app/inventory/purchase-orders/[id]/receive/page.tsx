@@ -10,13 +10,21 @@ import { toast } from 'react-hot-toast';
 
 export default function ReceivePOPage() {
     const { id } = useParams();
-    const { token, isHydrated, selectedStoreId } = useAuth();
+    const { token, isHydrated, selectedStoreId, hasPermission } = useAuth();
     const router = useRouter();
     const [po, setPo] = useState<any>(null);
     const [items, setItems] = useState<any[]>([]);
 
     useEffect(() => {
         if (!isHydrated || !token) return;
+
+        // Security Check
+        if (!hasPermission('RECEIVE_GOODS')) {
+            toast.error("Permission Denied");
+            router.push('/inventory/purchase-orders');
+            return;
+        }
+
         loadPO();
     }, [id, token, isHydrated]);
 

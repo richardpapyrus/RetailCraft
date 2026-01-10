@@ -265,6 +265,14 @@ export default function ProductsPage() {
                         >
                             ↻ Refresh
                         </button>
+                        {(hasPermission('MANAGE_PRODUCTS') || hasPermission('RAISE_PURCHASE_ORDER')) && (
+                            <button
+                                onClick={() => router.push('/inventory/purchase-orders')}
+                                className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition shadow-sm flex items-center gap-2"
+                            >
+                                <span className="text-lg leading-none">📋</span> Purchase Orders
+                            </button>
+                        )}
                         {hasPermission('MANAGE_PRODUCTS') && (
                             <>
                                 <button
@@ -278,12 +286,6 @@ export default function ProductsPage() {
                                     className={`border border-gray-300 px-4 py-2 rounded-lg transition shadow-sm ${!selectedStoreId ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
                                 >
                                     Import CSV
-                                </button>
-                                <button
-                                    onClick={() => router.push('/inventory/purchase-orders')}
-                                    className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition shadow-sm flex items-center gap-2"
-                                >
-                                    <span className="text-lg leading-none">📋</span> Purchase Orders
                                 </button>
                                 <button
                                     onClick={() => {

@@ -13,6 +13,10 @@ export class PurchaseOrdersController {
         let storeId = body.storeId;
         const isSystemAdmin = req.user.role === 'Administrator' || req.user.permissions?.includes('*');
 
+        if (!isSystemAdmin && !req.user.permissions?.includes('RAISE_PURCHASE_ORDER')) {
+            throw new Error("Permission Denied: Requires RAISE_PURCHASE_ORDER");
+        }
+
         if (!isSystemAdmin) {
             if (!req.user.storeId) throw new Error("Store Context Required");
             storeId = req.user.storeId;
@@ -40,8 +44,16 @@ export class PurchaseOrdersController {
     }
 
     @Get()
-    findAll(@Request() req, @Query('status') status?: string) {
-        return this.poService.findAll(req.user.tenantId, req.user.storeId, status);
+    findAll(@Request() req, @Query('status') status?: string, @Query('storeId') queryStoreId?: string) {
+        let storeId = req.user.storeId;
+        const isSystemAdmin = req.user.role === 'Administrator' || req.user.permissions?.includes('*');
+
+        if (isSystemAdmin) {
+            // Allow Admin to view all or specific store
+            storeId = queryStoreId;
+        }
+
+        return this.poService.findAll(req.user.tenantId, storeId, status);
     }
 
     @Get(':id')

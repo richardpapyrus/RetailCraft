@@ -9,7 +9,7 @@ import { toast } from 'react-hot-toast';
 import { ProductPicker } from '@/components/inventory/ProductPicker';
 
 export default function CreatePOPage() {
-    const { token, isHydrated, selectedStoreId, user } = useAuth();
+    const { token, isHydrated, selectedStoreId, user, hasPermission } = useAuth();
     const router = useRouter();
 
     const [suppliers, setSuppliers] = useState<any[]>([]);
@@ -21,6 +21,14 @@ export default function CreatePOPage() {
 
     useEffect(() => {
         if (!isHydrated || !token) return;
+
+        // Security Check
+        if (!hasPermission('RAISE_PURCHASE_ORDER')) {
+            toast.error("Permission Denied");
+            router.push('/inventory/purchase-orders');
+            return;
+        }
+
         loadSuppliers();
     }, [token, isHydrated, selectedStoreId]);
 

@@ -15,8 +15,8 @@ export class GrnController {
 
         if (!isAdmin) {
             // For non-admins, ensure they have RECEIVE permission and a Store Context
-            if (!req.user.permissions?.includes('RECEIVE_STOCK') && req.user.role !== 'Manager') {
-                throw new Error("Permission Denied");
+            if (!req.user.permissions?.includes('RECEIVE_GOODS')) {
+                throw new Error("Permission Denied: Requires RECEIVE_GOODS");
             }
             if (!req.user.storeId) throw new Error("Store Context Required");
             storeId = req.user.storeId;

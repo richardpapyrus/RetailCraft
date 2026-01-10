@@ -9,7 +9,7 @@ import { Plus, Eye, Truck } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 export default function PurchaseOrdersPage() {
-    const { token, isHydrated, selectedStoreId } = useAuth();
+    const { token, isHydrated, selectedStoreId, hasPermission } = useAuth();
     const router = useRouter();
     const [orders, setOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -51,12 +51,14 @@ export default function PurchaseOrdersPage() {
                         <h1 className="text-2xl font-bold text-gray-900">Purchase Orders</h1>
                         <p className="text-sm text-gray-500">Manage procurement and stock replenishment</p>
                     </div>
-                    <button
-                        onClick={() => router.push('/inventory/purchase-orders/new')}
-                        className="flex items-center bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
-                    >
-                        <Plus className="w-5 h-5 mr-2" /> New Order
-                    </button>
+                    {hasPermission('RAISE_PURCHASE_ORDER') && (
+                        <button
+                            onClick={() => router.push('/inventory/purchase-orders/new')}
+                            className="flex items-center bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
+                        >
+                            <Plus className="w-5 h-5 mr-2" /> New Order
+                        </button>
+                    )}
                 </div>
 
                 <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -100,7 +102,7 @@ export default function PurchaseOrdersPage() {
                                             >
                                                 <Eye className="w-5 h-5" />
                                             </button>
-                                            {['SENT', 'PARTIALLY_RECEIVED'].includes(po.status) && (
+                                            {['SENT', 'PARTIALLY_RECEIVED'].includes(po.status) && hasPermission('RECEIVE_GOODS') && (
                                                 <button
                                                     onClick={() => router.push(`/inventory/purchase-orders/${po.id}/receive`)}
                                                     className="text-indigo-600 hover:text-indigo-800 p-1"
