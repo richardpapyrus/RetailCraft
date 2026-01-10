@@ -13,15 +13,25 @@ async function bootstrap() {
   app.useStaticAssets(join(process.cwd(), 'uploads'), {
     prefix: '/api/uploads/',
   });
+  const allowedOrigins = [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "https://app.retailcraft.com.ng",
+    "https://retailcraft.com.ng",
+    "https://www.retailcraft.com.ng",
+    "https://staging.retailcraft.com.ng", // Explicit Staging Whitelist
+    /\.retailcraft\.com\.ng$/,
+  ];
+
+  if (process.env.FRONTEND_URL) {
+    allowedOrigins.push(process.env.FRONTEND_URL);
+  }
+  if (process.env.CORS_ORIGIN) {
+    allowedOrigins.push(process.env.CORS_ORIGIN);
+  }
+
   app.enableCors({
-    origin: [
-      "http://localhost:3000",
-      "http://localhost:3001",
-      "https://app.retailcraft.com.ng",
-      "https://retailcraft.com.ng",
-      "https://www.retailcraft.com.ng",
-      /\.retailcraft\.com\.ng$/,
-    ],
+    origin: allowedOrigins,
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
     credentials: true,
     allowedHeaders: "Content-Type, Key, Authorization, X-Requested-With",
