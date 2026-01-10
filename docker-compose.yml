@@ -47,6 +47,11 @@ services:
       DATABASE_URL: postgresql://admin:password@postgres:5432/pos_db
       APP_URL: https://app.retailcraft.com.ng
     volumes:
+      - ./:/app
+      - /app/node_modules
+      - /app/apps/api/node_modules
+      - /app/apps/web/node_modules
+      - /app/apps/api/dist
       - ./uploads:/app/apps/api/uploads
 
   web:
@@ -62,7 +67,13 @@ services:
     networks:
       - pos_network
     environment:
-      NEXT_PUBLIC_API_URL: https://app.retailcraft.com.ng/api
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+    volumes:
+      - ./:/app
+      - /app/node_modules
+      - /app/apps/web/node_modules
+      - /app/apps/api/node_modules
+      - /app/apps/web/.next
 
 networks:
   pos_network:

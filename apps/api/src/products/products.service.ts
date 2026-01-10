@@ -201,7 +201,10 @@ export class ProductsService {
           data.category === "" || data.category === null ? null : data.category,
         supplierId:
           data.supplierId === "" || data.supplierId === null ? null : data.supplierId,
-        storeId: (data as any).storeId, // Add storeId to create
+        storeId: (data as any).storeId,
+        supplierProducts: data.supplierId ? {
+          create: { supplierId: data.supplierId, isPreferred: true }
+        } : undefined,
       },
     });
   }

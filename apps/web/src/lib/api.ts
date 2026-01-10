@@ -167,8 +167,16 @@ export const api = {
             return fetchClient(`/suppliers?${params.toString()}`).then(res => res as any[]);
         },
         create: (data: any) => fetchClient('/suppliers', { method: 'POST', body: JSON.stringify(data) }),
+        get: (id: string) => fetchClient(`/suppliers/${id}`).then(res => res as any),
         update: (id: string, data: any) => fetchClient(`/suppliers/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
         delete: (id: string) => fetchClient(`/suppliers/${id}`, { method: 'DELETE' }),
+        addProduct: (id: string, data: any) => fetchClient(`/suppliers/${id}/products`, { method: 'POST', body: JSON.stringify(data) }),
+        removeProduct: (id: string, productId: string) => fetchClient(`/suppliers/${id}/products/${productId}`, { method: 'DELETE' }),
+        getReorderItems: (id: string, storeId?: string) => {
+            const params = new URLSearchParams();
+            if (storeId) params.append('storeId', storeId);
+            return fetchClient(`/suppliers/${id}/reorder-items?${params.toString()}`).then(res => res as any[]);
+        }
     },
     inventory: {
         adjust: (productId: string, quantity: number, reason: string, storeId?: string) =>
@@ -311,6 +319,25 @@ export const api = {
         update: (id: string, data: Partial<Role>) => fetchClient(`/roles/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
         delete: (id: string) => fetchClient(`/roles/${id}`, { method: 'DELETE' }),
         getPermissions: () => fetchClient('/roles/permissions').then(res => res as PermissionGroup[]),
+    },
+    purchaseOrders: {
+        list: (status?: string, storeId?: string) => {
+            const params = new URLSearchParams();
+            if (status) params.append('status', status);
+            if (storeId) params.append('storeId', storeId);
+            return fetchClient(`/purchase-orders?${params.toString()}`).then(res => res as any[]);
+        },
+        create: (data: { supplierId: string; storeId?: string; items: { productId: string; quantity: number; unitCost: number }[]; notes?: string }) => fetchClient('/purchase-orders', { method: 'POST', body: JSON.stringify(data) }),
+        get: (id: string) => fetchClient(`/purchase-orders/${id}`).then(res => res as any),
+        updateStatus: (id: string, status: string) => fetchClient(`/purchase-orders/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
+    },
+    grn: {
+        list: (storeId?: string) => {
+            const params = new URLSearchParams();
+            if (storeId) params.append('storeId', storeId);
+            return fetchClient(`/grn?${params.toString()}`).then(res => res as any[]);
+        },
+        receive: (data: { poId: string; storeId?: string; items: { productId: string; quantityReceived: number; batchNumber?: string; expiryDate?: string }[]; notes?: string }) => fetchClient('/grn', { method: 'POST', body: JSON.stringify(data) }),
     }
 };
 

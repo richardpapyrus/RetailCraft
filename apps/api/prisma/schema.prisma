@@ -27,6 +27,7 @@ model Tenant {
   discounts Discount[]
   roles     Role[]
   tills     Till[]
+  purchaseOrders PurchaseOrder[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -52,6 +53,9 @@ model Store {
   customers Customer[]
   suppliers Supplier[]
   inventoryEvents InventoryEvent[]
+  purchaseOrders PurchaseOrder[]
+  grns          GoodsReceivedNote[]
+  supplierReturns SupplierReturn[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -77,6 +81,8 @@ model User {
   sales     Sale[]
   returnsProcessed SalesReturn[]
   tillSessions TillSession[]
+  purchaseOrdersCreated PurchaseOrder[]
+  grnsReceived GoodsReceivedNote[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -123,6 +129,10 @@ model Product {
   saleItems   SaleItem[]
   returnItems SalesReturnItem[]
   inventoryEvents InventoryEvent[]
+  supplierProducts SupplierProduct[]
+  poItems       PurchaseOrderItem[]
+  grnItems      GRNItem[]
+  supplierReturnItems   SupplierReturnItem[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -168,8 +178,16 @@ model Supplier {
   tenant    Tenant   @relation(fields: [tenantId], references: [id])
   storeId   String?
   store     Store?   @relation(fields: [storeId], references: [id])
+  
+  currency  String   @default("USD")
+  termDays  Int      @default(30)
+
   events    InventoryEvent[]
-  products  Product[]
+  products  Product[]         // Legacy Relation
+  supplierProducts SupplierProduct[] // New Multi-Supplier Relation
+  purchaseOrders PurchaseOrder[]
+  returns   SupplierReturn[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -365,4 +383,146 @@ model SalesReturnItem {
   quantity    Int
   restock     Boolean  @default(true)
   refundAmount Decimal
+}
+
+model SupplierProduct {
+  id          String   @id @default(uuid())
+  supplierId  String
+  supplier    Supplier @relation(fields: [supplierId], references: [id])
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  
+  supplierSku String?
+  lastCost    Decimal  @default(0.0)
+  isPreferred Boolean  @default(false)
+
+  @@unique([supplierId, productId])
+}
+
+model PurchaseOrder {
+  id            String   @id @default(uuid())
+  poNumber      String   // Scoped unique constraint below
+  status        String   @default("DRAFT") // DRAFT, SENT, PARTIALLY_RECEIVED, FULLY_RECEIVED, CLOSED, CANCELLED
+  
+  supplierId    String
+  supplier      Supplier @relation(fields: [supplierId], references: [id])
+  
+  storeId       String
+  store         Store    @relation(fields: [storeId], references: [id])
+  
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+
+  createdBy     String
+  user          User     @relation(fields: [createdBy], references: [id])
+  
+  totalAmount   Decimal  @default(0.0)
+  notes         String?
+  
+  items         PurchaseOrderItem[]
+  grns          GoodsReceivedNote[]
+  invoices      SupplierInvoice[]
+  returns       SupplierReturn[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([poNumber, tenantId])
+}
+
+model PurchaseOrderItem {
+  id            String   @id @default(uuid())
+  poId          String
+  purchaseOrder PurchaseOrder @relation(fields: [poId], references: [id])
+  
+  productId     String
+  product       Product   @relation(fields: [productId], references: [id])
+  
+  quantityOrdered Int
+  quantityReceived Int      @default(0)
+  
+  unitCost      Decimal
+  totalCost     Decimal
+}
+
+model GoodsReceivedNote {
+  id            String   @id @default(uuid())
+  grnNumber     String   @unique
+  
+  poId          String
+  purchaseOrder PurchaseOrder @relation(fields: [poId], references: [id])
+  
+  receivedBy    String
+  user          User     @relation(fields: [receivedBy], references: [id])
+  
+  storeId       String
+  store         Store    @relation(fields: [storeId], references: [id])
+  
+  receivedDate  DateTime @default(now())
+  notes         String?
+  
+  items         GRNItem[]
+  
+  invoiceId     String?
+}
+
+model GRNItem {
+  id            String   @id @default(uuid())
+  grnId         String
+  grn           GoodsReceivedNote @relation(fields: [grnId], references: [id])
+  
+  productId     String
+  product       Product @relation(fields: [productId], references: [id])
+  
+  quantityReceived Int
+  
+  batchNumber   String?
+  expiryDate    DateTime?
+}
+
+model SupplierInvoice {
+  id            String   @id @default(uuid())
+  invoiceNumber String
+  
+  poId          String
+  purchaseOrder PurchaseOrder @relation(fields: [poId], references: [id])
+  
+  amount        Decimal
+  status        String   @default("PENDING") // PENDING, PAID, DISPUTED
+  
+  dueDate       DateTime?
+  createdAt     DateTime @default(now())
+}
+
+model SupplierReturn {
+  id            String   @id @default(uuid())
+  returnNumber  String   @unique
+  
+  poId          String?  // Optional link
+  purchaseOrder PurchaseOrder? @relation(fields: [poId], references: [id])
+  
+  supplierId    String
+  supplier      Supplier @relation(fields: [supplierId], references: [id])
+  
+  storeId       String
+  store         Store    @relation(fields: [storeId], references: [id])
+  
+  status        String   @default("PENDING")
+  reason        String?
+  
+  items         SupplierReturnItem[]
+  
+  createdAt     DateTime @default(now())
+}
+
+model SupplierReturnItem {
+  id            String   @id @default(uuid())
+  returnId      String
+  supplierReturn SupplierReturn @relation(fields: [returnId], references: [id])
+  
+  productId     String
+  product       Product  @relation(fields: [productId], references: [id])
+  
+  quantity      Int
+  batchNumber   String?
 }
