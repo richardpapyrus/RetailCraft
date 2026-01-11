@@ -175,6 +175,5 @@ export default function ReceiptTemplate({ sale, user, store: propStore }: Receip
                 <p className="text-[10px] text-gray-400 mt-4">RetailCraft POS</p>
             </div>
         </div>
-        </div >
     );
 }
