@@ -149,8 +149,10 @@ export const DataService = {
         await db.customers.add(offlineData);
 
         return { success: true, offline: true, data: offlineData };
-    async updateCustomer(id: string, payload: any): Promise < { success: boolean } > {
-            if(typeof navigator !== 'undefined' && navigator.onLine) {
+    },
+
+    async updateCustomer(id: string, payload: any): Promise<{ success: boolean }> {
+        if (typeof navigator !== 'undefined' && navigator.onLine) {
             try {
                 await api.customers.update(id, payload);
                 // Update Cache
@@ -172,7 +174,7 @@ export const DataService = {
             await db.customers.update(id, payload);
             return { success: true };
         }
-},
+    },
 
     async clearCache() {
         await db.products.clear();
