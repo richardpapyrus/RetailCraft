@@ -320,7 +320,8 @@ export default function POSPage() {
                 customerId: selectedCustomer?.id,
                 tillSessionId: activeSession?.id,
                 redeemPoints: usePoints ? pointsToRedeem : 0,
-                storeId: selectedStoreId || undefined
+                storeId: selectedStoreId || undefined,
+                discount: appliedDiscount || undefined
             });
 
             // Store Sale Info for Receipt
