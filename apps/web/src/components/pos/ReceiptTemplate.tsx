@@ -110,13 +110,13 @@ export default function ReceiptTemplate({ sale, user, store: propStore }: Receip
             <div className="mb-6 space-y-1 text-[11px] pr-1">
                 <div className="flex justify-between">
                     <span>Subtotal</span>
-                    <span>{formatCurrency(sale.total - (sale.tax || 0), user?.currency, user?.locale)}</span>
+                    <span>{formatCurrency(sale.subtotal || (sale.total - (sale.taxTotal || sale.tax || 0)), user?.currency, user?.locale)}</span>
                 </div>
 
-                {sale.discount > 0 && (
+                {(sale.discountTotal > 0 || sale.discount > 0) && (
                     <div className="flex justify-between text-black">
                         <span>Discount</span>
-                        <span>-{formatCurrency(sale.discount, user?.currency, user?.locale)}</span>
+                        <span>-{formatCurrency(sale.discountTotal || sale.discount, user?.currency, user?.locale)}</span>
                     </div>
                 )}
 

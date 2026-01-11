@@ -370,8 +370,8 @@ export default function POSPage() {
                     lastSale?.items || [],
                     formatCurrency(lastSale?.total, user?.currency, user?.locale),
                     formatCurrency(lastSale?.subtotal, user?.currency, user?.locale),
-                    lastSale?.discount > 0 ? formatCurrency(lastSale?.discount, user?.currency, user?.locale) : undefined,
-                    lastSale?.tax > 0 ? formatCurrency(lastSale?.tax, user?.currency, user?.locale) : undefined
+                    (lastSale?.discountTotal > 0 || lastSale?.discount > 0) ? formatCurrency(lastSale?.discountTotal || lastSale?.discount, user?.currency, user?.locale) : undefined,
+                    (lastSale?.taxTotal > 0 || lastSale?.tax > 0) ? formatCurrency(lastSale?.taxTotal || lastSale?.tax, user?.currency, user?.locale) : undefined
                 );
                 await printerService.print(receipt);
             } catch (e) {
