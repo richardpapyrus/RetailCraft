@@ -17,6 +17,39 @@ export default function CustomersPage() {
     const [totalCustomers, setTotalCustomers] = useState(0);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
+    const [formData, setFormData] = useState({ name: '', phone: '', email: '', isLoyaltyMember: false });
+
+    useEffect(() => {
+        if (!isHydrated) return;
+
+        if (!token) {
+            router.push('/login');
+            return;
+        }
+        loadCustomers(true);
+    }, [token, router, isHydrated, selectedStoreId]);
+
+    const loadCustomers = async (reset = false) => {
+        try {
+            if (reset) setLoading(true);
+            else setLoadingMore(true);
+
+            const skip = reset ? 0 : customers.length;
+            const { data, total } = await DataService.getCustomers(skip, 50, selectedStoreId || undefined);
+
+            if (reset) setCustomers(data);
+            else setCustomers(prev => [...prev, ...data]);
+
+            setTotalCustomers(total);
+            setHasMore(data.length > 0 && (reset ? data.length : customers.length + data.length) < total);
+
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoading(false);
+            setLoadingMore(false);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
