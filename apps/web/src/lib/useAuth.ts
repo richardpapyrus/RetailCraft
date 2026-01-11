@@ -59,6 +59,11 @@ export const useAuth = create<AuthState>()(
                         body: JSON.stringify({ email, password }),
                     });
 
+                    // STRICT VALIDATION: Prevent "Zombie" login
+                    if (!data.user || !data.user.role || data.user.role === 'Unknown') {
+                        throw new Error('User account has no assigned role. Please contact an administrator.');
+                    }
+
                     const isStrictLocation = data.user.role !== 'Administrator' && data.user.role !== 'ADMIN';
                     const initialStoreId = isStrictLocation ? data.user.storeId : null; // Admin defaults to Business Dashboard (null)
 
@@ -94,6 +99,14 @@ export const useAuth = create<AuthState>()(
                 if (user && user.email && token) {
                     try {
                         const freshUser = await fetchClient('/auth/profile', { method: 'POST', body: JSON.stringify({ email: user.email }) });
+
+                        // STRICT VALIDATION
+                        if (!freshUser || !freshUser.id || !freshUser.role || freshUser.role === 'Unknown') {
+                            console.warn('Profile refresh returned invalid user. Forcing logout.');
+                            set({ token: null, user: null, lastActive: 0 });
+                            return;
+                        }
+
                         if (freshUser) {
                             // Re-enforce binding
                             const isStrictLocation = freshUser.role !== 'Administrator' && freshUser.role !== 'ADMIN';

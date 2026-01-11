@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { useAuth, formatCurrency } from '@/lib/useAuth';
@@ -243,56 +243,52 @@ export default function POSPage() {
         }));
     };
 
-    // Helper: Calculation
-    const subtotal = cart.reduce((sum, item) => sum + (Number(item.price) * item.cartQty), 0);
+    // Helper: Calculation (Memoized for Speed)
+    const { subtotal, discountAmount, taxAmount, cartTotal } = useMemo(() => {
+        const sub = cart.reduce((sum, item) => sum + (Number(item.price) * item.cartQty), 0);
+        let disc = 0;
 
-    let discountAmount = 0;
-    if (appliedDiscount) {
-        let eligibleSubtotal = 0;
+        if (appliedDiscount) {
+            let eligibleSubtotal = 0;
+            if (!appliedDiscount.targetType || appliedDiscount.targetType === 'ALL') {
+                eligibleSubtotal = sub;
+            } else {
+                cart.forEach(item => {
+                    let isEligible = false;
+                    if (appliedDiscount.targetType === 'PRODUCT') {
+                        if (appliedDiscount.targetValues?.includes(item.id)) isEligible = true;
+                    } else if (appliedDiscount.targetType === 'CATEGORY') {
+                        if (item.category && appliedDiscount.targetValues?.includes(item.category)) isEligible = true;
+                    }
 
-        if (!appliedDiscount.targetType || appliedDiscount.targetType === 'ALL') {
-            eligibleSubtotal = subtotal;
-        } else {
-            // Filter eligible items
-            cart.forEach(item => {
-                let isEligible = false;
-                if (appliedDiscount.targetType === 'PRODUCT') {
-                    if (appliedDiscount.targetValues?.includes(item.id)) isEligible = true;
-                } else if (appliedDiscount.targetType === 'CATEGORY') {
-                    if (item.category && appliedDiscount.targetValues?.includes(item.category)) isEligible = true;
-                }
+                    if (isEligible) eligibleSubtotal += Number(item.price) * item.cartQty;
+                });
+            }
 
-                if (isEligible) {
-                    eligibleSubtotal += Number(item.price) * item.cartQty;
-                }
-            });
+            if (appliedDiscount.type === 'PERCENTAGE') {
+                disc = eligibleSubtotal * (appliedDiscount.value / 100);
+            } else {
+                disc = Math.min(appliedDiscount.value, eligibleSubtotal);
+            }
         }
 
-        if (appliedDiscount.type === 'PERCENTAGE') {
-            discountAmount = eligibleSubtotal * (appliedDiscount.value / 100);
-        } else {
-            discountAmount = Math.min(appliedDiscount.value, eligibleSubtotal);
+        // Loyalty Discount
+        if (usePoints && pointsToRedeem > 0) {
+            disc += pointsToRedeem * 0.10;
         }
-    }
 
-    // Loyalty Discount (Client-side estimate)
-    if (usePoints && pointsToRedeem > 0) {
-        // 1 Point = $0.10
-        const loyaltyDiscount = pointsToRedeem * 0.10;
-        discountAmount += loyaltyDiscount;
-    }
+        if (disc > sub) disc = sub;
 
-    // Ensure discount doesn't exceed subtotal
-    if (discountAmount > subtotal) discountAmount = subtotal;
+        const taxable = sub - disc;
+        const totalRate = taxes.reduce((sum, t) => sum + Number(t.rate), 0);
+        const tax = taxable * totalRate;
+        const total = taxable + tax;
+
+        return { subtotal: sub, discountAmount: disc, taxAmount: tax, cartTotal: total };
+    }, [cart, appliedDiscount, taxes, usePoints, pointsToRedeem]);
 
     const taxableAmount = subtotal - discountAmount;
-
-    // Calculate Tax (Sum of all active rates applied to taxable amount)
-    // Assumption: Taxes are exclusive and additive
     const totalTaxRate = taxes.reduce((sum, t) => sum + Number(t.rate), 0);
-    const taxAmount = taxableAmount * totalTaxRate;
-
-    const cartTotal = taxableAmount + taxAmount;
 
     // Auto-fill split amount when remaining changes
     useEffect(() => {
