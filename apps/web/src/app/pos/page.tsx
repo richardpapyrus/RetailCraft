@@ -386,6 +386,19 @@ export default function POSPage() {
     };
 
 
+    // Receipt Context: Get ACTUAL store object via API (safer than relying on user object)
+    const [activeStore, setActiveStore] = useState<any>(user?.store);
+
+    useEffect(() => {
+        if (selectedStoreId) {
+            api.stores.list(selectedStoreId).then((res: any) => {
+                if (Array.isArray(res) && res.length > 0) setActiveStore(res[0]);
+                else setActiveStore(user?.store);
+            }).catch(() => setActiveStore(user?.store));
+        } else {
+            setActiveStore(user?.store);
+        }
+    }, [selectedStoreId, user?.store]);
 
     // Verify Store Selection (Global View Lock)
     if (isHydrated && !selectedStoreId) {
@@ -404,21 +417,7 @@ export default function POSPage() {
 
     if (!user || !isHydrated) return <div className="p-8">Loading POS...</div>;
 
-    // Receipt Context: Get ACTUAL store object via API (safer than relying on user object)
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const [activeStore, setActiveStore] = useState<any>(user?.store);
 
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useEffect(() => {
-        if (selectedStoreId) {
-            api.stores.list(selectedStoreId).then((res: any) => {
-                if (Array.isArray(res) && res.length > 0) setActiveStore(res[0]);
-                else setActiveStore(user?.store);
-            }).catch(() => setActiveStore(user?.store));
-        } else {
-            setActiveStore(user?.store);
-        }
-    }, [selectedStoreId, user?.store]);
 
 
     const filteredProducts = products;
