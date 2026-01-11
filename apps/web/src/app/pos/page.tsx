@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { useAuth, formatCurrency } from '@/lib/useAuth';
-import { api, Product } from '@/lib/api';
+import { api, Product, API_URL } from '@/lib/api'; // Import API_URL
 import { printerService, PrinterService } from '@/lib/printer-service';
 import { DataService } from '@/lib/db-service';
 import { Customer } from '@/lib/db';
@@ -1140,36 +1140,40 @@ export default function POSPage() {
                                             if (!supervisorCreds.email || !supervisorCreds.password) return toast.error('Please enter credentials');
                                             setVerifyingSupervisor(true);
                                             try {
-                                                // Verify credentials via direct fetch to avoid global auth state change
-                                                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/login`, {
-                                                    method: 'POST',
-                                                    headers: { 'Content-Type': 'application/json' },
-                                                    body: JSON.stringify(supervisorCreds)
-                                                });
+                                                try {
+                                                    // Verify credentials
+                                                    // We use direct fetch to avoid messing with global auth state
+                                                    // Use API_URL from lib/api to ensure correct environment (Prod/Staging/Dev)
+                                                    console.log("Verifying credentials against:", `${API_URL}/auth/login`);
+                                                    const res = await fetch(`${API_URL}/auth/login`, {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify(supervisorCreds)
+                                                    });
 
-                                                if (!res.ok) throw new Error('Invalid credentials');
+                                                    if (!res.ok) throw new Error('Invalid credentials');
 
-                                                const data = await res.json();
-                                                const role = data.user.role;
-                                                const permissions = data.user.permissions || [];
+                                                    const data = await res.json();
+                                                    const role = data.user.role;
+                                                    const permissions = data.user.permissions || [];
 
-                                                // Check permission
-                                                const authorized = role === 'ADMIN' || role === 'Administrator' || permissions.includes('MANAGE_DISCOUNTS') || permissions.includes('*');
+                                                    // Check permission
+                                                    const authorized = role === 'ADMIN' || role === 'Administrator' || permissions.includes('MANAGE_DISCOUNTS') || permissions.includes('*');
 
-                                                if (authorized) {
-                                                    toast.success(`Override Approved by ${data.user.name}`);
-                                                    setSupervisorMode(false);
-                                                    setManualDiscountInput('0.00'); // Unlock Manual Input
-                                                } else {
-                                                    toast.error('User does not have permission to authorize discounts.');
+                                                    if (authorized) {
+                                                        toast.success(`Override Approved by ${data.user.name}`);
+                                                        setSupervisorMode(false);
+                                                        setManualDiscountInput('0.00'); // Unlock Manual Input
+                                                    } else {
+                                                        toast.error('User does not have permission to authorize discounts.');
+                                                    }
+                                                } catch (e) {
+                                                    console.error(e);
+                                                    toast.error('Authorization Failed');
+                                                } finally {
+                                                    setVerifyingSupervisor(false);
                                                 }
-                                            } catch (e) {
-                                                console.error(e);
-                                                toast.error('Authorization Failed');
-                                            } finally {
-                                                setVerifyingSupervisor(false);
-                                            }
-                                        }}
+                                            }}
                                         disabled={verifyingSupervisor}
                                         className="w-full py-3 bg-black text-white rounded-xl font-bold hover:bg-gray-800 disabled:opacity-50"
                                     >
