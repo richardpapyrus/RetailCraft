@@ -1,0 +1,19 @@
+name: Restart Production
+
+on:
+  workflow_dispatch:
+
+jobs:
+  restart:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/retail-craft
+          chmod 600 ~/.ssh/retail-craft
+          ssh-keyscan -H 165.227.26.131 >> ~/.ssh/known_hosts
+
+      - name: Restart Containers
+        run: |
+          ssh -i ~/.ssh/retail-craft root@165.227.26.131 "cd /root/retail-craft-app/ && docker compose down && docker compose up -d"

@@ -70,7 +70,7 @@ services:
     networks:
       - pos_network_staging
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:4001
+      NEXT_PUBLIC_API_URL: https://staging.retailcraft.com.ng/api
     volumes:
       - ./:/app
       - /app/node_modules
