@@ -245,6 +245,10 @@ export const api = {
             method: 'POST',
             body: JSON.stringify(data),
         }),
+        update: (id: string, data: any) => fetchClient(`/customers/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+        }),
         getSales: (id: string, skip: number, take: number) => fetchClient(`/customers/${id}/sales?skip=${skip}&take=${take}`).then(res => res as { data: any[], total: number }),
     },
     users: {

@@ -16,51 +16,37 @@ export default function CustomersPage() {
     const [hasMore, setHasMore] = useState(true);
     const [totalCustomers, setTotalCustomers] = useState(0);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [formData, setFormData] = useState({ name: '', phone: '', email: '' });
-
-    useEffect(() => {
-        if (!isHydrated) return;
-
-        if (!token) {
-            router.push('/login');
-            return;
-        }
-        loadCustomers(true);
-    }, [token, router, isHydrated, selectedStoreId]);
-
-    const loadCustomers = async (reset = false) => {
-        try {
-            if (reset) setLoading(true);
-            else setLoadingMore(true);
-
-            const skip = reset ? 0 : customers.length;
-            const { data, total } = await DataService.getCustomers(skip, 50, selectedStoreId || undefined);
-
-            if (reset) setCustomers(data);
-            else setCustomers(prev => [...prev, ...data]);
-
-            setTotalCustomers(total);
-            setHasMore(data.length > 0 && (reset ? data.length : customers.length + data.length) < total);
-
-        } catch (e) {
-            console.error(e);
-        } finally {
-            setLoading(false);
-            setLoadingMore(false);
-        }
-    };
+    const [editingId, setEditingId] = useState<string | null>(null);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await DataService.saveCustomer({ ...formData, storeId: selectedStoreId || undefined });
+            if (editingId) {
+                await DataService.updateCustomer(editingId, { ...formData });
+                toast.success("Customer Updated");
+            } else {
+                await DataService.saveCustomer({ ...formData, storeId: selectedStoreId || undefined });
+                toast.success("Customer Saved");
+            }
             setIsModalOpen(false);
-            setFormData({ name: '', phone: '', email: '' });
+            setEditingId(null);
+            setFormData({ name: '', phone: '', email: '', isLoyaltyMember: false } as any);
             loadCustomers(true);
-            toast.success("Customer Saved");
         } catch (error) {
             toast.error("Failed to save customer");
         }
+    };
+
+    const handleEdit = (customer: any, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setFormData({
+            name: customer.name,
+            phone: customer.phone || '',
+            email: customer.email || '',
+            isLoyaltyMember: customer.isLoyaltyMember || false
+        } as any);
+        setEditingId(customer.id);
+        setIsModalOpen(true);
     };
 
     if (!user) return <div>Loading...</div>;
@@ -133,11 +119,19 @@ export default function CustomersPage() {
                                                 </span>
                                             </td>
                                             <td className="p-4">
-                                                {c.id.startsWith('OFFLINE') ? (
-                                                    <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">Unsynced</span>
-                                                ) : (
-                                                    <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Synced</span>
-                                                )}
+                                                <div className="flex items-center justify-between">
+                                                    {c.id.startsWith('OFFLINE') ? (
+                                                        <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">Unsynced</span>
+                                                    ) : (
+                                                        <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Synced</span>
+                                                    )}
+                                                    <button
+                                                        onClick={(e) => handleEdit(c, e)}
+                                                        className="p-1 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))

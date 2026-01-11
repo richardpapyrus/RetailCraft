@@ -274,7 +274,8 @@ export default function POSPage() {
 
         // Loyalty Discount
         if (usePoints && pointsToRedeem > 0) {
-            disc += pointsToRedeem * 0.10;
+            const rate = Number(user?.tenant?.loyaltyRedeemRate) || 0.10;
+            disc += pointsToRedeem * rate;
         }
 
         if (disc > sub) disc = sub;
@@ -867,10 +868,10 @@ export default function POSPage() {
                                                     const checked = e.target.checked;
                                                     setUsePoints(checked);
                                                     if (checked) {
-                                                        // Max Redeem: Balance OR enough to cover subtotal??? 
-                                                        // For now max is Balance.
-                                                        // Wait, we need to know the max useful points (Subtotal / 0.10)
-                                                        const maxUseful = Math.ceil(subtotal / 0.10);
+                                                        const rate = Number(user?.tenant?.loyaltyRedeemRate) || 0.10;
+                                                        // Calculate val: points * rate
+                                                        // Limit by subtotal
+                                                        const maxUseful = Math.ceil(subtotal / rate);
                                                         setPointsToRedeem(Math.min(selectedCustomer.loyaltyPoints, maxUseful));
                                                     } else {
                                                         setPointsToRedeem(0);
@@ -883,19 +884,19 @@ export default function POSPage() {
                                                 className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${usePoints ? 'bg-green-400' : 'bg-gray-300'}`}
                                             ></label>
                                         </div>
-                                        <span className="text-sm font-medium text-gray-700">Redeem Points</span>
+                                        <span className="text-sm font-medium text-gray-700">Redeem Points (Rate: {formatCurrency(Number(user?.tenant?.loyaltyRedeemRate) || 0.10)})</span>
                                     </div>
 
                                     {usePoints && (
                                         <div className="mt-3">
                                             <div className="flex justify-between items-center text-xs text-gray-500 mb-1">
                                                 <span>Points to Redeem</span>
-                                                <span className="font-bold text-green-600">-${(pointsToRedeem * 0.10).toFixed(2)}</span>
+                                                <span className="font-bold text-green-600">-${(pointsToRedeem * (Number(user?.tenant?.loyaltyRedeemRate) || 0.10)).toFixed(2)}</span>
                                             </div>
                                             <input
                                                 type="range"
                                                 min="0"
-                                                max={Math.min(selectedCustomer.loyaltyPoints, Math.ceil(subtotal / 0.10))}
+                                                max={Math.min(selectedCustomer.loyaltyPoints, Math.ceil(subtotal / (Number(user?.tenant?.loyaltyRedeemRate) || 0.10)))}
                                                 value={pointsToRedeem}
                                                 onChange={(e) => setPointsToRedeem(parseInt(e.target.value))}
                                                 className="w-full h-2 bg-indigo-200 rounded-lg appearance-none cursor-pointer"
