@@ -28,6 +28,12 @@ model Tenant {
   roles     Role[]
   tills     Till[]
   purchaseOrders PurchaseOrder[]
+  
+  // Loyalty Settings
+  loyaltyEarnRate   Decimal  @default(1.0)  // Points per Currency Unit
+  loyaltyRedeemRate Decimal  @default(0.10) // Value per Point
+  loyaltyExpiryDays Int      @default(365)
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

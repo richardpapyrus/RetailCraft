@@ -362,6 +362,9 @@ export const api = {
             if (tillId) params.append('tillId', tillId);
             return fetchClient(`/till-reports/inventory?${params.toString()}`).then(res => res as any[]);
         }
+    },
+    tenants: {
+        update: (id: string, data: any) => fetchClient(`/tenants/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     }
 };
 

@@ -16,7 +16,8 @@ import {
     LogOut,
     Shield,
     Pin,
-    PinOff
+    PinOff,
+    Award
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { StoreSelector } from './StoreSelector';

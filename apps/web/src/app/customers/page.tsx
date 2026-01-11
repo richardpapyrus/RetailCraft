@@ -1,5 +1,6 @@
 "use client";
 import { useRouter } from 'next/navigation';
+import { Award } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { DataService } from '@/lib/db-service';
 import { Customer } from '@/lib/db';
@@ -73,18 +74,27 @@ export default function CustomersPage() {
                 <div className="max-w-4xl mx-auto">
                     <div className="flex justify-between items-center mb-6">
                         <h1 className="text-2xl font-bold text-gray-800">Customers</h1>
-                        <button
-                            onClick={() => {
-                                if (!selectedStoreId) {
-                                    toast.error("Please select a store to create a customer.");
-                                    return;
-                                }
-                                setIsModalOpen(true);
-                            }}
-                            className={`px-4 py-2 rounded transition shadow-sm ${!selectedStoreId ? 'bg-gray-300 cursor-not-allowed text-gray-500' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
-                        >
-                            + Add Customer
-                        </button>
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={() => router.push('/loyalty')}
+                                className="px-4 py-2 rounded bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 flex items-center gap-2 shadow-sm font-medium"
+                            >
+                                <Award size={18} className="text-indigo-600" />
+                                Loyalty Program
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (!selectedStoreId) {
+                                        toast.error("Please select a store to create a customer.");
+                                        return;
+                                    }
+                                    setIsModalOpen(true);
+                                }}
+                                className={`px-4 py-2 rounded transition shadow-sm ${!selectedStoreId ? 'bg-gray-300 cursor-not-allowed text-gray-500' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+                            >
+                                + Add Customer
+                            </button>
+                        </div>
                     </div>
 
                     <div className="bg-white rounded-lg shadow overflow-hidden">

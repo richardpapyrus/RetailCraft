@@ -160,6 +160,13 @@ export class SalesService {
         }
       }
 
+      // Fetch Tenant Loyalty Settings
+      const tenant = await tx.tenant.findUnique({
+        where: { id: tenantId }
+      });
+      const earnRate = Number(tenant?.loyaltyEarnRate) || 1.0;
+      const redeemRate = Number(tenant?.loyaltyRedeemRate) || 0.10;
+
       // Loyalty Redemption
       let pointsUsed = 0;
       if (redeemPoints && redeemPoints > 0) {
@@ -172,8 +179,7 @@ export class SalesService {
         if (customer.loyaltyPoints < redeemPoints)
           throw new BadRequestException("Insufficient loyalty points");
 
-        const pointValue = 0.1;
-        const redemptionValue = redeemPoints * pointValue;
+        const redemptionValue = redeemPoints * redeemRate;
 
         discountAmount += redemptionValue;
         pointsUsed = redeemPoints;
@@ -191,7 +197,7 @@ export class SalesService {
       // Loyalty Accrual
       let pointsEarned = 0;
       if (customerId) {
-        pointsEarned = Math.floor(taxableAmount);
+        pointsEarned = Math.floor(taxableAmount * earnRate);
         if (pointsEarned > 0) {
           await tx.customer.update({
             where: { id: customerId },
