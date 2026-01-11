@@ -15,7 +15,8 @@ const DEFAULT_ROLES = {
         description: 'Manage store operations, products, and inventory',
         permissions: [
             'MANAGE_PRODUCTS', 'MANAGE_INVENTORY', 'MANAGE_CUSTOMERS',
-            'MANAGE_SUPPLIERS', 'VIEW_SALES', 'MANAGE_TILLS', 'VIEW_REPORTS', 'VIEW_TILL_REPORTS'
+            'MANAGE_SUPPLIERS', 'VIEW_SALES', 'MANAGE_TILLS', 'VIEW_REPORTS', 'VIEW_TILL_REPORTS',
+            'MANAGE_DISCOUNTS'
         ],
         isSystem: true
     },

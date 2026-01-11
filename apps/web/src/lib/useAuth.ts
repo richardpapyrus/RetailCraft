@@ -37,6 +37,7 @@ interface AuthState {
     logout: () => void;
     updateActivity: () => void;
     refreshProfile: () => Promise<void>;
+    checkInactivity: (limit?: number) => boolean;
     hasPermission: (permission: string) => boolean;
     // Multi-Store Context (Global)
     selectedStoreId: string | null;
@@ -106,10 +107,19 @@ export const useAuth = create<AuthState>()(
                             }
                         }
                     } catch (e) {
-                        console.error('Failed to refresh profile', e);
-                        // If fails (e.g. 401), maybe logout? For now just log.
+                        console.error('Failed to refresh profile, forcing logout to prevent zombie state', e);
+                        // CRITICAL FIX: If profile refresh fails (token expired/invalid), wipe the session.
+                        set({ token: null, user: null, lastActive: 0 });
                     }
                 }
+            },
+            checkInactivity: (limit = 15 * 60 * 1000) => {
+                const { lastActive } = get();
+                if (Date.now() - lastActive > limit) {
+                    get().logout();
+                    return true;
+                }
+                return false;
             },
             hasPermission: (permission: string) => {
                 const { user } = get();
