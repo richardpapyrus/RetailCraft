@@ -197,12 +197,21 @@ export class SalesService {
       // Loyalty Accrual
       let pointsEarned = 0;
       if (customerId) {
-        pointsEarned = Math.floor(taxableAmount * earnRate);
-        if (pointsEarned > 0) {
-          await tx.customer.update({
-            where: { id: customerId },
-            data: { loyaltyPoints: { increment: pointsEarned } },
-          });
+        // Re-fetch customer to check membership status if not already known? 
+        // We fetched customer earlier ONLY if redeeming.
+        // If not redeeming, we might not have 'customer' variable in scope or it might be partial.
+        // Actually, we haven't fetched customer if redeemPoints was 0.
+
+        const customerForAccrual = await tx.customer.findUnique({ where: { id: customerId } });
+
+        if (customerForAccrual && customerForAccrual.isLoyaltyMember) {
+          pointsEarned = Math.floor(taxableAmount * earnRate);
+          if (pointsEarned > 0) {
+            await tx.customer.update({
+              where: { id: customerId },
+              data: { loyaltyPoints: { increment: pointsEarned } },
+            });
+          }
         }
       }
 

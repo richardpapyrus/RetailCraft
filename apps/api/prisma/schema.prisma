@@ -288,6 +288,7 @@ model Customer {
   store       Store     @relation(fields: [storeId], references: [id])
   
   loyaltyPoints Int      @default(0)
+  isLoyaltyMember Boolean @default(false)
   
   sales     Sale[]
   

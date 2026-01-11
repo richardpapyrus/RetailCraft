@@ -189,11 +189,20 @@ export default function CustomersPage() {
                             <div className="mb-4">
                                 <label className="block text-sm font-medium mb-1">Email</label>
                                 <input
-                                    type="email"
-                                    className="w-full p-2 border rounded"
-                                    value={formData.email}
                                     onChange={e => setFormData({ ...formData, email: e.target.value })}
                                 />
+                            </div>
+                            <div className="mb-6 flex items-center">
+                                <input
+                                    type="checkbox"
+                                    id="loyalty"
+                                    className="w-5 h-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                                    checked={(formData as any).isLoyaltyMember || false}
+                                    onChange={e => setFormData({ ...formData, isLoyaltyMember: e.target.checked } as any)}
+                                />
+                                <label htmlFor="loyalty" className="ml-2 block text-sm font-bold text-gray-700">
+                                    Enroll in Loyalty Program
+                                </label>
                             </div>
                             <div className="flex justify-end gap-2">
                                 <button

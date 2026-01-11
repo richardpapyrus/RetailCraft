@@ -12,7 +12,7 @@ import OpenTillModal from '@/components/tills/OpenTillModal';
 import CloseTillModal from '@/components/tills/CloseTillModal';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
-import { Package, AlertCircle } from 'lucide-react';
+import { Package, AlertCircle, Award, User, Phone } from 'lucide-react';
 import ReceiptTemplate from '@/components/pos/ReceiptTemplate';
 
 interface CartItem extends Product {
@@ -722,28 +722,35 @@ export default function POSPage() {
                                 </div>
                                 <div className="flex-1 overflow-y-auto px-4 space-y-2 pb-4">
                                     {filteredCustomers.map(customer => (
-                                        <div
+                                        <button
                                             key={customer.id}
                                             onClick={() => setSelectedCustomer(customer)}
-                                            className={`p-4 rounded-2xl cursor-pointer transition border-2 ${selectedCustomer?.id === customer.id
-                                                ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-200 transform scale-[1.02]'
-                                                : 'bg-white border-transparent hover:border-gray-100 hover:bg-gray-50'
-                                                }`}
+                                            className={`w-full flex items-center p-2 border hover:bg-indigo-50 hover:border-indigo-200 rounded-lg transition-all group text-left h-14 ${selectedCustomer?.id === customer.id ? 'bg-indigo-600 border-indigo-600 hover:bg-indigo-700 text-white' : 'bg-white border-gray-100'}`}
                                         >
-                                            <div className="flex justify-between items-center">
-                                                <div>
-                                                    <div className={`font-bold ${selectedCustomer?.id === customer.id ? 'text-white' : 'text-gray-900'}`}>{customer.name}</div>
-                                                    <div className={`text-xs font-medium mt-1 ${selectedCustomer?.id === customer.id ? 'text-indigo-200' : 'text-gray-400'}`}>
-                                                        {customer.code} • {customer.phone || 'No Phone'}
-                                                    </div>
-                                                </div>
-                                                {selectedCustomer?.id === customer.id && (
-                                                    <div className="bg-white text-indigo-600 p-1 rounded-full w-6 h-6 flex items-center justify-center">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                                                    </div>
-                                                )}
+                                            <div className={`w-10 h-10 rounded flex items-center justify-center mr-3 flex-shrink-0 transition-colors ${selectedCustomer?.id === customer.id ? 'bg-white/20 text-white' : 'bg-gray-50 text-gray-400 group-hover:bg-indigo-100 group-hover:text-indigo-600'}`}>
+                                                <User className="w-5 h-5" />
                                             </div>
-                                        </div>
+                                            <div className="flex-1 min-w-0 pr-3">
+                                                <div className="flex items-center justify-between">
+                                                    <span className={`font-semibold text-sm truncate ${selectedCustomer?.id === customer.id ? 'text-white' : 'text-gray-800'}`}>{customer.name}</span>
+                                                    {(customer as any).isLoyaltyMember && (
+                                                        <div className={`flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${selectedCustomer?.id === customer.id ? 'bg-white/20 text-white' : 'bg-indigo-100 text-indigo-700'}`}>
+                                                            <Award size={10} />
+                                                            <span>{(customer as any).loyaltyPoints || 0}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="flex items-center justify-between mt-0.5">
+                                                    <div className={`flex items-center gap-1 text-[10px] truncate ${selectedCustomer?.id === customer.id ? 'text-indigo-200' : 'text-gray-400'}`}>
+                                                        <Phone size={10} />
+                                                        <span>{customer.phone || 'No Phone'}</span>
+                                                    </div>
+                                                    {selectedCustomer?.id === customer.id && (
+                                                        <span className="text-[10px] font-bold bg-white text-indigo-600 px-1.5 rounded">Selected</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </button>
                                     ))}
                                     {hasMoreCustomers && (
                                         <div className="text-center pt-2 pb-4">
