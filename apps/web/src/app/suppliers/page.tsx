@@ -93,8 +93,14 @@ export default function SuppliersPage() {
                     <div className="flex justify-between items-center mb-6">
                         <h1 className="text-2xl font-bold text-gray-800">Suppliers</h1>
                         <button
-                            onClick={openCreate}
-                            className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
+                            onClick={() => {
+                                if (!selectedStoreId) {
+                                    toast.error("Please select a store to create a supplier.");
+                                    return;
+                                }
+                                openCreate();
+                            }}
+                            className={`px-4 py-2 rounded transition shadow-sm ${!selectedStoreId ? 'bg-gray-300 cursor-not-allowed text-gray-500' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
                         >
                             + Add Supplier
                         </button>
@@ -108,27 +114,29 @@ export default function SuppliersPage() {
                                     <th className="p-3 text-left">Contact</th>
                                     <th className="p-3 text-left">Phone</th>
                                     <th className="p-3 text-left">Email</th>
-                                    <th className="p-3 text-right">Actions</th>
+                                    {selectedStoreId && <th className="p-3 text-right">Actions</th>}
                                 </tr>
                             </thead>
                             <tbody className="divide-y">
                                 {suppliers.length === 0 ? (
                                     <tr>
-                                        <td colSpan={5} className="p-8 text-center text-gray-500">
+                                        <td colSpan={selectedStoreId ? 5 : 4} className="p-8 text-center text-gray-500">
                                             No suppliers found.
                                         </td>
                                     </tr>
                                 ) : (
                                     suppliers.map(s => (
-                                        <tr key={s.id} className="hover:bg-gray-50">
-                                            <td className="p-3 font-bold">{s.name}</td>
+                                        <tr key={s.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => router.push(`/suppliers/${s.id}`)}>
+                                            <td className="p-3 font-bold text-indigo-600">{s.name}</td>
                                             <td className="p-3">{s.contact || '-'}</td>
                                             <td className="p-3">{s.phone || '-'}</td>
                                             <td className="p-3 text-gray-600">{s.email || '-'}</td>
-                                            <td className="p-3 text-right space-x-2">
-                                                <button onClick={() => handleEdit(s)} className="text-indigo-600 hover:text-indigo-800">Edit</button>
-                                                <button onClick={() => handleDelete(s.id)} className="text-red-600 hover:text-red-800">Delete</button>
-                                            </td>
+                                            {selectedStoreId && (
+                                                <td className="p-3 text-right space-x-2" onClick={e => e.stopPropagation()}>
+                                                    <button onClick={() => handleEdit(s)} className="text-gray-600 hover:text-gray-800">Edit</button>
+                                                    <button onClick={() => handleDelete(s.id)} className="text-red-600 hover:text-red-800">Delete</button>
+                                                </td>
+                                            )}
                                         </tr>
                                     ))
                                 )}

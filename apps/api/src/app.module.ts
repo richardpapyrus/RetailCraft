@@ -22,9 +22,13 @@ import { PrismaModule } from "./prisma/prisma.module";
 import { BusinessModule } from "./business/business.module";
 // import { ServeStaticModule } from '@nestjs/serve-static';
 import { UploadsModule } from "./uploads/uploads.module";
+import { PurchaseOrdersModule } from "./purchase-orders/purchase-orders.module";
+import { GrnModule } from "./grn/grn.module";
+import { TillReportsModule } from "./till-reports/till-reports.module";
 import { join } from 'path';
 
 import { LoggerMiddleware } from "./common/middleware/logger.middleware";
+import { ApiPrefixMiddleware } from "./common/middleware/api-prefix.middleware";
 
 @Module({
   imports: [
@@ -49,7 +53,10 @@ import { LoggerMiddleware } from "./common/middleware/logger.middleware";
     BusinessModule,
     BusinessModule,
     UploadsModule,
-    // ServeStaticModule removed in favor of manual controller for better debugging
+    PurchaseOrdersModule,
+    PurchaseOrdersModule,
+    GrnModule,
+    TillReportsModule,
   ],
   controllers: [],
   providers: [],
@@ -57,5 +64,6 @@ import { LoggerMiddleware } from "./common/middleware/logger.middleware";
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(LoggerMiddleware).forRoutes("*");
+    consumer.apply(ApiPrefixMiddleware).forRoutes("*"); // Handle /api prefix removal
   }
 }

@@ -1,5 +1,6 @@
 import React from 'react';
 import { formatCurrency } from '@/lib/useAuth';
+import { API_URL } from '@/lib/api';
 
 interface ReceiptTemplateProps {
     sale: any;
@@ -16,16 +17,21 @@ export default function ReceiptTemplate({ sale, user, store: propStore }: Receip
     const siteName = user?.tenant?.name || user?.tenantName || store.name || 'My Store';
 
     // Receipt width: 80mm is standard thermal paper width.
-    // Tailwind 'print:block' ensures it only shows when printing.
     return (
-        <div id="receipt-print-area" className="hidden print:block w-[78mm] bg-white text-black font-mono text-[12px] leading-tight p-2">
+        <div id="receipt-print-area" className="hidden print:block bg-white text-black font-mono text-[11px] leading-tight">
 
             {/* --- HEADER --- */}
             <div className="text-center mb-4">
-                {store.logoUrl && (
+                {/* Logo Logic: Prefer Tenant Logo, then Store Logo */}
+                {(user?.tenantLogo || store.logoUrl) && (
                     <div className="flex justify-center mb-3">
-                        {/* Ensure image is black/white friendly or good contrast */}
-                        <img src={store.logoUrl} alt="Logo" className="max-h-12 object-contain" />
+                        {/* Grayscale & Contrast for Thermal Printing */}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                            src={(user?.tenantLogo || store.logoUrl).startsWith('http') ? (user?.tenantLogo || store.logoUrl) : `${API_URL}${user?.tenantLogo || store.logoUrl}`}
+                            alt="Logo"
+                            className="max-h-12 object-contain grayscale contrast-125 brightness-90"
+                        />
                     </div>
                 )}
 

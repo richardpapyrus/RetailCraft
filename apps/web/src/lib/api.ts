@@ -7,8 +7,9 @@ if (typeof window !== 'undefined') {
 
     // Fallback logic ONLY if Env Var is missing
     if (hostname.includes('retailcraft.com.ng')) {
-        // Guessing production API - but allow override via Env Var
-        computedUrl = 'https://api.retailcraft.com.ng';
+        // Production/Staging use path-based routing (Nginx /api proxy)
+        // This avoids CORS issues by keeping requests Same-Origin
+        computedUrl = '/api';
     } else if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
         // LAN / IP Access (Assume Backend is on same host, port 4000)
         computedUrl = `${protocol}//${hostname}:4000`;
@@ -167,8 +168,16 @@ export const api = {
             return fetchClient(`/suppliers?${params.toString()}`).then(res => res as any[]);
         },
         create: (data: any) => fetchClient('/suppliers', { method: 'POST', body: JSON.stringify(data) }),
+        get: (id: string) => fetchClient(`/suppliers/${id}`).then(res => res as any),
         update: (id: string, data: any) => fetchClient(`/suppliers/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
         delete: (id: string) => fetchClient(`/suppliers/${id}`, { method: 'DELETE' }),
+        addProduct: (id: string, data: any) => fetchClient(`/suppliers/${id}/products`, { method: 'POST', body: JSON.stringify(data) }),
+        removeProduct: (id: string, productId: string) => fetchClient(`/suppliers/${id}/products/${productId}`, { method: 'DELETE' }),
+        getReorderItems: (id: string, storeId?: string) => {
+            const params = new URLSearchParams();
+            if (storeId) params.append('storeId', storeId);
+            return fetchClient(`/suppliers/${id}/reorder-items?${params.toString()}`).then(res => res as any[]);
+        }
     },
     inventory: {
         adjust: (productId: string, quantity: number, reason: string, storeId?: string) =>
@@ -311,6 +320,48 @@ export const api = {
         update: (id: string, data: Partial<Role>) => fetchClient(`/roles/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
         delete: (id: string) => fetchClient(`/roles/${id}`, { method: 'DELETE' }),
         getPermissions: () => fetchClient('/roles/permissions').then(res => res as PermissionGroup[]),
+    },
+    purchaseOrders: {
+        list: (status?: string, storeId?: string) => {
+            const params = new URLSearchParams();
+            if (status) params.append('status', status);
+            if (storeId) params.append('storeId', storeId);
+            return fetchClient(`/purchase-orders?${params.toString()}`).then(res => res as any[]);
+        },
+        create: (data: { supplierId: string; storeId?: string; items: { productId: string; quantity: number; unitCost: number }[]; notes?: string }) => fetchClient('/purchase-orders', { method: 'POST', body: JSON.stringify(data) }),
+        get: (id: string) => fetchClient(`/purchase-orders/${id}`).then(res => res as any),
+        updateStatus: (id: string, status: string) => fetchClient(`/purchase-orders/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
+    },
+    grn: {
+        list: (storeId?: string) => {
+            const params = new URLSearchParams();
+            if (storeId) params.append('storeId', storeId);
+            return fetchClient(`/grn?${params.toString()}`).then(res => res as any[]);
+        },
+        receive: (data: { poId: string; storeId?: string; items: { productId: string; quantityReceived: number; batchNumber?: string; expiryDate?: string }[]; notes?: string }) => fetchClient('/grn', { method: 'POST', body: JSON.stringify(data) }),
+    },
+    tillReports: {
+        getDashboard: (from: string, to: string, tillId?: string) => {
+            const params = new URLSearchParams();
+            if (from) params.append('from', from);
+            if (to) params.append('to', to);
+            if (tillId) params.append('tillId', tillId);
+            return fetchClient(`/till-reports/dashboard?${params.toString()}`).then(res => res as any);
+        },
+        getExceptions: (from: string, to: string, tillId?: string) => {
+            const params = new URLSearchParams();
+            if (from) params.append('from', from);
+            if (to) params.append('to', to);
+            if (tillId) params.append('tillId', tillId);
+            return fetchClient(`/till-reports/exceptions?${params.toString()}`).then(res => res as any);
+        },
+        getInventory: (from: string, to: string, tillId?: string) => {
+            const params = new URLSearchParams();
+            if (from) params.append('from', from);
+            if (to) params.append('to', to);
+            if (tillId) params.append('tillId', tillId);
+            return fetchClient(`/till-reports/inventory?${params.toString()}`).then(res => res as any[]);
+        }
     }
 };
 

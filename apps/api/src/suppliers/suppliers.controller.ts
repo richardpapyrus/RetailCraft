@@ -28,6 +28,10 @@ export class SuppliersController {
       targetStoreId = req.user.storeId;
     }
 
+    if (!targetStoreId) {
+      throw new Error("Store Context is required to create a Supplier. Global suppliers are not allowed.");
+    }
+
     return this.suppliersService.create({
       ...body,
       tenantId: req.user.tenantId,
@@ -58,6 +62,28 @@ export class SuppliersController {
 
   @Delete(":id")
   remove(@Param("id") id: string, @Request() req) {
+    // TODO: Check permissions or if used in POs
     return this.suppliersService.remove(id);
+  }
+
+  @Post(":id/products")
+  addProduct(
+    @Param("id") id: string,
+    @Body() body: { productId: string, supplierSku?: string, lastCost: number, isPreferred?: boolean },
+    @Request() req
+  ) {
+    return this.suppliersService.addProduct(id, body.productId, body);
+  }
+
+  @Delete(":id/products/:productId")
+  removeProduct(@Param("id") id: string, @Param("productId") productId: string) {
+    return this.suppliersService.removeProduct(id, productId);
+  }
+
+  @Get(":id/reorder-items")
+  getReorderItems(@Param("id") id: string, @Query("storeId") storeId: string, @Request() req) {
+    const targetStore = storeId || req.user.storeId;
+    if (!targetStore) throw new Error("Store Context Required");
+    return this.suppliersService.findReorderItems(id, targetStore);
   }
 }

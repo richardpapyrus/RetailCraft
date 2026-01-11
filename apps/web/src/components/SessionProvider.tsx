@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/useAuth';
 
-const INACTIVITY_LIMIT = 30 * 60 * 1000; // 30 minutes
+const INACTIVITY_LIMIT = 15 * 60 * 1000; // 15 minutes
 const CHECK_INTERVAL = 60 * 1000; // Check every minute
 const ACTIVITY_THROTTLE = 30 * 1000; // throttle updates to every 30s
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {
-    const { user, lastActive, logout, updateActivity } = useAuth();
+    const { user, lastActive, logout, updateActivity, checkInactivity } = useAuth();
+    const router = useRouter(); // Import this
     // Using a ref to track throttle without re-rendering or depending on store state constantly
     const lastUpdate = useRef(Date.now());
 
@@ -17,26 +19,20 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         if (!user) return;
 
         const interval = setInterval(() => {
-            const now = Date.now();
-            const timeSinceActive = now - useAuth.getState().lastActive; // Read fresh from state
-
-            if (timeSinceActive > INACTIVITY_LIMIT) {
+            if (checkInactivity(INACTIVITY_LIMIT)) {
                 console.log("Session timed out due to inactivity");
-                logout();
+                router.push('/login');
             }
         }, CHECK_INTERVAL);
 
         return () => clearInterval(interval);
-    }, [user, logout]);
+    }, [user, checkInactivity, router]);
 
-    // 2. Initial check on mount (in case they reload page after 30m)
+    // 2. Initial check on mount (in case they reload page after 15m)
     useEffect(() => {
         if (user) {
-            const now = Date.now();
-            // Important: user might be stale from hydration, use getState to be safe or rely on prop
-            // but prop is fine in useEffect
-            if (now - lastActive > INACTIVITY_LIMIT) {
-                logout();
+            if (checkInactivity(INACTIVITY_LIMIT)) {
+                router.push('/login');
             }
         }
     }, []);

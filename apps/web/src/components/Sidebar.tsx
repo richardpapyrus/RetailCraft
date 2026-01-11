@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/useAuth';
+import { API_URL } from '@/lib/api';
 import {
     LayoutDashboard,
     ShoppingCart,
@@ -106,7 +107,7 @@ export function Sidebar() {
 
                         <div className="flex items-center gap-2">
                             {user?.tenantLogo && (
-                                <img src={user.tenantLogo} alt="Biz" className="w-6 h-6 object-contain rounded-sm" />
+                                <img src={user.tenantLogo.startsWith('http') ? user.tenantLogo : `${API_URL}${user.tenantLogo}`} alt="Biz" className="w-6 h-6 object-contain rounded-sm" />
                             )}
                             <h3 className="font-bold text-sm leading-tight truncate"
                                 style={{ color: user?.tenantBrandColor || '#1f2937' }}>

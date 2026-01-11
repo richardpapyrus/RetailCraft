@@ -37,10 +37,14 @@ export class CustomersController {
     // Verify storeId is not passed twice (as string and as relation)
     const { storeId: _s, ...rest } = createCustomerDto as any;
 
+    if (!targetStoreId) {
+      throw new Error("Store Context is required to create a Customer. Global customers are not allowed.");
+    }
+
     return this.customersService.create({
       ...rest,
       tenant: { connect: { id: req.user.tenantId } },
-      store: targetStoreId ? { connect: { id: targetStoreId } } : undefined,
+      store: { connect: { id: targetStoreId } }, // Strict Connect
     });
   }
 

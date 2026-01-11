@@ -74,8 +74,14 @@ export default function CustomersPage() {
                     <div className="flex justify-between items-center mb-6">
                         <h1 className="text-2xl font-bold text-gray-800">Customers</h1>
                         <button
-                            onClick={() => setIsModalOpen(true)}
-                            className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
+                            onClick={() => {
+                                if (!selectedStoreId) {
+                                    toast.error("Please select a store to create a customer.");
+                                    return;
+                                }
+                                setIsModalOpen(true);
+                            }}
+                            className={`px-4 py-2 rounded transition shadow-sm ${!selectedStoreId ? 'bg-gray-300 cursor-not-allowed text-gray-500' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
                         >
                             + Add Customer
                         </button>

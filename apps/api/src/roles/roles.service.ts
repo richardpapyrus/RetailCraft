@@ -8,9 +8,10 @@ import { PERMISSION_GROUPS } from "../common/constants/permissions";
 
 @Injectable()
 export class RolesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   getAvailablePermissions() {
+    // Return all available permission groups
     return PERMISSION_GROUPS;
   }
 
@@ -54,9 +55,15 @@ export class RolesService {
       throw new BadRequestException("Cannot rename system roles");
     }
 
+    const { name, description, permissions } = data;
+
     return this.prisma.role.update({
       where: { id },
-      data,
+      data: {
+        name,
+        description,
+        permissions
+      },
     });
   }
 

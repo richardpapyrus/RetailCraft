@@ -37,6 +37,7 @@ interface AuthState {
     logout: () => void;
     updateActivity: () => void;
     refreshProfile: () => Promise<void>;
+    checkInactivity: (limit?: number) => boolean;
     hasPermission: (permission: string) => boolean;
     // Multi-Store Context (Global)
     selectedStoreId: string | null;
@@ -57,6 +58,11 @@ export const useAuth = create<AuthState>()(
                         method: 'POST',
                         body: JSON.stringify({ email, password }),
                     });
+
+                    // STRICT VALIDATION: Prevent "Zombie" login
+                    if (!data.user || !data.user.role || data.user.role === 'Unknown') {
+                        throw new Error('User account has no assigned role. Please contact an administrator.');
+                    }
 
                     const isStrictLocation = data.user.role !== 'Administrator' && data.user.role !== 'ADMIN';
                     const initialStoreId = isStrictLocation ? data.user.storeId : null; // Admin defaults to Business Dashboard (null)
@@ -93,6 +99,14 @@ export const useAuth = create<AuthState>()(
                 if (user && user.email && token) {
                     try {
                         const freshUser = await fetchClient('/auth/profile', { method: 'POST', body: JSON.stringify({ email: user.email }) });
+
+                        // STRICT VALIDATION
+                        if (!freshUser || !freshUser.id || !freshUser.role || freshUser.role === 'Unknown') {
+                            console.warn('Profile refresh returned invalid user. Forcing logout.');
+                            set({ token: null, user: null, lastActive: 0 });
+                            return;
+                        }
+
                         if (freshUser) {
                             // Re-enforce binding
                             const isStrictLocation = freshUser.role !== 'Administrator' && freshUser.role !== 'ADMIN';
@@ -106,10 +120,19 @@ export const useAuth = create<AuthState>()(
                             }
                         }
                     } catch (e) {
-                        console.error('Failed to refresh profile', e);
-                        // If fails (e.g. 401), maybe logout? For now just log.
+                        console.error('Failed to refresh profile, forcing logout to prevent zombie state', e);
+                        // CRITICAL FIX: If profile refresh fails (token expired/invalid), wipe the session.
+                        set({ token: null, user: null, lastActive: 0 });
                     }
                 }
+            },
+            checkInactivity: (limit = 15 * 60 * 1000) => {
+                const { lastActive } = get();
+                if (Date.now() - lastActive > limit) {
+                    get().logout();
+                    return true;
+                }
+                return false;
             },
             hasPermission: (permission: string) => {
                 const { user } = get();

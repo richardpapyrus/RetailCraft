@@ -1,0 +1,83 @@
+services:
+  staging_postgres:
+    image: postgres:15-alpine
+    container_name: pos_postgres_staging
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: pos_db_staging
+    restart: always
+    volumes:
+      - ./docker/postgres_staging:/var/lib/postgresql/data
+    networks:
+      - pos_network_staging
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U admin -d pos_db_staging" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  staging_redis:
+    image: redis:7-alpine
+    container_name: pos_redis_staging
+    ports:
+      - "6380:6379"
+    restart: always
+    networks:
+      - pos_network_staging
+
+  staging_api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: pos_api_staging
+    ports:
+      - "4001:4000"
+    restart: always
+    depends_on:
+      staging_postgres:
+        condition: service_healthy
+      staging_redis:
+        condition: service_started
+    networks:
+      - pos_network_staging
+    environment:
+      DATABASE_URL: postgresql://admin:password@staging_postgres:5432/pos_db_staging
+      APP_URL: https://staging.retailcraft.com.ng
+      API_URL: https://staging.retailcraft.com.ng/api
+      PORT: 4000
+    volumes:
+      - ./:/app
+      - /app/node_modules
+      - /app/apps/api/node_modules
+      - /app/apps/web/node_modules
+      - /app/apps/api/dist
+      - ./uploads_staging:/app/apps/api/uploads
+
+  staging_web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: pos_web_staging
+    ports:
+      - "3001:3000"
+    restart: always
+    depends_on:
+      staging_api:
+        condition: service_started
+    networks:
+      - pos_network_staging
+    environment:
+      NEXT_PUBLIC_API_URL: https://staging.retailcraft.com.ng/api
+    volumes:
+      - ./:/app
+      - /app/node_modules
+      - /app/apps/web/node_modules
+      - /app/apps/api/node_modules
+      - /app/apps/web/.next
+
+networks:
+  pos_network_staging:
+    driver: bridge

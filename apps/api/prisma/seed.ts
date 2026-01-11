@@ -80,7 +80,25 @@ async function main() {
             tenantId: tenant.id,
             storeId: store.id
         }
+
     });
+
+    // 5. Create "Unspecified" System Supplier
+    await prisma.supplier.upsert({
+        where: { id: 'unspecified-supplier' }, // Fixed ID handling? Supplier ID is uuid, but we can try to force one or findFirst
+        // Actually ID field is string @id @default(uuid()). We can supply a string.
+        update: { isSystem: true }, // Ensure system flag is set if exists
+        create: {
+            id: 'unspecified-supplier',
+            name: 'Unspecified',
+            tenantId: tenant.id,
+            isSystem: true,
+            email: 'system@retailcraft.com',
+            phone: 'N/A',
+            // storeId is optional, global
+        }
+    });
+    console.log('Ensure Supplier: Unspecified');
 
     // 5. Enrichment: Run for ALL Tenants to ensure user sees data regardless of login
 
@@ -94,7 +112,7 @@ async function main() {
         "Fresh Picks", "Metro Wholesalers", "Standard Supply", "Rapid Logistics", "Value Traders"
     ];
     const allTenants = await prisma.tenant.findMany();
-
+    
     for (const t of allTenants) {
         // ... (truncated for cleanliness) ...
     }

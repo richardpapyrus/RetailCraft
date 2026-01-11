@@ -265,6 +265,14 @@ export default function ProductsPage() {
                         >
                             ↻ Refresh
                         </button>
+                        {(hasPermission('MANAGE_PRODUCTS') || hasPermission('RAISE_PURCHASE_ORDER')) && (
+                            <button
+                                onClick={() => router.push('/inventory/purchase-orders')}
+                                className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition shadow-sm flex items-center gap-2"
+                            >
+                                <span className="text-lg leading-none">📋</span> Purchase Orders
+                            </button>
+                        )}
                         {hasPermission('MANAGE_PRODUCTS') && (
                             <>
                                 <button
@@ -626,13 +634,13 @@ export default function ProductsPage() {
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cost (Buy)</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Supplier</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Stock</th>
-                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                {selectedStoreId && <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>}
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                             {products.length === 0 ? (
                                 <tr>
-                                    <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
+                                    <td colSpan={selectedStoreId ? 8 : 7} className="px-6 py-8 text-center text-gray-500">
                                         No products found matching your filters.
                                     </td>
                                 </tr>
@@ -677,32 +685,34 @@ export default function ProductsPage() {
                                                     </span>
                                                 )}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                {hasPermission('MANAGE_INVENTORY') && (
-                                                    <>
+                                            {selectedStoreId && (
+                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                    {hasPermission('MANAGE_INVENTORY') && (
+                                                        <>
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); openAdjustModal(p); }}
+                                                                className="text-indigo-600 hover:text-indigo-900"
+                                                            >
+                                                                Adjust
+                                                            </button>
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); openReceiveModal(p); }}
+                                                                className="text-green-600 hover:text-green-900 ml-4 font-bold"
+                                                            >
+                                                                Receive
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                    {hasPermission('MANAGE_PRODUCTS') && (
                                                         <button
-                                                            onClick={(e) => { e.stopPropagation(); openAdjustModal(p); }}
-                                                            className="text-indigo-600 hover:text-indigo-900"
+                                                            onClick={(e) => { e.stopPropagation(); startEdit(p); }}
+                                                            className="text-blue-600 hover:text-blue-900 ml-4 font-medium"
                                                         >
-                                                            Adjust
+                                                            Edit
                                                         </button>
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); openReceiveModal(p); }}
-                                                            className="text-green-600 hover:text-green-900 ml-4 font-bold"
-                                                        >
-                                                            Receive
-                                                        </button>
-                                                    </>
-                                                )}
-                                                {hasPermission('MANAGE_PRODUCTS') && (
-                                                    <button
-                                                        onClick={(e) => { e.stopPropagation(); startEdit(p); }}
-                                                        className="text-blue-600 hover:text-blue-900 ml-4"
-                                                    >
-                                                        Edit
-                                                    </button>
-                                                )}
-                                            </td>
+                                                    )}
+                                                </td>
+                                            )}
                                         </tr>
                                     );
                                 })
@@ -726,6 +736,6 @@ export default function ProductsPage() {
                     )}
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

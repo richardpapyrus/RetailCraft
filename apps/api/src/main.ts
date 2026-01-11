@@ -1,17 +1,38 @@
 import { NestFactory } from "@nestjs/core";
+import { NestExpressApplication } from "@nestjs/platform-express";
+import { join } from "path";
 import { AppModule } from "./app.module";
 import { PrismaService } from "./prisma/prisma.service";
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  // Force Reload Trigger
+  console.log("Starting API Server...");
+
+  // Serve Uploads (e.g. Logos)
+  app.useStaticAssets(join(process.cwd(), 'uploads'), {
+    prefix: '/api/uploads/',
+  });
+  const allowedOrigins = [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "https://app.retailcraft.com.ng",
+    "https://retailcraft.com.ng",
+    "https://www.retailcraft.com.ng",
+    "https://staging.retailcraft.com.ng", // Explicit Staging Whitelist
+    /\.retailcraft\.com\.ng$/,
+  ];
+
+  if (process.env.FRONTEND_URL) {
+    allowedOrigins.push(process.env.FRONTEND_URL);
+  }
+  if (process.env.CORS_ORIGIN) {
+    allowedOrigins.push(process.env.CORS_ORIGIN);
+  }
+
   app.enableCors({
-    origin: [
-      "http://localhost:3000",
-      "https://app.retailcraft.com.ng",
-      "https://retailcraft.com.ng",
-      "https://www.retailcraft.com.ng",
-      /\.retailcraft\.com\.ng$/,
-    ],
+    // ALLOW ALL (Reflect Origin) to permit Staging/Prod/Custom domains without config
+    origin: true,
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
     credentials: true,
     allowedHeaders: "Content-Type, Key, Authorization, X-Requested-With",
@@ -65,8 +86,9 @@ async function bootstrap() {
   }
   // --- END SELF HEALING ---
 
-  await app.listen(process.env.PORT || 4000);
+  await app.listen(process.env.PORT || 4000, '0.0.0.0');
+  // Force Restart for Reports Module
   console.log(`Application is running on: ${await app.getUrl()}`);
-  console.log("✅ Backend Ready & Watching (Reset)");
+  console.log("✅ Backend Ready & Watching (Attempts: 2)");
 }
 bootstrap();

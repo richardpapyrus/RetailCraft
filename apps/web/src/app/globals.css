@@ -30,31 +30,67 @@ body {
 }
 
 /* --- THERMAL RECEIPT PRINTING STYLES --- */
+/* --- THERMAL RECEIPT PRINTING STYLES --- */
 @media print {
-
-  /* Reset margins for thermal paper */
   @page {
     size: 80mm auto;
-    /* Explicitly tell browser this is a thermal receipt */
     margin: 0;
   }
 
-  /* Hide everything by default using visibility to preserve portals */
   body {
     visibility: hidden;
     background: white;
-    /* Ensure clean background */
-    height: auto;
   }
 
   /* Aggressively hide floating elements, toasts, and headers */
   div[role="status"],
-  /* React Hot Toast */
+  div[role="alert"],
+  div[aria-live],
+  div[style*="z-index"],
+  /* Inline Style Catchers */
+  div[style*="box-shadow"],
+  div[style*="bottom"],
+  div[style*="left"],
+  div[style*="right"],
+  div[style*="position:fixed"],
+  /* No space variant */
+  div[style*="position: fixed"],
+
+  .z-50,
+  .z-40,
+  .bottom-4,
+  .bottom-0,
+  .left-4,
+  .left-0,
+  .right-0,
+  .top-0,
+  .fixed,
+  .absolute,
+  .sticky,
+  .shadow,
+  .shadow-md,
+  .shadow-lg,
+  .shadow-xl,
+  .rounded,
+  .rounded-md,
+  .rounded-lg,
+  .bg-white:not(#receipt-print-area),
+  .no-print,
+  .print\:hidden,
+  .toast-container,
+  [class*="toast"],
+  [class*="snackbar"],
+  [class*="notification"],
   header,
   nav,
-  aside,
-  .toast-container {
+  aside {
     display: none !important;
+  }
+
+  /* EXCEPTION: Restore visibility for the receipt itself if it matches above */
+  #receipt-print-area {
+    display: block !important;
+    visibility: visible !important;
   }
 
   /* Show ONLY the receipt container */
@@ -63,16 +99,19 @@ body {
     visibility: visible;
   }
 
-  /* Position the receipt at the exact top-left of the page */
+  /* Position the receipt centered on the page */
   #receipt-print-area {
     position: absolute;
-    left: 0;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
     top: 0;
-    width: 100% !important;
-    /* Let container control max-width */
+    width: 72mm !important;
+    /* Forces standard receipt width */
     margin: 0 !important;
-    padding: 0 !important;
+    padding: 2mm 0 !important;
     box-shadow: none !important;
     border: none !important;
+    right: auto !important;
+    box-sizing: border-box !important;
   }
 }
