@@ -84,7 +84,7 @@ export class PrinterService {
     get sizeDouble() { return new Uint8Array([0x1D, 0x21, 0x11]); } // Double Width + Height
 
     // Builder logic to combine commands
-    static createReceipt(storeName: string, items: any[], total: string) {
+    static createReceipt(storeName: string, items: any[], total: string, subtotal?: string, discount?: string, tax?: string) {
         const encoder = new TextEncoder();
         const commands: number[] = [];
 
@@ -112,8 +112,20 @@ export class PrinterService {
 
         addLine('--------------------------------');
 
-        // Total
-        add(new Uint8Array([0x1B, 0x61, 0x02])); // Right
+        // Totals Breakdown
+        add(new Uint8Array([0x1B, 0x61, 0x02])); // Right alignment
+
+        if (subtotal) {
+            addLine(`Subtotal: ${subtotal}`);
+        }
+        if (discount) {
+            addLine(`Discount: -${discount}`);
+        }
+        if (tax) {
+            addLine(`Tax: ${tax}`);
+        }
+
+        // Final Total
         add(new Uint8Array([0x1B, 0x45, 0x01])); // Bold
         addLine(`TOTAL: ${total}`);
         add(new Uint8Array([0x1B, 0x45, 0x00])); // Bold Off

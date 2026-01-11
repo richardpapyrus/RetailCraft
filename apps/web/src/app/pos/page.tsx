@@ -368,7 +368,10 @@ export default function POSPage() {
                 const receipt = PrinterService.createReceipt(
                     businessName,
                     lastSale?.items || [],
-                    formatCurrency(lastSale?.total, user?.currency, user?.locale)
+                    formatCurrency(lastSale?.total, user?.currency, user?.locale),
+                    formatCurrency(lastSale?.subtotal, user?.currency, user?.locale),
+                    lastSale?.discount > 0 ? formatCurrency(lastSale?.discount, user?.currency, user?.locale) : undefined,
+                    lastSale?.tax > 0 ? formatCurrency(lastSale?.tax, user?.currency, user?.locale) : undefined
                 );
                 await printerService.print(receipt);
             } catch (e) {
