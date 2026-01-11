@@ -43,10 +43,17 @@ export default function CreatePOPage() {
 
     // Auto-Populate Logic
     const handleSupplierChange = async (newSupplierId: string) => {
-        setSupplierId(newSupplierId);
+        // Reset cart logic:
+        // 1. If switching FROM 'unassigned' TO a real supplier -> KEEP CART (We are assigning these items)
+        // 2. If switching FROM 'real' TO 'real' -> RESET CART (Different vendor context)
+        // 3. If switching TO 'unassigned' -> RESET CART (Fresh search for unassigned)
+        if (supplierId !== 'unassigned' && newSupplierId !== 'unassigned') {
+            setCart([]);
+        } else if (newSupplierId === 'unassigned') {
+            setCart([]);
+        }
 
-        // Reset cart immediately when switching supplier (PO is single-supplier context)
-        setCart([]);
+        setSupplierId(newSupplierId);
 
         if (!newSupplierId || !selectedStoreId) return;
 
@@ -190,6 +197,7 @@ export default function CreatePOPage() {
                             <option value="">
                                 {isLoadingSuggestions ? 'Finding Low Stock Items...' : 'Choose Supplier...'}
                             </option>
+                            <option value="unassigned">⚠️ Unassigned Products (No Preferred Supplier)</option>
                             {suppliers.map(s => (
                                 <option key={s.id} value={s.id}>{s.name} ({s.currency})</option>
                             ))}

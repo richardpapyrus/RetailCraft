@@ -99,11 +99,13 @@ export class SuppliersService {
   async findReorderItems(supplierId: string, storeId: string) {
     // 1. Get Products where this Supplier is the 'Preferred Supplier' (Legacy Field)
     // The frontend sets Product.supplierId, so we must query that.
+    const isUnassigned = supplierId === 'unassigned';
+
     // 1. Get Products where this Supplier is the 'Preferred Supplier'
     // AND the product belongs to the Current Store (or is Global)
     const products = await prisma.product.findMany({
       where: {
-        supplierId: supplierId,
+        supplierId: isUnassigned ? null : supplierId,
         OR: [
           { storeId: storeId },
           { storeId: null }
@@ -143,6 +145,8 @@ export class SuppliersService {
         }
         return null;
       })
-      .filter(item => item !== null);
+      .filter(item => item !== null)
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .slice(0, 15);
   }
 }
