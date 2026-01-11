@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/lib/useAuth';
+import { useAuth, formatCurrency } from '@/lib/useAuth';
 import { api } from '@/lib/api';
 import { Award, Gift, TrendingUp, Users, ArrowRight, Settings } from 'lucide-react';
 import Link from 'next/link';
 
 export default function LoyaltyPage() {
-    const { user, formatCurrency } = useAuth();
+    const { user } = useAuth();
     const [stats, setStats] = useState({
         totalPoints: 0,
         enrolledCustomers: 0,
