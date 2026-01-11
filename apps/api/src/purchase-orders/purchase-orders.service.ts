@@ -35,6 +35,31 @@ export class PurchaseOrdersService {
         const poNumber = `PO-${new Date().getFullYear()}-${nextNumber.toString().padStart(4, '0')}`;
         console.log(`[PO Service] Generating PO Number. Last: ${lastPO?.poNumber || 'None'}. Next: ${poNumber}`);
 
+        // Detect "Unassigned" -> Map to System Vendor
+        let finalSupplierId = data.supplierId;
+        if (data.supplierId === 'unassigned') {
+            const systemVendor = await prisma.supplier.findFirst({
+                where: {
+                    tenantId: data.tenantId,
+                    name: 'Unregistered Supplier'
+                }
+            });
+
+            if (systemVendor) {
+                finalSupplierId = systemVendor.id;
+            } else {
+                const newVendor = await prisma.supplier.create({
+                    data: {
+                        name: 'Unregistered Supplier',
+                        tenantId: data.tenantId,
+                        termDays: 0,
+                        contact: 'System Generated'
+                    }
+                });
+                finalSupplierId = newVendor.id;
+            }
+        }
+
         // 2. Calculate Total
         const totalAmount = data.items.reduce((sum, item) => sum + (item.quantity * item.unitCost), 0);
 
@@ -42,7 +67,7 @@ export class PurchaseOrdersService {
             data: {
                 poNumber,
                 status: 'DRAFT',
-                supplier: { connect: { id: data.supplierId } },
+                supplier: { connect: { id: finalSupplierId } },
                 store: { connect: { id: data.storeId } },
                 tenant: { connect: { id: data.tenantId } },
                 user: { connect: { id: data.userId } },

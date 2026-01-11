@@ -197,7 +197,7 @@ export default function CreatePOPage() {
                             <option value="">
                                 {isLoadingSuggestions ? 'Finding Low Stock Items...' : 'Choose Supplier...'}
                             </option>
-                            <option value="unassigned">⚠️ Unassigned Products (No Preferred Supplier)</option>
+                            <option value="unassigned">Unregistered Supplier</option>
                             {suppliers.map(s => (
                                 <option key={s.id} value={s.id}>{s.name} ({s.currency})</option>
                             ))}
