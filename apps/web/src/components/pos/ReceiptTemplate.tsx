@@ -172,18 +172,9 @@ export default function ReceiptTemplate({ sale, user, store: propStore }: Receip
                     <div className="text-[10px] font-bold">Thank you for shopping with us!</div>
                 )}
 
-                <div className="mt-4 pt-2">
-                    {/* Barcode Simulation */}
-                    <div className="flex flex-col items-center">
-                        <div className="h-8 w-4/5 bg-black mb-1 repeating-linear-gradient"></div>
-                        <p className="text-[8px] font-mono">{sale.id}</p>
-                    </div>
-                </div>
-
-                <div className="text-[8px] text-gray-500 mt-2 uppercase tracking-tighter">
-                    RetaiLogic POS
-                </div>
+                <p className="text-[10px] text-gray-400 mt-4">RetailCraft POS</p>
             </div>
         </div>
+        </div >
     );
 }

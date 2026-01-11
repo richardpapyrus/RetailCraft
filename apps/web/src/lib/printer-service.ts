@@ -132,7 +132,9 @@ export class PrinterService {
 
         // Footer
         add(new Uint8Array([0x1B, 0x61, 0x01])); // Center
-        addLine('\nThank you for shopping!\n\n\n');
+        addLine('\nThank you for shopping!');
+        addLine('RetailCraft POS');
+        addLine('\n\n\n');
 
         // Cut
         add(new Uint8Array([0x1D, 0x56, 0x41, 0x00]));
