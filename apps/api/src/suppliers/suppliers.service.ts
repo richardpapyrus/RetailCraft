@@ -125,7 +125,8 @@ export class SuppliersService {
         // Strict Reorder Rule:
         // 1. Must be below or at Min Stock
         // 2. AND (Min Stock must be defined (>0) OR Stock must be negative (Backordered))
-        const needsReorder = currentQty <= minStock && (minStock > 0 || currentQty < 0);
+        // RELAXED: Just check if Stock <= Min. (Handles 0 <= 0 case).
+        const needsReorder = currentQty <= minStock;
 
         if (needsReorder) {
           let suggestQty = (minStock - currentQty);
