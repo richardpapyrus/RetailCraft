@@ -1139,40 +1139,40 @@ export default function POSPage() {
                                             if (!supervisorCreds.email || !supervisorCreds.password) return toast.error('Please enter credentials');
                                             setVerifyingSupervisor(true);
                                             try {
-                                                try {
-                                                    // Verify credentials
-                                                    // We use direct fetch to avoid messing with global auth state
-                                                    // Use API_URL from lib/api to ensure correct environment (Prod/Staging/Dev)
-                                                    console.log("Verifying credentials against:", `${API_URL}/auth/login`);
-                                                    const res = await fetch(`${API_URL}/auth/login`, {
-                                                        method: 'POST',
-                                                        headers: { 'Content-Type': 'application/json' },
-                                                        body: JSON.stringify(supervisorCreds)
-                                                    });
 
-                                                    if (!res.ok) throw new Error('Invalid credentials');
+                                                // Verify credentials
+                                                // We use direct fetch to avoid messing with global auth state
+                                                // Use API_URL from lib/api to ensure correct environment (Prod/Staging/Dev)
+                                                console.log("Verifying credentials against:", `${API_URL}/auth/login`);
+                                                const res = await fetch(`${API_URL}/auth/login`, {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify(supervisorCreds)
+                                                });
 
-                                                    const data = await res.json();
-                                                    const role = data.user.role;
-                                                    const permissions = data.user.permissions || [];
+                                                if (!res.ok) throw new Error('Invalid credentials');
 
-                                                    // Check permission
-                                                    const authorized = role === 'ADMIN' || role === 'Administrator' || permissions.includes('MANAGE_DISCOUNTS') || permissions.includes('*');
+                                                const data = await res.json();
+                                                const role = data.user.role;
+                                                const permissions = data.user.permissions || [];
 
-                                                    if (authorized) {
-                                                        toast.success(`Override Approved by ${data.user.name}`);
-                                                        setSupervisorMode(false);
-                                                        setManualDiscountInput('0.00'); // Unlock Manual Input
-                                                    } else {
-                                                        toast.error('User does not have permission to authorize discounts.');
-                                                    }
-                                                } catch (e) {
-                                                    console.error(e);
-                                                    toast.error('Authorization Failed');
-                                                } finally {
-                                                    setVerifyingSupervisor(false);
+                                                // Check permission
+                                                const authorized = role === 'ADMIN' || role === 'Administrator' || permissions.includes('MANAGE_DISCOUNTS') || permissions.includes('*');
+
+                                                if (authorized) {
+                                                    toast.success(`Override Approved by ${data.user.name}`);
+                                                    setSupervisorMode(false);
+                                                    setManualDiscountInput('0.00'); // Unlock Manual Input
+                                                } else {
+                                                    toast.error('User does not have permission to authorize discounts.');
                                                 }
-                                            }}
+                                            } catch (e) {
+                                                console.error(e);
+                                                toast.error('Authorization Failed');
+                                            } finally {
+                                                setVerifyingSupervisor(false);
+                                            }
+                                        }}
                                         disabled={verifyingSupervisor}
                                         className="w-full py-3 bg-black text-white rounded-xl font-bold hover:bg-gray-800 disabled:opacity-50"
                                     >
