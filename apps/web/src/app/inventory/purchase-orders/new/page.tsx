@@ -199,7 +199,7 @@ export default function CreatePOPage() {
                             </option>
                             <option value="unassigned">Unregistered Supplier</option>
                             {suppliers.map(s => (
-                                <option key={s.id} value={s.id}>{s.name} ({s.currency})</option>
+                                <option key={s.id} value={s.id}>{s.name}</option>
                             ))}
                         </select>
                     </div>

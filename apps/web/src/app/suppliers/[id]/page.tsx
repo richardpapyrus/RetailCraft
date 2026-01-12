@@ -123,70 +123,123 @@ export default function SupplierDetailsPage() {
                 {/* Content */}
                 <div className="bg-white rounded-lg shadow p-6">
                     {activeTab === 'details' && (
-                        <form onSubmit={handleUpdateDetails} className="space-y-4 max-w-lg">
-                            <div>
-                                <label className="block text-sm font-medium mb-1">Supplier Name</label>
-                                <input
-                                    className="w-full p-2 border rounded"
-                                    value={supplier.name}
-                                    onChange={e => setSupplier({ ...supplier, name: e.target.value })}
-                                />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
+                        <>
+                            <form onSubmit={handleUpdateDetails} className="space-y-4 max-w-lg">
                                 <div>
-                                    <label className="block text-sm font-medium mb-1">Contact Person</label>
+                                    <label className="block text-sm font-medium mb-1">Supplier Name</label>
                                     <input
                                         className="w-full p-2 border rounded"
-                                        value={supplier.contact || ''}
-                                        onChange={e => setSupplier({ ...supplier, contact: e.target.value })}
+                                        value={supplier.name}
+                                        onChange={e => setSupplier({ ...supplier, name: e.target.value })}
                                     />
                                 </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium mb-1">Contact Person</label>
+                                        <input
+                                            className="w-full p-2 border rounded"
+                                            value={supplier.contact || ''}
+                                            onChange={e => setSupplier({ ...supplier, contact: e.target.value })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium mb-1">Phone</label>
+                                        <input
+                                            className="w-full p-2 border rounded"
+                                            value={supplier.phone || ''}
+                                            onChange={e => setSupplier({ ...supplier, phone: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
                                 <div>
-                                    <label className="block text-sm font-medium mb-1">Phone</label>
+                                    <label className="block text-sm font-medium mb-1">Email</label>
                                     <input
                                         className="w-full p-2 border rounded"
-                                        value={supplier.phone || ''}
-                                        onChange={e => setSupplier({ ...supplier, phone: e.target.value })}
+                                        value={supplier.email || ''}
+                                        onChange={e => setSupplier({ ...supplier, email: e.target.value })}
                                     />
                                 </div>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium mb-1">Email</label>
-                                <input
-                                    className="w-full p-2 border rounded"
-                                    value={supplier.email || ''}
-                                    onChange={e => setSupplier({ ...supplier, email: e.target.value })}
-                                />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium mb-1">Currency</label>
-                                    <select
-                                        className="w-full p-2 border rounded"
-                                        value={supplier.currency || 'USD'}
-                                        onChange={e => setSupplier({ ...supplier, currency: e.target.value })}
-                                    >
-                                        <option value="USD">USD ($)</option>
-                                        <option value="NGN">NGN (₦)</option>
-                                        <option value="EUR">EUR (€)</option>
-                                    </select>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium mb-1">Currency</label>
+                                        <select
+                                            className="w-full p-2 border rounded"
+                                            value={supplier.currency || 'USD'}
+                                            onChange={e => setSupplier({ ...supplier, currency: e.target.value })}
+                                        >
+                                            <option value="USD">USD ($)</option>
+                                            <option value="NGN">NGN (₦)</option>
+                                            <option value="EUR">EUR (€)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium mb-1">Payment Terms (Days)</label>
+                                        <input
+                                            type="number"
+                                            className="w-full p-2 border rounded"
+                                            value={supplier.termDays || 30}
+                                            onChange={e => setSupplier({ ...supplier, termDays: Number(e.target.value) })}
+                                        />
+                                    </div>
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium mb-1">Payment Terms (Days)</label>
-                                    <input
-                                        type="number"
-                                        className="w-full p-2 border rounded"
-                                        value={supplier.termDays || 30}
-                                        onChange={e => setSupplier({ ...supplier, termDays: Number(e.target.value) })}
-                                    />
+                                <div className="pt-4">
+                                    <button type="submit" className="flex items-center bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
+                                        <Save className="w-4 h-4 mr-2" /> Save Changes
+                                    </button>
+                                </div>
+                            </form>
+
+                            {/* Transaction History Section */}
+                            <div className="mt-12 pt-8 border-t border-gray-100">
+                                <h3 className="text-lg font-bold text-gray-900 mb-4">Transaction History</h3>
+                                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                                    <table className="w-full text-left text-sm">
+                                        <thead className="bg-gray-50 border-b border-gray-200">
+                                            <tr>
+                                                <th className="p-3 font-medium text-gray-500">Date</th>
+                                                <th className="p-3 font-medium text-gray-500">PO Number</th>
+                                                <th className="p-3 font-medium text-gray-500">Status</th>
+                                                <th className="p-3 font-medium text-gray-500 text-right">Items</th>
+                                                <th className="p-3 font-medium text-gray-500 text-right">Total Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100">
+                                            {supplier.purchaseOrders && supplier.purchaseOrders.length > 0 ? (
+                                                supplier.purchaseOrders.map((po: any) => (
+                                                    <tr
+                                                        key={po.id}
+                                                        onClick={() => router.push(`/inventory/purchase-orders/${po.id}`)}
+                                                        className="hover:bg-gray-50 cursor-pointer transition-colors"
+                                                    >
+                                                        <td className="p-3 text-gray-900">{new Date(po.createdAt).toLocaleDateString()}</td>
+                                                        <td className="p-3 font-mono text-indigo-600">#{po.poNumber || po.id.slice(0, 8)}</td>
+                                                        <td className="p-3">
+                                                            <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wide
+                                                            ${po.status === 'DRAFT' ? 'bg-gray-100 text-gray-600' : ''}
+                                                            ${po.status === 'ISSUED' ? 'bg-blue-100 text-blue-600' : ''}
+                                                            ${po.status === 'RECEIVED' ? 'bg-green-100 text-green-600' : ''}
+                                                        `}>
+                                                                {po.status}
+                                                            </span>
+                                                        </td>
+                                                        <td className="p-3 text-right text-gray-600">{po.items?.length || 0}</td>
+                                                        <td className="p-3 text-right font-bold text-gray-900">
+                                                            {po.items?.reduce((sum: number, item: any) => sum + (item.quantityOrdered * item.unitCost), 0).toLocaleString(undefined, { style: 'currency', currency: supplier.currency || 'USD' })}
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            ) : (
+                                                <tr>
+                                                    <td colSpan={5} className="p-8 text-center text-gray-400 bg-gray-50/50">
+                                                        No transactions found for this supplier.
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
-                            <div className="pt-4">
-                                <button type="submit" className="flex items-center bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
-                                    <Save className="w-4 h-4 mr-2" /> Save Changes
-                                </button>
-                            </div>
-                        </form>
+                        </>
                     )}
 
                     {activeTab === 'products' && (
@@ -205,6 +258,7 @@ export default function SupplierDetailsPage() {
                                     <tr>
                                         <th className="p-3">Product Name</th>
                                         <th className="p-3">Supplier SKU</th>
+                                        <th className="p-3 text-right">Current Stock</th>
                                         <th className="p-3 text-right">Last Cost</th>
                                         <th className="p-3 text-center">Preferred</th>
                                         <th className="p-3 text-right">Actions</th>
@@ -215,6 +269,9 @@ export default function SupplierDetailsPage() {
                                         <tr key={p.id}>
                                             <td className="p-3 font-medium">{p.product.name}</td>
                                             <td className="p-3 text-gray-500">{p.supplierSku || '-'}</td>
+                                            <td className="p-3 text-right font-medium">
+                                                {p.product.inventory?.reduce((acc: number, item: any) => acc + item.quantity, 0) || 0}
+                                            </td>
                                             <td className="p-3 text-right font-mono">{p.lastCost?.toLocaleString()}</td>
                                             <td className="p-3 text-center">
                                                 {p.isPreferred ? <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded text-xs">Yes</span> : '-'}

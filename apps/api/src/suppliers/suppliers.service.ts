@@ -45,14 +45,58 @@ export class SuppliersService {
   }
 
   async findOne(id: string, tenantId: string) {
-    return prisma.supplier.findFirst({
+    const supplier = await prisma.supplier.findFirst({
       where: { id, tenantId },
       include: {
         supplierProducts: {
-          include: { product: true }
+          include: {
+            product: {
+              include: { inventory: true }
+            }
+          }
+        },
+        purchaseOrders: {
+          orderBy: { createdAt: 'desc' },
+          include: {
+            // We might need items for total amount calculation if not stored on PO
+            items: true
+          }
         }
       },
     });
+
+    if (!supplier) return null;
+
+    // Fetch products where this supplier is set directly as the primary 'supplierId'
+    // but implies "Preferred" status, even if not explicitly in the junction table.
+    const directProducts = await prisma.product.findMany({
+      where: { supplierId: id, tenantId },
+      include: { inventory: true }
+    });
+
+    // Merge logic:
+    // Create a Set of product IDs already in the junction table
+    const existingProductIds = new Set(supplier.supplierProducts.map(sp => sp.productId));
+
+    const implicitSupplierProducts = directProducts
+      .filter(p => !existingProductIds.has(p.id))
+      .map(p => ({
+        supplierId: id,
+        productId: p.id,
+        supplierSku: null,
+        lastCost: p.costPrice,
+        isPreferred: true, // Implicitly preferred
+        product: p,
+        // Add fake timestamps if needed by type, though mostly optional/generated
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }));
+
+    // Combine and attach
+    return {
+      ...supplier,
+      supplierProducts: [...supplier.supplierProducts, ...implicitSupplierProducts]
+    };
   }
 
   async update(

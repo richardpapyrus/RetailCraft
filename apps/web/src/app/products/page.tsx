@@ -14,9 +14,9 @@ export default function ProductsPage() {
     const [products, setProducts] = useState<Product[]>([]);
     const [suppliers, setSuppliers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [loadingMore, setLoadingMore] = useState(false);
-    const [hasMore, setHasMore] = useState(true);
     const [totalProducts, setTotalProducts] = useState(0);
+    const [page, setPage] = useState(1);
+    const limit = 50;
 
     // Filters
     const [search, setSearch] = useState('');
@@ -56,7 +56,8 @@ export default function ProductsPage() {
     // Debounce Search
     useEffect(() => {
         const timeout = setTimeout(() => {
-            loadProducts(true);
+            setPage(1);
+            loadProducts(1);
         }, 800);
         return () => clearTimeout(timeout);
     }, [search, category, showLowStock]);
@@ -71,7 +72,7 @@ export default function ProductsPage() {
         loadProducts(true);
         loadSuppliers();
         loadStats();
-        loadProducts(true);
+        loadProducts(1);
         loadSuppliers();
         loadStats();
         loadCategories();
@@ -104,20 +105,15 @@ export default function ProductsPage() {
         }
     };
 
-    const loadProducts = async (reset = false) => {
+    const loadProducts = async (pageToLoad: number) => {
         try {
-            if (reset) setLoading(true);
-            else setLoadingMore(true);
-
-            const skip = reset ? 0 : products.length;
+            setLoading(true);
+            const skip = (pageToLoad - 1) * limit;
             const filters = { search, category, lowStock: showLowStock };
-            const { data, total } = await DataService.getProducts(skip, 50, filters, selectedStoreId || undefined);
+            const { data, total } = await DataService.getProducts(skip, limit, filters, selectedStoreId || undefined);
 
-            if (reset) setProducts(data);
-            else setProducts(prev => [...prev, ...data]);
-
+            setProducts(data);
             setTotalProducts(total);
-            setHasMore(data.length > 0 && (reset ? data.length : products.length + data.length) < total);
             setError(null);
             setDebugInfo({ productsFetched: data.length, totalFromApi: total, tenantId: user?.tenantId });
 
@@ -126,7 +122,6 @@ export default function ProductsPage() {
             setError(e.message || "Failed to load products");
         } finally {
             setLoading(false);
-            setLoadingMore(false);
         }
     };
 
@@ -759,19 +754,34 @@ export default function ProductsPage() {
                     </table>
                 </div>
 
-                <div className="mt-4 text-center pb-8 space-y-2">
-                    <div className="text-gray-500 text-sm">
-                        Viewing {products.length} of {totalProducts} products
+                <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex items-center justify-between rounded-b-xl border-x border-b">
+                    <div className="text-sm text-gray-500">
+                        Page {page} of {Math.max(1, Math.ceil(totalProducts / limit))}
                     </div>
-                    {hasMore && (
+                    <div className="flex gap-2">
                         <button
-                            onClick={() => loadProducts(false)}
-                            disabled={loadingMore}
-                            className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                            onClick={() => {
+                                const newPage = Math.max(1, page - 1);
+                                setPage(newPage);
+                                loadProducts(newPage);
+                            }}
+                            disabled={page === 1 || loading}
+                            className="px-4 py-2 border rounded-md bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {loadingMore ? 'Loading...' : 'Load More Products'}
+                            Previous
                         </button>
-                    )}
+                        <button
+                            onClick={() => {
+                                const newPage = page + 1;
+                                setPage(newPage);
+                                loadProducts(newPage);
+                            }}
+                            disabled={page >= Math.ceil(totalProducts / limit) || loading}
+                            className="px-4 py-2 border rounded-md bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            Next
+                        </button>
+                    </div>
                 </div>
             </div>
 

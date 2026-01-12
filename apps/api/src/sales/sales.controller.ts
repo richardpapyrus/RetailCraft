@@ -30,14 +30,24 @@ export class SalesController {
   constructor(private readonly salesService: SalesService) { }
 
   @Get()
-  async findAll(@Request() req, @Query("storeId") queryStoreId?: string) {
+  async findAll(
+    @Request() req,
+    @Query("storeId") queryStoreId?: string,
+    @Query("skip") skip?: number,
+    @Query("take") take?: number
+  ) {
     let storeId = queryStoreId;
     const isSystemAdmin = req.user.role === 'Administrator' || req.user.permissions?.includes('*');
     if (!isSystemAdmin) {
       if (req.user.storeId) storeId = req.user.storeId;
       else storeId = 'invalid-store-id';
     }
-    return this.salesService.findAll(req.user.tenantId, storeId);
+    return this.salesService.findAll(
+      req.user.tenantId,
+      storeId,
+      skip ? Number(skip) : undefined,
+      take ? Number(take) : undefined
+    );
   }
 
   @Get("test-reload")
