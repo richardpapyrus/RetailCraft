@@ -151,6 +151,31 @@ export const DataService = {
         return { success: true, offline: true, data: offlineData };
     },
 
+    async updateCustomer(id: string, payload: any): Promise<{ success: boolean }> {
+        if (typeof navigator !== 'undefined' && navigator.onLine) {
+            try {
+                await api.customers.update(id, payload);
+                // Update Cache
+                await db.customers.update(id, payload);
+                return { success: true };
+            } catch (error) {
+                console.error("Update failed", error);
+                throw error;
+            }
+        } else {
+            // Offline Update
+            await db.syncQueue.add({
+                url: `/customers/${id}`,
+                method: 'PATCH',
+                body: payload,
+                createdAt: Date.now(),
+                retryCount: 0
+            });
+            await db.customers.update(id, payload);
+            return { success: true };
+        }
+    },
+
     async clearCache() {
         await db.products.clear();
         await db.customers.clear();

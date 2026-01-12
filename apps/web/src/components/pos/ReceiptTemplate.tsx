@@ -19,6 +19,22 @@ export default function ReceiptTemplate({ sale, user, store: propStore }: Receip
     // Receipt width: 80mm is standard thermal paper width.
     return (
         <div id="receipt-print-area" className="hidden print:block bg-white text-black font-mono text-[11px] leading-tight">
+            <style jsx global>{`
+                @media print {
+                    @page { margin: 0; }
+                    body { visibility: hidden; }
+                    #receipt-print-area {
+                        visibility: visible;
+                        position: absolute;
+                        left: 0;
+                        top: 0;
+                        width: 100%;
+                    }
+                    #receipt-print-area * {
+                        visibility: visible;
+                    }
+                }
+            `}</style>
 
             {/* --- HEADER --- */}
             <div className="text-center mb-4">
@@ -62,8 +78,8 @@ export default function ReceiptTemplate({ sale, user, store: propStore }: Receip
             <div className="mb-4 text-[10px]">
                 <div className="flex justify-between border-b border-black pb-1 mb-1">
                     <div className="text-left">
-                        <p>{new Date(sale.date).toLocaleDateString()}</p>
-                        <p>{new Date(sale.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                        <p>{new Date(sale.date || sale.createdAt).toLocaleDateString()}</p>
+                        <p>{new Date(sale.date || sale.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                     </div>
                     <div className="text-right">
                         <p>Rcpt: #{sale.id?.slice(-6).toUpperCase()}</p>
@@ -110,13 +126,13 @@ export default function ReceiptTemplate({ sale, user, store: propStore }: Receip
             <div className="mb-6 space-y-1 text-[11px] pr-1">
                 <div className="flex justify-between">
                     <span>Subtotal</span>
-                    <span>{formatCurrency(sale.total - (sale.tax || 0), user?.currency, user?.locale)}</span>
+                    <span>{formatCurrency(sale.subtotal || (sale.total - (sale.taxTotal || sale.tax || 0)), user?.currency, user?.locale)}</span>
                 </div>
 
-                {sale.discount > 0 && (
+                {(sale.discountTotal > 0 || sale.discount > 0) && (
                     <div className="flex justify-between text-black">
                         <span>Discount</span>
-                        <span>-{formatCurrency(sale.discount, user?.currency, user?.locale)}</span>
+                        <span>-{formatCurrency(sale.discountTotal || sale.discount, user?.currency, user?.locale)}</span>
                     </div>
                 )}
 
@@ -157,9 +173,10 @@ export default function ReceiptTemplate({ sale, user, store: propStore }: Receip
                     <span>{formatCurrency(sale.change, user?.currency, user?.locale)}</span>
                 </div>
 
-                {sale.redeemPoints > 0 && (
-                    <div className="mt-2 text-center text-[10px] border border-black py-1 rounded">
-                        Info: {sale.redeemPoints} Pts Redeemed
+                {(sale.loyaltyPointsUsed > 0 || sale.redeemPoints > 0) && (
+                    <div className="flex justify-between font-bold text-black mt-1 bg-gray-100 p-1">
+                        <span>Loyalty Redemp. ({sale.loyaltyPointsUsed || sale.redeemPoints} pts)</span>
+                        <span>-{formatCurrency(sale.loyaltyDiscountAmount || ((sale.loyaltyPointsUsed || sale.redeemPoints) * (Number(user?.tenant?.loyaltyRedeemRate) || 0.10)), user?.currency, user?.locale)}</span>
                     </div>
                 )}
             </div>
@@ -172,17 +189,7 @@ export default function ReceiptTemplate({ sale, user, store: propStore }: Receip
                     <div className="text-[10px] font-bold">Thank you for shopping with us!</div>
                 )}
 
-                <div className="mt-4 pt-2">
-                    {/* Barcode Simulation */}
-                    <div className="flex flex-col items-center">
-                        <div className="h-8 w-4/5 bg-black mb-1 repeating-linear-gradient"></div>
-                        <p className="text-[8px] font-mono">{sale.id}</p>
-                    </div>
-                </div>
-
-                <div className="text-[8px] text-gray-500 mt-2 uppercase tracking-tighter">
-                    RetaiLogic POS
-                </div>
+                <p className="text-[10px] text-gray-400 mt-4">RetailCraft POS</p>
             </div>
         </div>
     );

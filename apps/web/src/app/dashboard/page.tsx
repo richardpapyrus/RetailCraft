@@ -25,12 +25,14 @@ import {
     MapPin
 } from 'lucide-react';
 import { EODReport } from '@/components/reporting/EODReport';
+import { SaleDetailModal } from '@/components/sales/SaleDetailModal';
 
 export default function DashboardPage() {
     const { user, token, isHydrated } = useAuth();
     const router = useRouter();
     const [stats, setStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [selectedSale, setSelectedSale] = useState<any>(null);
 
     // Global Store Filtering
     const { selectedStoreId } = useAuth();
@@ -263,20 +265,30 @@ export default function DashboardPage() {
                                         <h2 className="text-xl font-bold text-gray-900">Recent Sales</h2>
                                         <Link href="/sales" className="text-sm text-indigo-600 hover:text-indigo-800 font-bold">View All</Link>
                                     </div>
-                                    <div className="space-y-1">
+                                    <div className="space-y-6">
                                         {stats?.recentSales?.map((sale: any) => (
-                                            <div key={sale.id} className="group flex justify-between items-center p-4 hover:bg-gray-50 rounded-2xl transition-all duration-200">
-                                                <div>
-                                                    <div className="font-bold text-gray-900 mb-1">{sale.customer?.name || 'Walk-In Customer'}</div>
-                                                    <div className="text-xs font-medium text-gray-500 flex items-center gap-1.5">
-                                                        <span>{new Date(sale.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                                        <span className="w-1 h-1 rounded-full bg-gray-300"></span>
-                                                        <span className="text-indigo-500">{sale.user?.name || sale.user?.email}</span>
+                                            <div
+                                                key={sale.id}
+                                                onClick={() => setSelectedSale(sale)}
+                                                className="flex justify-between items-center group cursor-pointer hover:bg-gray-50 rounded-lg p-2 -mx-2 transition-colors"
+                                            >
+                                                <div className="flex items-center gap-4">
+                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${sale.status === 'COMPLETED' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                                                        }`}>
+                                                        {sale.customer?.name?.[0] || 'W'}
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-bold text-gray-900 text-sm">{sale.customer?.name || 'Walk-In Customer'}</div>
+                                                        <div className="text-xs font-medium text-gray-400 flex items-center gap-2">
+                                                            <span>{new Date(sale.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                            <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                                                            <span>{sale.user?.name?.split(' ')[0] || 'Staff'}</span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div className="text-right">
-                                                    <div className="font-bold text-gray-900 text-lg">{formatCurrency(sale.total, user?.currency, user?.locale)}</div>
-                                                    <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider bg-gray-100 px-2 py-1 rounded-lg inline-block mt-1">
+                                                    <div className="font-bold text-gray-900 text-base">{formatCurrency(sale.total, user?.currency, user?.locale)}</div>
+                                                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                                                         {sale.paymentMethod}
                                                     </div>
                                                 </div>
@@ -289,10 +301,17 @@ export default function DashboardPage() {
                                 </div>
                             </div>
                         </div>
+
+                        {selectedSale && (
+                            <SaleDetailModal
+                                sale={selectedSale}
+                                onClose={() => setSelectedSale(null)}
+                            />
+                        )}
                     </>
                 )}
             </div>
-            {stats && (
+            {stats && !selectedSale && (
                 <EODReport
                     stats={stats}
                     user={user}

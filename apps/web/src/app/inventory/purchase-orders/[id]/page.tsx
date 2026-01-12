@@ -129,7 +129,7 @@ export default function PODetailPage() {
                         <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Receiving Progress</h3>
                         {/* Simple Progress Bar logic */}
                         {(() => {
-                            const totalOrdered = po.items.reduce((s: number, i: any) => s + i.quantity, 0);
+                            const totalOrdered = po.items.reduce((s: number, i: any) => s + i.quantityOrdered, 0);
                             const totalReceived = po.items.reduce((s: number, i: any) => s + i.quantityReceived, 0);
                             const pct = totalOrdered ? Math.round((totalReceived / totalOrdered) * 100) : 0;
 
@@ -168,16 +168,16 @@ export default function PODetailPage() {
                                         <div className="font-bold">{item.product.name}</div>
                                         <div className="text-xs text-gray-500">{item.product.sku}</div>
                                     </td>
-                                    <td className="p-4 text-center font-medium">{item.quantity}</td>
+                                    <td className="p-4 text-center font-medium">{item.quantityOrdered}</td>
                                     <td className="p-4 text-center text-green-600 font-bold">{item.quantityReceived}</td>
                                     <td className="p-4 text-center text-red-500 font-bold">
-                                        {Math.max(0, item.quantity - item.quantityReceived)}
+                                        {Math.max(0, item.quantityOrdered - item.quantityReceived)}
                                     </td>
                                     <td className="p-4 text-right font-mono">
                                         {Number(item.unitCost).toFixed(2)}
                                     </td>
                                     <td className="p-4 text-right font-mono font-bold">
-                                        {(Number(item.unitCost) * item.quantity).toFixed(2)}
+                                        {(Number(item.unitCost) * item.quantityOrdered).toFixed(2)}
                                     </td>
                                 </tr>
                             ))}
@@ -194,7 +194,7 @@ export default function PODetailPage() {
                                 <div key={grn.id} className="bg-white p-4 rounded shadow border-l-4 border-indigo-500">
                                     <div className="flex justify-between">
                                         <div className="font-bold">{grn.grnNumber}</div>
-                                        <div className="text-sm text-gray-500">{new Date(grn.receivedAt).toLocaleString()}</div>
+                                        <div className="text-sm text-gray-500">{new Date(grn.receivedDate).toLocaleString()}</div>
                                     </div>
                                     <div className="text-sm text-gray-600 mt-2">
                                         Received by: {grn.receivedBy?.firstName}

@@ -104,6 +104,7 @@ export class SalesService {
       for (const item of items) {
         const product = await tx.product.findUnique({
           where: { id: item.productId },
+          include: { category: true }
         });
         if (!product)
           throw new BadRequestException(`Product ${item.productId} not found`);
@@ -120,7 +121,8 @@ export class SalesService {
           } else if (resolvedDiscount.targetType === "CATEGORY") {
             if (
               product.category &&
-              resolvedDiscount.targetValues.includes(product.category)
+              // Use name for legacy compatibility or ID? Using Name is safer for "Electronics" stored in discounts
+              resolvedDiscount.targetValues.includes(product.category.name)
             ) {
               isEligible = true;
             }
@@ -160,6 +162,13 @@ export class SalesService {
         }
       }
 
+      // Fetch Tenant Loyalty Settings
+      const tenant = await tx.tenant.findUnique({
+        where: { id: tenantId }
+      });
+      const earnRate = Number(tenant?.loyaltyEarnRate) || 1.0;
+      const redeemRate = Number(tenant?.loyaltyRedeemRate) || 0.10;
+
       // Loyalty Redemption
       let pointsUsed = 0;
       if (redeemPoints && redeemPoints > 0) {
@@ -172,8 +181,7 @@ export class SalesService {
         if (customer.loyaltyPoints < redeemPoints)
           throw new BadRequestException("Insufficient loyalty points");
 
-        const pointValue = 0.1;
-        const redemptionValue = redeemPoints * pointValue;
+        const redemptionValue = redeemPoints * redeemRate;
 
         discountAmount += redemptionValue;
         pointsUsed = redeemPoints;
@@ -191,12 +199,21 @@ export class SalesService {
       // Loyalty Accrual
       let pointsEarned = 0;
       if (customerId) {
-        pointsEarned = Math.floor(taxableAmount);
-        if (pointsEarned > 0) {
-          await tx.customer.update({
-            where: { id: customerId },
-            data: { loyaltyPoints: { increment: pointsEarned } },
-          });
+        // Re-fetch customer to check membership status if not already known? 
+        // We fetched customer earlier ONLY if redeeming.
+        // If not redeeming, we might not have 'customer' variable in scope or it might be partial.
+        // Actually, we haven't fetched customer if redeemPoints was 0.
+
+        const customerForAccrual = await tx.customer.findUnique({ where: { id: customerId } });
+
+        if (customerForAccrual && customerForAccrual.isLoyaltyMember) {
+          pointsEarned = Math.floor(taxableAmount * earnRate);
+          if (pointsEarned > 0) {
+            await tx.customer.update({
+              where: { id: customerId },
+              data: { loyaltyPoints: { increment: pointsEarned } },
+            });
+          }
         }
       }
 
@@ -249,11 +266,11 @@ export class SalesService {
             }))
           },
           status: "COMPLETED",
-          tenantId,
-          storeId,
-          userId,
-          customerId,
-          tillSessionId,
+          tenant: { connect: { id: tenantId } },
+          store: { connect: { id: storeId } },
+          user: { connect: { id: userId } },
+          customer: customerId ? { connect: { id: customerId } } : undefined,
+          tillSession: { connect: { id: tillSessionId } },
           loyaltyPointsUsed: pointsUsed,
           loyaltyPointsEarned: pointsEarned,
         },
@@ -297,26 +314,33 @@ export class SalesService {
     });
   }
 
-  async findAll(tenantId: string, storeId?: string) {
+  async findAll(tenantId: string, storeId?: string, skip?: number, take?: number) {
     const where: any = { tenantId };
     if (storeId) where.storeId = storeId;
 
-    return prisma.sale.findMany({
-      where,
-      include: {
-        items: {
-          include: {
-            product: true,
+    const [data, total] = await Promise.all([
+      prisma.sale.findMany({
+        where,
+        skip,
+        take,
+        include: {
+          items: {
+            include: {
+              product: true,
+            },
+          },
+          payments: true, // Include split details
+          customer: true,
+          user: {
+            select: { email: true, name: true },
           },
         },
-        payments: true, // Include split details
-        customer: true,
-        user: {
-          select: { email: true, name: true },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.sale.count({ where })
+    ]);
+
+    return { data, total };
   }
 
   async getStats(
@@ -488,7 +512,9 @@ export class SalesService {
       orderBy: { createdAt: "desc" },
       include: {
         user: { select: { email: true, name: true } },
-        customer: { select: { name: true } },
+        customer: { select: { name: true, code: true } },
+        items: { include: { product: true } },
+        payments: true,
       },
     });
     return {

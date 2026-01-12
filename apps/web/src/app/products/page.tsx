@@ -6,6 +6,7 @@ import { DataService } from '@/lib/db-service';
 import { useAuth, formatCurrency } from '@/lib/useAuth';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
+import CategoryManager from '@/components/products/CategoryManager';
 
 export default function ProductsPage() {
     const { user, token, isHydrated, hasPermission, selectedStoreId } = useAuth();
@@ -13,14 +14,18 @@ export default function ProductsPage() {
     const [products, setProducts] = useState<Product[]>([]);
     const [suppliers, setSuppliers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [loadingMore, setLoadingMore] = useState(false);
-    const [hasMore, setHasMore] = useState(true);
     const [totalProducts, setTotalProducts] = useState(0);
+    const [page, setPage] = useState(1);
+    const limit = 50;
 
     // Filters
     const [search, setSearch] = useState('');
     const [category, setCategory] = useState('');
     const [showLowStock, setShowLowStock] = useState(false);
+
+    // Categories
+    const [categories, setCategories] = useState<any[]>([]);
+    const [showCategoryManager, setShowCategoryManager] = useState(false);
 
     // Stats
     const [stats, setStats] = useState<{ totalProducts: number; inventoryValue: string; lowStockCount: number } | null>(null);
@@ -28,7 +33,7 @@ export default function ProductsPage() {
     // Create/Edit State
     const [showCreate, setShowCreate] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
-    const [newProduct, setNewProduct] = useState({ name: '', sku: '', barcode: '', category: '', price: '', costPrice: '', minStockLevel: 0, supplierId: '' });
+    const [newProduct, setNewProduct] = useState({ name: '', sku: '', barcode: '', categoryId: '', price: '', costPrice: '', minStockLevel: 0, supplierId: '' });
 
     // Inventory Modal States
     const [adjustModalOpen, setAdjustModalOpen] = useState(false);
@@ -51,7 +56,8 @@ export default function ProductsPage() {
     // Debounce Search
     useEffect(() => {
         const timeout = setTimeout(() => {
-            loadProducts(true);
+            setPage(1);
+            loadProducts(1);
         }, 800);
         return () => clearTimeout(timeout);
     }, [search, category, showLowStock]);
@@ -66,7 +72,20 @@ export default function ProductsPage() {
         loadProducts(true);
         loadSuppliers();
         loadStats();
+        loadProducts(1);
+        loadSuppliers();
+        loadStats();
+        loadCategories();
     }, [token, router, isHydrated, selectedStoreId]);
+
+    const loadCategories = async () => {
+        try {
+            const data = await api.categories.list();
+            setCategories(data);
+        } catch (e) {
+            console.error("Failed to load categories");
+        }
+    };
 
     const loadStats = async () => {
         try {
@@ -86,20 +105,15 @@ export default function ProductsPage() {
         }
     };
 
-    const loadProducts = async (reset = false) => {
+    const loadProducts = async (pageToLoad: number) => {
         try {
-            if (reset) setLoading(true);
-            else setLoadingMore(true);
-
-            const skip = reset ? 0 : products.length;
+            setLoading(true);
+            const skip = (pageToLoad - 1) * limit;
             const filters = { search, category, lowStock: showLowStock };
-            const { data, total } = await DataService.getProducts(skip, 50, filters, selectedStoreId || undefined);
+            const { data, total } = await DataService.getProducts(skip, limit, filters, selectedStoreId || undefined);
 
-            if (reset) setProducts(data);
-            else setProducts(prev => [...prev, ...data]);
-
+            setProducts(data);
             setTotalProducts(total);
-            setHasMore(data.length > 0 && (reset ? data.length : products.length + data.length) < total);
             setError(null);
             setDebugInfo({ productsFetched: data.length, totalFromApi: total, tenantId: user?.tenantId });
 
@@ -108,7 +122,6 @@ export default function ProductsPage() {
             setError(e.message || "Failed to load products");
         } finally {
             setLoading(false);
-            setLoadingMore(false);
         }
     };
 
@@ -137,7 +150,7 @@ export default function ProductsPage() {
             setShowCreate(false);
             setEditingId(null);
             loadProducts(true);
-            setNewProduct({ name: '', sku: '', barcode: '', category: '', price: '', costPrice: '', minStockLevel: 0, supplierId: '' });
+            setNewProduct({ name: '', sku: '', barcode: '', categoryId: '', price: '', costPrice: '', minStockLevel: 0, supplierId: '' });
         } catch (err: any) {
             console.error(err);
             toast.error(`Failed to save product: ${err.message || 'Unknown error'}`);
@@ -149,7 +162,7 @@ export default function ProductsPage() {
             name: product.name,
             sku: product.sku,
             barcode: product.barcode || '',
-            category: product.category || '',
+            categoryId: (product as any).categoryId || product.category?.id || '',
             price: product.price.toString(),
             costPrice: product.costPrice?.toString() || '',
             minStockLevel: product.minStockLevel || 0,
@@ -276,6 +289,12 @@ export default function ProductsPage() {
                         {hasPermission('MANAGE_PRODUCTS') && (
                             <>
                                 <button
+                                    onClick={() => setShowCategoryManager(true)}
+                                    className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition shadow-sm"
+                                >
+                                    Manage Categories
+                                </button>
+                                <button
                                     onClick={() => {
                                         if (!selectedStoreId) {
                                             toast.error("Please select a specific store first.");
@@ -342,10 +361,7 @@ export default function ProductsPage() {
                             className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
                         >
                             <option value="">All Categories</option>
-                            {/* Dedupe categories from existing products or fetch distinct? Simple approach: Dedupe visible or hardcode common for now if not fetched separately. 
-                            Ideally, we fetch categories from API.
-                        */}
-                            {['Electronics', 'Apparel', 'Home', 'Food', 'Misc'].map(c => <option key={c} value={c}>{c}</option>)}
+                            {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                         </select>
                     </div>
                     <div className="flex items-center gap-2">
@@ -376,6 +392,23 @@ export default function ProductsPage() {
                                     onChange={e => setNewProduct({ ...newProduct, name: e.target.value })}
                                     required
                                 />
+                                <div className="grid grid-cols-2 gap-4">
+                                    <select
+                                        className="w-full p-2 border rounded-lg"
+                                        value={newProduct.categoryId || ''}
+                                        onChange={e => setNewProduct({ ...newProduct, categoryId: e.target.value })}
+                                    >
+                                        <option value="">Select Category</option>
+                                        {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                    </select>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowCategoryManager(true)}
+                                        className="text-indigo-600 font-medium text-sm hover:underline"
+                                    >
+                                        Manage
+                                    </button>
+                                </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <input
                                         placeholder="SKU"
@@ -661,7 +694,7 @@ export default function ProductsPage() {
                                                 {formatCurrency(p.price, user?.currency)}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {(p as any).category || '-'}
+                                                {p.category?.name || (p as any).category || '-'}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 {p.costPrice ? formatCurrency(p.costPrice, user?.currency) : '-'}
@@ -721,21 +754,42 @@ export default function ProductsPage() {
                     </table>
                 </div>
 
-                <div className="mt-4 text-center pb-8 space-y-2">
-                    <div className="text-gray-500 text-sm">
-                        Viewing {products.length} of {totalProducts} products
+                <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex items-center justify-between rounded-b-xl border-x border-b">
+                    <div className="text-sm text-gray-500">
+                        Page {page} of {Math.max(1, Math.ceil(totalProducts / limit))}
                     </div>
-                    {hasMore && (
+                    <div className="flex gap-2">
                         <button
-                            onClick={() => loadProducts(false)}
-                            disabled={loadingMore}
-                            className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                            onClick={() => {
+                                const newPage = Math.max(1, page - 1);
+                                setPage(newPage);
+                                loadProducts(newPage);
+                            }}
+                            disabled={page === 1 || loading}
+                            className="px-4 py-2 border rounded-md bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {loadingMore ? 'Loading...' : 'Load More Products'}
+                            Previous
                         </button>
-                    )}
+                        <button
+                            onClick={() => {
+                                const newPage = page + 1;
+                                setPage(newPage);
+                                loadProducts(newPage);
+                            }}
+                            disabled={page >= Math.ceil(totalProducts / limit) || loading}
+                            className="px-4 py-2 border rounded-md bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            Next
+                        </button>
+                    </div>
                 </div>
             </div>
+
+            <CategoryManager
+                isOpen={showCategoryManager}
+                onClose={() => setShowCategoryManager(false)}
+                onUpdate={loadCategories}
+            />
         </div >
     );
 }

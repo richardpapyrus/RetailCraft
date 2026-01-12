@@ -31,6 +31,15 @@ async function main() {
     });
     console.log(`   Location 2 ID: ${loc2.id}`);
 
+    // 2b. Create a Category
+    const category = await prisma.productCategory.create({
+        data: {
+            name: 'Test Category',
+            tenantId: adminUser.tenantId,
+            status: 'ACTIVE'
+        }
+    });
+
     // 3. Create a Product (Global Catalog)
     console.log('3. Creating Product...');
     const product = await prisma.product.create({
@@ -38,7 +47,8 @@ async function main() {
             name: 'Test Product',
             sku: `SKU_${Date.now()}`,
             price: 100,
-            tenantId: adminUser.tenantId,
+            tenant: { connect: { id: adminUser.tenantId } },
+            category: { connect: { id: category.id } }
             // storeId is optional on Product, leaving null for global
         }
     });

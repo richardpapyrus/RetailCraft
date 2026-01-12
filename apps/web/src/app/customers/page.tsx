@@ -1,5 +1,6 @@
 "use client";
 import { useRouter } from 'next/navigation';
+import { Award } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { DataService } from '@/lib/db-service';
 import { Customer } from '@/lib/db';
@@ -15,7 +16,8 @@ export default function CustomersPage() {
     const [hasMore, setHasMore] = useState(true);
     const [totalCustomers, setTotalCustomers] = useState(0);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [formData, setFormData] = useState({ name: '', phone: '', email: '' });
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [formData, setFormData] = useState({ name: '', phone: '', email: '', isLoyaltyMember: false });
 
     useEffect(() => {
         if (!isHydrated) return;
@@ -52,14 +54,32 @@ export default function CustomersPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await DataService.saveCustomer({ ...formData, storeId: selectedStoreId || undefined });
+            if (editingId) {
+                await DataService.updateCustomer(editingId, { ...formData });
+                toast.success("Customer Updated");
+            } else {
+                await DataService.saveCustomer({ ...formData, storeId: selectedStoreId || undefined });
+                toast.success("Customer Saved");
+            }
             setIsModalOpen(false);
-            setFormData({ name: '', phone: '', email: '' });
+            setEditingId(null);
+            setFormData({ name: '', phone: '', email: '', isLoyaltyMember: false } as any);
             loadCustomers(true);
-            toast.success("Customer Saved");
         } catch (error) {
             toast.error("Failed to save customer");
         }
+    };
+
+    const handleEdit = (customer: any, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setFormData({
+            name: customer.name,
+            phone: customer.phone || '',
+            email: customer.email || '',
+            isLoyaltyMember: customer.isLoyaltyMember || false
+        } as any);
+        setEditingId(customer.id);
+        setIsModalOpen(true);
     };
 
     if (!user) return <div>Loading...</div>;
@@ -73,18 +93,27 @@ export default function CustomersPage() {
                 <div className="max-w-4xl mx-auto">
                     <div className="flex justify-between items-center mb-6">
                         <h1 className="text-2xl font-bold text-gray-800">Customers</h1>
-                        <button
-                            onClick={() => {
-                                if (!selectedStoreId) {
-                                    toast.error("Please select a store to create a customer.");
-                                    return;
-                                }
-                                setIsModalOpen(true);
-                            }}
-                            className={`px-4 py-2 rounded transition shadow-sm ${!selectedStoreId ? 'bg-gray-300 cursor-not-allowed text-gray-500' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
-                        >
-                            + Add Customer
-                        </button>
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={() => router.push('/loyalty')}
+                                className="px-4 py-2 rounded bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 flex items-center gap-2 shadow-sm font-medium"
+                            >
+                                <Award size={18} className="text-indigo-600" />
+                                Loyalty Program
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (!selectedStoreId) {
+                                        toast.error("Please select a store to create a customer.");
+                                        return;
+                                    }
+                                    setIsModalOpen(true);
+                                }}
+                                className={`px-4 py-2 rounded transition shadow-sm ${!selectedStoreId ? 'bg-gray-300 cursor-not-allowed text-gray-500' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+                            >
+                                + Add Customer
+                            </button>
+                        </div>
                     </div>
 
                     <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -123,11 +152,19 @@ export default function CustomersPage() {
                                                 </span>
                                             </td>
                                             <td className="p-4">
-                                                {c.id.startsWith('OFFLINE') ? (
-                                                    <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">Unsynced</span>
-                                                ) : (
-                                                    <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Synced</span>
-                                                )}
+                                                <div className="flex items-center justify-between">
+                                                    {c.id.startsWith('OFFLINE') ? (
+                                                        <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">Unsynced</span>
+                                                    ) : (
+                                                        <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Synced</span>
+                                                    )}
+                                                    <button
+                                                        onClick={(e) => handleEdit(c, e)}
+                                                        className="p-1 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))
@@ -179,11 +216,20 @@ export default function CustomersPage() {
                             <div className="mb-4">
                                 <label className="block text-sm font-medium mb-1">Email</label>
                                 <input
-                                    type="email"
-                                    className="w-full p-2 border rounded"
-                                    value={formData.email}
                                     onChange={e => setFormData({ ...formData, email: e.target.value })}
                                 />
+                            </div>
+                            <div className="mb-6 flex items-center">
+                                <input
+                                    type="checkbox"
+                                    id="loyalty"
+                                    className="w-5 h-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                                    checked={(formData as any).isLoyaltyMember || false}
+                                    onChange={e => setFormData({ ...formData, isLoyaltyMember: e.target.checked } as any)}
+                                />
+                                <label htmlFor="loyalty" className="ml-2 block text-sm font-bold text-gray-700">
+                                    Enroll in Loyalty Program
+                                </label>
                             </div>
                             <div className="flex justify-end gap-2">
                                 <button

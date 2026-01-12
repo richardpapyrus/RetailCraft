@@ -104,7 +104,8 @@ export interface Product {
     name: string;
     sku: string;
     barcode?: string | null;
-    category?: string;
+    categoryId?: string;
+    category?: { id: string; name: string };
     price: string | number;
     costPrice?: string | number;
     minStockLevel?: number;
@@ -202,7 +203,7 @@ export const api = {
             params.append('take', take.toString());
             return fetchClient(`/sales?${params.toString()}`);
         },
-        create: (data: { items: { productId: string; quantity: number }[]; paymentMethod?: string; payments?: { method: string; amount: number; reference?: string }[]; customerId?: string; discount?: any; tillSessionId?: string; redeemPoints?: number; storeId?: string }) =>
+        create: (data: { items: { productId: string; quantity: number }[]; paymentMethod?: string; payments?: { method: string; amount: number; reference?: string }[]; customerId?: string; discount?: any; tillSessionId?: string; redeemPoints?: number; loyaltyDiscountAmount?: number; storeId?: string }) =>
             fetchClient('/sales', {
                 method: 'POST',
                 body: JSON.stringify(data)
@@ -245,7 +246,17 @@ export const api = {
             method: 'POST',
             body: JSON.stringify(data),
         }),
+        update: (id: string, data: any) => fetchClient(`/customers/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+        }),
         getSales: (id: string, skip: number, take: number) => fetchClient(`/customers/${id}/sales?skip=${skip}&take=${take}`).then(res => res as { data: any[], total: number }),
+    },
+    categories: {
+        list: () => fetchClient('/categories').then(res => res as any[]),
+        create: (data: { name: string; description?: string }) => fetchClient('/categories', { method: 'POST', body: JSON.stringify(data) }),
+        update: (id: string, data: any) => fetchClient(`/categories/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+        delete: (id: string) => fetchClient(`/categories/${id}`, { method: 'DELETE' }),
     },
     users: {
         list: (storeId?: string) => fetchClient(`/users${storeId ? `?storeId=${storeId}` : ''}`),

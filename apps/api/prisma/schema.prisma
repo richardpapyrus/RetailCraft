@@ -28,6 +28,13 @@ model Tenant {
   roles     Role[]
   tills     Till[]
   purchaseOrders PurchaseOrder[]
+  productCategories ProductCategory[]
+  
+  // Loyalty Settings
+  loyaltyEarnRate   Decimal  @default(1.0)  // Points per Currency Unit
+  loyaltyRedeemRate Decimal  @default(0.10) // Value per Point
+  loyaltyExpiryDays Int      @default(365)
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -110,7 +117,10 @@ model Product {
   sku         String
   barcode     String?
   name        String
-  category    String?  // New Field
+  // New Relation
+  categoryId  String?
+  category    ProductCategory? @relation(fields: [categoryId], references: [id])
+  
   description String?
   price       Decimal  // Selling Price
   costPrice   Decimal  @default(0.0) // Purchase Price
@@ -138,6 +148,23 @@ model Product {
 
   @@unique([sku, tenantId])
   @@unique([barcode, tenantId])
+}
+
+model ProductCategory {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  status      String   @default("ACTIVE") // ACTIVE, INACTIVE
+  
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  
+  products    Product[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([name, tenantId])
 }
 
 model Inventory {
@@ -249,6 +276,7 @@ model Sale {
   
   loyaltyPointsUsed   Int @default(0)
   loyaltyPointsEarned Int @default(0)
+  loyaltyDiscountAmount Decimal @default(0)
 
   items         SaleItem[]
   
@@ -282,6 +310,7 @@ model Customer {
   store       Store     @relation(fields: [storeId], references: [id])
   
   loyaltyPoints Int      @default(0)
+  isLoyaltyMember Boolean @default(false)
   
   sales     Sale[]
   

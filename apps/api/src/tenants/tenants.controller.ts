@@ -13,7 +13,15 @@ export class TenantsController {
   // @UseGuards(AuthGuard) // Uncomment when AuthGuard is available/imported correctly
   async update(
     @Param("id") id: string,
-    @Body() body: { currency?: string; locale?: string; logoUrl?: string; brandColor?: string },
+    @Body() body: {
+      currency?: string;
+      locale?: string;
+      logoUrl?: string;
+      brandColor?: string;
+      loyaltyEarnRate?: number;
+      loyaltyRedeemRate?: number;
+      loyaltyExpiryDays?: number;
+    },
   ) {
     return this.tenantsService.update(id, body);
   }

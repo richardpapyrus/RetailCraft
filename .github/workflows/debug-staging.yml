@@ -1,0 +1,25 @@
+name: Auto Debug Logs
+
+on:
+  push:
+    branches: ["develop", "main"]
+  workflow_dispatch:
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/retail-craft
+          chmod 600 ~/.ssh/retail-craft
+          ssh-keyscan -H 165.227.26.131 >> ~/.ssh/known_hosts
+
+      - name: Fetch API Logs
+        run: |
+          echo "==== API CONTAINER STATUS ===="
+          ssh -i ~/.ssh/retail-craft root@165.227.26.131 "cd /root/retail-craft-staging/ && docker compose -f docker-compose.staging.yml ps"
+          
+          echo -e "\n\n==== API LOGS (Last 100 lines) ===="
+          ssh -i ~/.ssh/retail-craft root@165.227.26.131 "cd /root/retail-craft-staging/ && docker compose -f docker-compose.staging.yml logs --tail=100 staging_api"
