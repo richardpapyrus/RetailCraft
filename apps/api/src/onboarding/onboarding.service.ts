@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 @Injectable()
 export class OnboardingService {
-  constructor() {}
+  constructor() { }
 
   async updateBusinessProfile(
     tenantId: string,
@@ -24,7 +24,7 @@ export class OnboardingService {
     // We no longer auto-rename the store to match business name. 
     // Locations are distinct entities.
     // However, if no store exists (rare), we might create one, but onboarding flow should handle that.
-    
+
     return { success: true };
   }
 
@@ -73,12 +73,23 @@ export class OnboardingService {
       });
     }
 
+    // Ensure default category exists
+    let category = await prisma.productCategory.findFirst({
+      where: { tenantId, name: 'Uncategorized' }
+    });
+    if (!category) {
+      category = await prisma.productCategory.create({
+        data: { name: 'Uncategorized', tenantId, status: 'ACTIVE' }
+      });
+    }
+
     return prisma.product.create({
       data: {
         name: data.name,
         price: data.price,
         sku: data.sku,
-        tenantId,
+        tenant: { connect: { id: tenantId } },
+        category: { connect: { id: category.id } }
       },
     });
   }

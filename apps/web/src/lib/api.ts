@@ -104,7 +104,8 @@ export interface Product {
     name: string;
     sku: string;
     barcode?: string | null;
-    category?: string;
+    categoryId?: string;
+    category?: { id: string; name: string };
     price: string | number;
     costPrice?: string | number;
     minStockLevel?: number;
@@ -251,6 +252,12 @@ export const api = {
         }),
         getSales: (id: string, skip: number, take: number) => fetchClient(`/customers/${id}/sales?skip=${skip}&take=${take}`).then(res => res as { data: any[], total: number }),
     },
+    categories: {
+        list: () => fetchClient('/categories').then(res => res as any[]),
+        create: (data: { name: string; description?: string }) => fetchClient('/categories', { method: 'POST', body: JSON.stringify(data) }),
+        update: (id: string, data: any) => fetchClient(`/categories/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+        delete: (id: string) => fetchClient(`/categories/${id}`, { method: 'DELETE' }),
+    },
     users: {
         list: (storeId?: string) => fetchClient(`/users${storeId ? `?storeId=${storeId}` : ''}`),
         create: (data: any) => fetchClient('/users', { method: 'POST', body: JSON.stringify(data) }),
@@ -366,9 +373,6 @@ export const api = {
             if (tillId) params.append('tillId', tillId);
             return fetchClient(`/till-reports/inventory?${params.toString()}`).then(res => res as any[]);
         }
-    },
-    tenants: {
-        update: (id: string, data: any) => fetchClient(`/tenants/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     }
 };
 

@@ -79,17 +79,34 @@ export class ProductsService {
         if (defaultStore) targetStoreId = defaultStore.id;
       }
 
-      const productData = {
+      // Valid Category Logic
+      let categoryId = await this.getDefaultCategoryId(tenantId);
+      if (row.category && row.category.trim() !== "") {
+        const catName = row.category.trim();
+        const existingCat = await prisma.productCategory.findFirst({
+          where: { tenantId, name: { equals: catName, mode: 'insensitive' } }
+        });
+        if (existingCat) {
+          categoryId = existingCat.id;
+        } else {
+          const newCat = await prisma.productCategory.create({
+            data: { name: catName, tenantId, status: 'ACTIVE' }
+          });
+          categoryId = newCat.id;
+        }
+      }
+
+      const productScalars = {
         name: finalName,
         sku: finalSku,
         price: finalPrice,
-        tenantId,
+        // tenantId, // Removed to force connect
         costPrice: row.costprice ? parseFloat(row.costprice) : undefined,
         minStockLevel: row.minstocklevel ? parseInt(row.minstocklevel) : 0,
         description: row.description,
-        category: row.category && row.category.trim() !== "" ? row.category : null,
+        // category: ... Removed
         barcode: row.barcode && row.barcode.trim() !== "" ? row.barcode : null,
-        storeId: targetStoreId,
+
       };
 
       // SMART DEDUPLICATION LOGIC
@@ -129,25 +146,33 @@ export class ProductsService {
       let status: 'created' | 'updated' = 'created';
 
       if (existing) {
-        // If we found a match, we UPDATE it. 
-        // We do NOT overwrite the SKU if the existing product already has one and the CSV row didn't provide one.
-        const { storeId: _s, sku: _skuInput, ...updateData } = productData;
+        // Update
+        const { sku: _sk, ...updateVars } = productScalars;
+        const finalUpdateData = { ...updateVars };
 
-        // Only update SKU if explicitly provided in CSV, otherwise keep existing
-        const finalUpdateData = { ...updateData };
         if (sku) {
           (finalUpdateData as any).sku = sku;
         }
 
         product = await prisma.product.update({
           where: { id: existing.id },
-          data: finalUpdateData,
+          data: {
+            ...finalUpdateData,
+            // category: { connect: { id: categoryId } } // Optional: do we update category on re-import?
+            // Let's assume Yes if provided, but we already resolved categoryId.
+            // Logic: verify if we should overwrite. For now, let's connect it to ensure consistency.
+            category: { connect: { id: categoryId } }
+          },
         });
         status = 'updated';
       } else {
-        // Only create if truly new
+        // Create
         product = await prisma.product.create({
-          data: productData,
+          data: {
+            ...productScalars,
+            tenant: { connect: { id: tenantId } },
+            category: { connect: { id: categoryId } }
+          },
         });
         status = 'created';
       }
@@ -186,27 +211,27 @@ export class ProductsService {
     description?: string;
     barcode?: string | null;
     supplierId?: string;
-    category?: string | null;
+    categoryId?: string;
   }) {
+    const { tenantId, categoryId, supplierId, ...rest } = data; // specific extraction
+
+    const finalCategoryId = categoryId || (await this.getDefaultCategoryId(tenantId));
 
     return prisma.product.create({
       data: {
-        ...data,
+        ...rest,
         price: data.price, // Prisma handles string -> Decimal
         costPrice: data.costPrice,
         minStockLevel: data.minStockLevel || 0,
         barcode:
           data.barcode === "" || data.barcode === null ? null : data.barcode,
-        category:
-          data.category === "" || data.category === null ? null : data.category,
-        supplierId:
-          data.supplierId === "" || data.supplierId === null ? null : data.supplierId,
-        storeId: (data as any).storeId,
-        supplierProducts: data.supplierId ? {
-          create: { supplierId: data.supplierId, isPreferred: true }
-        } : undefined,
+        tenant: { connect: { id: tenantId } },
+        category: { connect: { id: finalCategoryId } },
+        ...(supplierId ? { supplier: { connect: { id: supplierId } } } : {}),
       },
+      include: { category: true } // Return with category
     });
+
   }
 
   async update(
@@ -258,7 +283,14 @@ export class ProductsService {
       updateData.barcode = null;
     }
     if (updateData.category === "" || updateData.category === null) {
-      updateData.category = null;
+      // updateData.category = null; // Cannot set Relation to null if required (Wait, schema says NotNull)
+      // If clearing category, set to Default? Or forbid?
+      // Assuming frontend sends ID. If empty, ignore or set default.
+      // Rename to categoryId
+      delete updateData.category; // Ensure legacy field is gone
+    } else if (updateData.category) {
+      updateData.categoryId = updateData.category;
+      delete updateData.category;
     }
     if (updateData.supplierId === "" || updateData.supplierId === null) {
       updateData.supplierId = null;
@@ -287,7 +319,7 @@ export class ProductsService {
                 FROM "Product" p
                 LEFT JOIN "Inventory" i ON p.id = i."productId" AND (${storeId ? Prisma.sql`i."storeId" = ${storeId}` : Prisma.sql`1=1`})
                 WHERE p."tenantId" = ${tenantId}
-                AND (${filters.category ? Prisma.sql`p.category = ${filters.category}` : Prisma.sql`1=1`})
+                AND (${filters.category ? Prisma.sql`p."categoryId" = ${filters.category}` : Prisma.sql`1=1`})
                 AND (
                     p.name ILIKE ${searchTerm} OR 
                     p.sku ILIKE ${searchTerm} OR 
@@ -308,7 +340,7 @@ export class ProductsService {
                   LEFT JOIN "Inventory" i ON p.id = i."productId" ${storeId ? `AND i."storeId" = '${storeId}'` : ''}
                   WHERE p."tenantId" = '${tenantId}'
                  ${storeId ? `AND (p."storeId" = '${storeId}' OR p."storeId" IS NULL OR i."storeId" = '${storeId}')` : ''}
-                 AND (${filters.category ? `p.category = '${filters.category}'` : '1=1'})
+                 AND (${filters.category ? `p."categoryId" = '${filters.category}'` : '1=1'})
                  AND (
                     p.name ILIKE '%${searchTerm}%' OR 
                     p.sku ILIKE '%${searchTerm}%' OR 
@@ -350,7 +382,7 @@ export class ProductsService {
       filters.category !== "null" &&
       filters.category.trim() !== ""
     ) {
-      where.category = filters.category;
+      where.categoryId = filters.category;
     }
 
     // STRICT STORE ISOLATION -> NOW ALLOWS GLOBAL PRODUCTS AND SHARED INVENTORY
@@ -373,7 +405,8 @@ export class ProductsService {
         where,
         include: {
           inventory: { where: storeId ? { storeId } : undefined },
-          supplier: true
+          supplier: true,
+          category: true,
         },
         skip,
         take,
@@ -439,6 +472,7 @@ export class ProductsService {
       include: {
         inventory: true,
         supplier: true,
+        category: true,
         inventoryEvents: {
           include: {
             supplier: true,
@@ -466,5 +500,19 @@ export class ProductsService {
       }),
     ]);
     return { total, data };
+  }
+
+  private async getDefaultCategoryId(tenantId: string): Promise<string> {
+    const category = await prisma.productCategory.findFirst({
+      where: { tenantId, name: 'Uncategorized' },
+      select: { id: true }
+    });
+    if (category) return category.id;
+
+    // Fallback: Create if missing (Self-Healing)
+    const newCat = await prisma.productCategory.create({
+      data: { name: 'Uncategorized', tenantId, status: 'ACTIVE' }
+    });
+    return newCat.id;
   }
 }

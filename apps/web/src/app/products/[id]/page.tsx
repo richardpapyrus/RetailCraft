@@ -22,6 +22,7 @@ export default function ProductDetailPage() {
     const [hasMore, setHasMore] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
     const [suppliers, setSuppliers] = useState<any[]>([]);
+    const [categories, setCategories] = useState<any[]>([]);
 
     // Modal States
     const [showEdit, setShowEdit] = useState(false);
@@ -41,6 +42,7 @@ export default function ProductDetailPage() {
         }
         loadProduct();
         loadSuppliers();
+        loadCategories();
     }, [token, router, isHydrated, id]);
 
     const loadProduct = async () => {
@@ -62,6 +64,15 @@ export default function ProductDetailPage() {
         try {
             const data = await api.suppliers.list();
             setSuppliers(data);
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    const loadCategories = async () => {
+        try {
+            const data = await api.categories.list();
+            setCategories(data);
         } catch (e) {
             console.error(e);
         }
@@ -149,7 +160,7 @@ export default function ProductDetailPage() {
             name: product.name,
             sku: product.sku,
             barcode: product.barcode,
-            category: product.category,
+            categoryId: (product as any).categoryId || product.category?.id,
             price: product.price,
             costPrice: product.costPrice,
             minStockLevel: product.minStockLevel,
@@ -333,7 +344,14 @@ export default function ProductDetailPage() {
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium mb-1">Category</label>
-                                    <input className="w-full p-2 border rounded-lg" value={editForm.category || ''} onChange={e => setEditForm({ ...editForm, category: e.target.value })} />
+                                    <select
+                                        className="w-full p-2 border rounded-lg"
+                                        value={editForm.categoryId || ''}
+                                        onChange={e => setEditForm({ ...editForm, categoryId: e.target.value })}
+                                    >
+                                        <option value="">None</option>
+                                        {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                    </select>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium mb-1">Supplier</label>

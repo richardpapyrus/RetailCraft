@@ -25,6 +25,7 @@ import { UploadsModule } from "./uploads/uploads.module";
 import { PurchaseOrdersModule } from "./purchase-orders/purchase-orders.module";
 import { GrnModule } from "./grn/grn.module";
 import { TillReportsModule } from "./till-reports/till-reports.module";
+import { CategoriesModule } from "./categories/categories.module";
 import { join } from 'path';
 
 import { LoggerMiddleware } from "./common/middleware/logger.middleware";
@@ -48,15 +49,13 @@ import { ApiPrefixMiddleware } from "./common/middleware/api-prefix.middleware";
     TenantsModule,
     ReturnsModule,
     RolesModule,
-    RolesModule,
     PrismaModule,
-    BusinessModule,
     BusinessModule,
     UploadsModule,
     PurchaseOrdersModule,
-    PurchaseOrdersModule,
     GrnModule,
     TillReportsModule,
+    CategoriesModule,
   ],
   controllers: [],
   providers: [],

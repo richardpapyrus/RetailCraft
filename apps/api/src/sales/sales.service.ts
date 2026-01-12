@@ -104,6 +104,7 @@ export class SalesService {
       for (const item of items) {
         const product = await tx.product.findUnique({
           where: { id: item.productId },
+          include: { category: true }
         });
         if (!product)
           throw new BadRequestException(`Product ${item.productId} not found`);
@@ -120,7 +121,8 @@ export class SalesService {
           } else if (resolvedDiscount.targetType === "CATEGORY") {
             if (
               product.category &&
-              resolvedDiscount.targetValues.includes(product.category)
+              // Use name for legacy compatibility or ID? Using Name is safer for "Electronics" stored in discounts
+              resolvedDiscount.targetValues.includes(product.category.name)
             ) {
               isEligible = true;
             }
