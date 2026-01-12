@@ -20,6 +20,8 @@ interface Sale {
     total: string;
     paymentMethod: string;
     status: string;
+    loyaltyPointsUsed?: number;
+    loyaltyDiscountAmount?: number;
 }
 
 export default function CustomerDetailPage({ params }: { params: { id: string } }) {
@@ -137,9 +139,17 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
                                                 }`}>
                                                 {sale.paymentMethod}
                                             </span>
+                                            {sale.loyaltyPointsUsed && sale.loyaltyPointsUsed > 0 && (
+                                                <span className="ml-2 px-2 py-1 rounded text-xs font-bold bg-indigo-100 text-indigo-800">
+                                                    + {sale.loyaltyPointsUsed} Pts
+                                                </span>
+                                            )}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-gray-900">
-                                            ${Number(sale.total).toFixed(2)}
+                                            <div>${Number(sale.total).toFixed(2)}</div>
+                                            {sale.loyaltyDiscountAmount && Number(sale.loyaltyDiscountAmount) > 0 && (
+                                                <div className="text-[10px] text-green-600">Saved ${Number(sale.loyaltyDiscountAmount).toFixed(2)}</div>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}

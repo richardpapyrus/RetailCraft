@@ -321,6 +321,7 @@ export default function POSPage() {
                 customerId: selectedCustomer?.id,
                 tillSessionId: activeSession?.id,
                 redeemPoints: usePoints ? pointsToRedeem : 0,
+                loyaltyDiscountAmount: usePoints ? (pointsToRedeem * (Number(user?.tenant?.loyaltyRedeemRate) || 0.10)) : 0,
                 storeId: selectedStoreId || undefined,
                 discount: appliedDiscount || undefined
             });
@@ -848,7 +849,7 @@ export default function POSPage() {
                             </div>
 
                             {/* Loyalty Redemption UI */}
-                            {selectedCustomer && (selectedCustomer.loyaltyPoints > 0) && (
+                            {selectedCustomer && selectedCustomer.isLoyaltyMember && (selectedCustomer.loyaltyPoints > 0) && (
                                 <div className="mb-6 bg-indigo-50 p-4 rounded-xl border border-indigo-100">
                                     <div className="flex justify-between items-center mb-2">
                                         <span className="text-sm font-bold text-indigo-900">Loyalty Points</span>

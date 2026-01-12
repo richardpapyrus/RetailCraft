@@ -255,6 +255,7 @@ model Sale {
   
   loyaltyPointsUsed   Int @default(0)
   loyaltyPointsEarned Int @default(0)
+  loyaltyDiscountAmount Decimal @default(0)
 
   items         SaleItem[]
   

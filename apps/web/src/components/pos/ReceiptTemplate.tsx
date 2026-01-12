@@ -157,9 +157,10 @@ export default function ReceiptTemplate({ sale, user, store: propStore }: Receip
                     <span>{formatCurrency(sale.change, user?.currency, user?.locale)}</span>
                 </div>
 
-                {sale.redeemPoints > 0 && (
-                    <div className="mt-2 text-center text-[10px] border border-black py-1 rounded">
-                        Info: {sale.redeemPoints} Pts Redeemed
+                {(sale.loyaltyPointsUsed > 0 || sale.redeemPoints > 0) && (
+                    <div className="flex justify-between font-bold text-black mt-1 bg-gray-100 p-1">
+                        <span>Loyalty Redemp. ({sale.loyaltyPointsUsed || sale.redeemPoints} pts)</span>
+                        <span>-{formatCurrency(sale.loyaltyDiscountAmount || ((sale.loyaltyPointsUsed || sale.redeemPoints) * (Number(user?.tenant?.loyaltyRedeemRate) || 0.10)), user?.currency, user?.locale)}</span>
                     </div>
                 )}
             </div>
