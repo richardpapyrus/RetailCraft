@@ -1,6 +1,8 @@
-name: Debug Staging Logs
+name: Auto Debug Logs
 
 on:
+  push:
+    branches: ["develop", "main"]
   workflow_dispatch:
 
 jobs:
