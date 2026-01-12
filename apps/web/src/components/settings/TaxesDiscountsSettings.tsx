@@ -23,17 +23,20 @@ export default function TaxesDiscountsSettings() {
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [allProducts, setAllProducts] = useState<any[]>([]);
+    const [allCategories, setAllCategories] = useState<any[]>([]);
 
     const fetchData = async () => {
         try {
-            const [t, d, p] = await Promise.all([
+            const [t, d, p, c] = await Promise.all([
                 api.taxes.list(),
                 api.discounts.list(),
-                api.products.list(0, 1000).then(res => res.data) // Fetch all products for dropdown
+                api.products.list(0, 1000).then(res => res.data), // Fetch all products for dropdown
+                api.categories.list()
             ]);
             setTaxes(t || []);
             setDiscounts(d || []);
             setAllProducts(p || []);
+            setAllCategories(c || []);
         } catch (e) {
             console.error(e);
         }
@@ -215,16 +218,25 @@ export default function TaxesDiscountsSettings() {
                         )}
 
                         {targetType === 'CATEGORY' && (
-                            <div className="mb-4">
-                                <label className="text-xs font-bold text-gray-500 block mb-2">Enter Categories (comma separated):</label>
-                                <input
-                                    type="text"
-                                    className="w-full p-2 border rounded"
-                                    placeholder="e.g. Drinks, Snacks"
-                                    value={targetValues.join(', ')}
-                                    onChange={e => setTargetValues(e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
-                                />
-                                <p className="text-xs text-gray-400 mt-1">Found categories: {[...new Set(allProducts.map(p => p.category).filter(Boolean))].join(', ')}</p>
+                            <div className="mb-4 p-3 bg-white border rounded">
+                                <label className="text-xs font-bold text-gray-500 block mb-2">Select Categories:</label>
+                                {allCategories.length === 0 ? <p className="text-sm text-gray-400">No categories found.</p> : (
+                                    <div className="max-h-32 overflow-y-auto grid grid-cols-2 gap-2">
+                                        {allCategories.map(c => (
+                                            <label key={c.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-50 p-1 rounded">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={targetValues.includes(c.name)}
+                                                    onChange={e => {
+                                                        if (e.target.checked) setTargetValues([...targetValues, c.name]);
+                                                        else setTargetValues(targetValues.filter(val => val !== c.name));
+                                                    }}
+                                                />
+                                                <span className="truncate">{c.name}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>

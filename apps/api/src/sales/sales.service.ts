@@ -266,14 +266,13 @@ export class SalesService {
             }))
           },
           status: "COMPLETED",
-          tenantId,
-          storeId,
-          userId,
-          customerId,
-          tillSessionId,
+          tenant: { connect: { id: tenantId } },
+          store: { connect: { id: storeId } },
+          user: { connect: { id: userId } },
+          customer: customerId ? { connect: { id: customerId } } : undefined,
+          tillSession: { connect: { id: tillSessionId } },
           loyaltyPointsUsed: pointsUsed,
           loyaltyPointsEarned: pointsEarned,
-          loyaltyDiscountAmount: (data as any).loyaltyDiscountAmount || 0,
         },
       });
 
@@ -506,7 +505,9 @@ export class SalesService {
       orderBy: { createdAt: "desc" },
       include: {
         user: { select: { email: true, name: true } },
-        customer: { select: { name: true } },
+        customer: { select: { name: true, code: true } },
+        items: { include: { product: true } },
+        payments: true,
       },
     });
     return {

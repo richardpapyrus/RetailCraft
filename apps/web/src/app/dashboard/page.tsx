@@ -25,12 +25,14 @@ import {
     MapPin
 } from 'lucide-react';
 import { EODReport } from '@/components/reporting/EODReport';
+import { SaleDetailModal } from '@/components/sales/SaleDetailModal';
 
 export default function DashboardPage() {
     const { user, token, isHydrated } = useAuth();
     const router = useRouter();
     const [stats, setStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [selectedSale, setSelectedSale] = useState<any>(null);
 
     // Global Store Filtering
     const { selectedStoreId } = useAuth();
@@ -265,7 +267,11 @@ export default function DashboardPage() {
                                     </div>
                                     <div className="space-y-1">
                                         {stats?.recentSales?.map((sale: any) => (
-                                            <div key={sale.id} className="group flex justify-between items-center p-4 hover:bg-gray-50 rounded-2xl transition-all duration-200">
+                                            <div
+                                                key={sale.id}
+                                                onClick={() => setSelectedSale(sale)}
+                                                className="group flex justify-between items-center p-4 hover:bg-gray-50 rounded-2xl transition-all duration-200 cursor-pointer"
+                                            >
                                                 <div>
                                                     <div className="font-bold text-gray-900 mb-1">{sale.customer?.name || 'Walk-In Customer'}</div>
                                                     <div className="text-xs font-medium text-gray-500 flex items-center gap-1.5">
@@ -289,10 +295,17 @@ export default function DashboardPage() {
                                 </div>
                             </div>
                         </div>
+
+                        {selectedSale && (
+                            <SaleDetailModal
+                                sale={selectedSale}
+                                onClose={() => setSelectedSale(null)}
+                            />
+                        )}
                     </>
                 )}
             </div>
-            {stats && (
+            {stats && !selectedSale && (
                 <EODReport
                     stats={stats}
                     user={user}

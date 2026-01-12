@@ -402,7 +402,6 @@ export default function ProductsPage() {
                                         className="w-full p-2 border rounded-lg"
                                         value={newProduct.categoryId || ''}
                                         onChange={e => setNewProduct({ ...newProduct, categoryId: e.target.value })}
-                                        required
                                     >
                                         <option value="">Select Category</option>
                                         {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}

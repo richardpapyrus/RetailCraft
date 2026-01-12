@@ -213,7 +213,7 @@ export class ProductsService {
     supplierId?: string;
     categoryId?: string;
   }) {
-    const { tenantId, categoryId, supplierId, ...rest } = data; // specific extraction
+    const { tenantId, categoryId, supplierId, storeId, ...rest } = data as any; // explicit any to catch storeId if missing in type
 
     const finalCategoryId = categoryId || (await this.getDefaultCategoryId(tenantId));
 
@@ -226,7 +226,8 @@ export class ProductsService {
         barcode:
           data.barcode === "" || data.barcode === null ? null : data.barcode,
         tenant: { connect: { id: tenantId } },
-        category: { connect: { id: finalCategoryId } },
+        category: categoryId ? { connect: { id: categoryId } } : undefined, // Optional connection
+        store: storeId ? { connect: { id: storeId } } : undefined, // Explicit connect
         ...(supplierId ? { supplier: { connect: { id: supplierId } } } : {}),
       },
       include: { category: true } // Return with category

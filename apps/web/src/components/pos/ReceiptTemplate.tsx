@@ -19,6 +19,22 @@ export default function ReceiptTemplate({ sale, user, store: propStore }: Receip
     // Receipt width: 80mm is standard thermal paper width.
     return (
         <div id="receipt-print-area" className="hidden print:block bg-white text-black font-mono text-[11px] leading-tight">
+            <style jsx global>{`
+                @media print {
+                    @page { margin: 0; }
+                    body { visibility: hidden; }
+                    #receipt-print-area {
+                        visibility: visible;
+                        position: absolute;
+                        left: 0;
+                        top: 0;
+                        width: 100%;
+                    }
+                    #receipt-print-area * {
+                        visibility: visible;
+                    }
+                }
+            `}</style>
 
             {/* --- HEADER --- */}
             <div className="text-center mb-4">
@@ -62,8 +78,8 @@ export default function ReceiptTemplate({ sale, user, store: propStore }: Receip
             <div className="mb-4 text-[10px]">
                 <div className="flex justify-between border-b border-black pb-1 mb-1">
                     <div className="text-left">
-                        <p>{new Date(sale.date).toLocaleDateString()}</p>
-                        <p>{new Date(sale.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                        <p>{new Date(sale.date || sale.createdAt).toLocaleDateString()}</p>
+                        <p>{new Date(sale.date || sale.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                     </div>
                     <div className="text-right">
                         <p>Rcpt: #{sale.id?.slice(-6).toUpperCase()}</p>

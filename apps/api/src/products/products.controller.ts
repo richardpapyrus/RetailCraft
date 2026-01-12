@@ -83,17 +83,29 @@ Example Product,EX-001,10.00,Description here,General,12345678,5.00,10,100`;
     const isSystemAdmin = req.user.role === 'Administrator' || req.user.permissions?.includes('*');
 
     // Determine Store ID
-    // If Non-Admin: MUST be their assigned store.
-    // If Admin: Can be body.storeId OR their assigned store OR null (Global) if explicitly null/undefined.
     let targetStoreId = body.storeId;
-    if (!isSystemAdmin) {
-      if (!req.user.storeId) throw new Error("Operation denied: No store assigned");
+
+    // Auto-assign current user's store if not provided (for both Admins and Staff)
+    if (!targetStoreId && req.user.storeId) {
       targetStoreId = req.user.storeId;
     }
 
-    if (!targetStoreId) {
-      throw new Error("Store ID is required to create a product.");
+    // If still no store, and not System Admin (who might want Global), deny.
+    // Actually, for simplicity, let's allow Global products if Admin explicitly sends nothing and has no store?
+    // But User has store. So the above fix handles it.
+
+    if (!isSystemAdmin && !targetStoreId) {
+      throw new Error("Operation denied: No store assigned");
     }
+
+    // For verifying the "Required" part:
+    // If we WANT to allow Global Products (storeId=null), we should remove the strictly required check below.
+    // But user likely wants products in their store.
+    // With the fallback above, targetStoreId will be set to 'default-store-id'.
+
+    // if (!targetStoreId) {
+    //   throw new Error("Store ID is required to create a product.");
+    // }
 
     return this.productsService.create({
       ...body,

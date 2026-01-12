@@ -5,6 +5,7 @@ import { api } from '@/lib/api';
 import { useAuth, formatCurrency } from '@/lib/useAuth';
 import { useRouter } from 'next/navigation';
 import { ReturnModal } from '@/components/sales/ReturnModal';
+import { SaleDetailModal } from '@/components/sales/SaleDetailModal';
 import { toast } from 'react-hot-toast';
 
 interface SaleItem {
@@ -191,81 +192,11 @@ export default function SalesHistoryPage() {
 
                 {/* RECEIPT DETAIL MODAL */}
                 {selectedSale && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setSelectedSale(null)}>
-                        <div className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
-                            <div className="p-6 border-b border-gray-100 flex justify-between items-start">
-                                <div>
-                                    <h2 className="text-xl font-bold text-gray-900">Receipt Details</h2>
-                                    <p className="text-sm text-gray-500 font-mono">#{selectedSale.id}</p>
-                                </div>
-                                <button className="text-gray-400 hover:text-gray-600" onClick={() => setSelectedSale(null)}>
-                                    ✕
-                                </button>
-                            </div>
-
-                            <div className="p-6 max-h-[60vh] overflow-y-auto">
-                                <div className="mb-6 text-center">
-                                    <div className="text-sm text-gray-500">{formatDate(selectedSale.createdAt)}</div>
-                                    <div className="font-bold text-lg mt-1">{selectedSale.customer?.name || 'Walk-In Customer'}</div>
-                                    {selectedSale.customer?.code && <div className="text-xs text-gray-400 font-mono">{selectedSale.customer.code}</div>}
-                                </div>
-
-                                <div className="space-y-4">
-                                    {selectedSale.items.map((item) => (
-                                        <div key={item.id} className="flex justify-between text-sm">
-                                            <div>
-                                                <div className="font-medium text-gray-900">{item.product.name}</div>
-                                                <div className="text-xs text-gray-500">{item.quantity} x ${Number(item.priceAtSale).toFixed(2)}</div>
-                                            </div>
-                                            <div className="font-medium text-gray-900">
-                                                ${(item.quantity * Number(item.priceAtSale)).toFixed(2)}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                <div className="border-t border-gray-200 mt-6 pt-4 space-y-2">
-                                    <div className="flex justify-between font-bold text-lg">
-                                        <span>Total</span>
-                                        <span>${Number(selectedSale.total).toFixed(2)}</span>
-                                    </div>
-                                    <div className="flex justify-between text-sm text-gray-500">
-                                        <span>Payment Method</span>
-                                        <span>{selectedSale.paymentMethod}</span>
-                                    </div>
-                                    {(selectedSale as any).payments && (selectedSale as any).payments.length > 0 && (
-                                        <div className="mt-2 bg-gray-50 p-2 rounded text-xs space-y-1">
-                                            {(selectedSale as any).payments.map((p: any, i: number) => (
-                                                <div key={i} className="flex justify-between">
-                                                    <span className="font-bold">{p.method}</span>
-                                                    <span>${Number(p.amount).toFixed(2)}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                    <div className="flex justify-between text-sm text-gray-500">
-                                        <span>Cashier</span>
-                                        <span>{selectedSale.user?.email || 'N/A'}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="bg-gray-50 px-6 py-4 flex justify-between">
-                                <button
-                                    className="px-4 py-2 border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 rounded font-medium"
-                                    onClick={() => setReturnModalOpen(true)}
-                                >
-                                    Return Items
-                                </button>
-                                <button
-                                    className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 font-medium"
-                                    onClick={() => window.print()}
-                                >
-                                    Print Receipt
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                    <SaleDetailModal
+                        sale={selectedSale}
+                        onClose={() => setSelectedSale(null)}
+                        onReturn={() => setReturnModalOpen(true)}
+                    />
                 )}
 
                 {selectedSale && (

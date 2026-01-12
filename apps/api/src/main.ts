@@ -38,6 +38,12 @@ async function bootstrap() {
     allowedHeaders: "Content-Type, Key, Authorization, X-Requested-With",
   });
 
+  // Global Request Logger
+  app.use((req, res, next) => {
+    console.log(`[REQUEST] ${req.method} ${req.path}`);
+    next();
+  });
+
   // --- SELF HEALING LOGIC ---
   try {
     const prisma = app.get(PrismaService);
