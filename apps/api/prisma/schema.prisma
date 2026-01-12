@@ -118,8 +118,8 @@ model Product {
   barcode     String?
   name        String
   // New Relation
-  categoryId  String
-  category    ProductCategory @relation(fields: [categoryId], references: [id])
+  categoryId  String?
+  category    ProductCategory? @relation(fields: [categoryId], references: [id])
   
   description String?
   price       Decimal  // Selling Price
