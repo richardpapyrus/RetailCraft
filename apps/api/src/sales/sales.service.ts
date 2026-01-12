@@ -269,7 +269,6 @@ export class SalesService {
           userId,
           customerId,
           tillSessionId,
-          tillSessionId,
           loyaltyPointsUsed: pointsUsed,
           loyaltyPointsEarned: pointsEarned,
           loyaltyDiscountAmount: (data as any).loyaltyDiscountAmount || 0,
