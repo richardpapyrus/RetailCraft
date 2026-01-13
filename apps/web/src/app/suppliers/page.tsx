@@ -24,6 +24,8 @@ export default function SuppliersPage() {
             return;
         }
         loadSuppliers();
+    }, [token, router, isHydrated, selectedStoreId]);
+
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearch(searchTerm);
@@ -112,28 +114,27 @@ export default function SuppliersPage() {
                 <div className="max-w-4xl mx-auto">
                     <div className="flex justify-between items-center mb-6">
                         <h1 className="text-2xl font-bold text-gray-800">Suppliers</h1>
-                        <button
-                            onClick={() => {
-                                if (!selectedStoreId) {
-                                    toast.error("Please select a store to create a supplier.");
-                                    return;
-                                }
-                                openCreate();
-                            }}
-                            className={`px-4 py-2 rounded transition shadow-sm ${!selectedStoreId ? 'bg-gray-300 cursor-not-allowed text-gray-500' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
-                        >
-                            + Add Supplier
-                        </button>
-                    </div>
-
-                    <div className="mb-4">
-                        <input
-                            type="text"
-                            placeholder="Search suppliers..."
-                            className="w-full px-4 py-2 border rounded-lg"
-                            value={searchTerm}
-                            onChange={e => setSearchTerm(e.target.value)}
-                        />
+                        <div className="flex items-center gap-4">
+                            <input
+                                type="text"
+                                placeholder="Search suppliers..."
+                                className="px-4 py-2 border rounded-lg w-64"
+                                value={searchTerm}
+                                onChange={e => setSearchTerm(e.target.value)}
+                            />
+                            <button
+                                onClick={() => {
+                                    if (!selectedStoreId) {
+                                        toast.error("Please select a store to create a supplier.");
+                                        return;
+                                    }
+                                    openCreate();
+                                }}
+                                className={`px-4 py-2 rounded transition shadow-sm ${!selectedStoreId ? 'bg-gray-300 cursor-not-allowed text-gray-500' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+                            >
+                                + Add Supplier
+                            </button>
+                        </div>
                     </div>
 
                     <div className="bg-white rounded-lg shadow overflow-hidden">

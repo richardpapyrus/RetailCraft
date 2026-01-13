@@ -30,6 +30,7 @@ export class SuppliersService {
   }
 
   async findAll(tenantId: string, storeId?: string, search?: string) {
+    // console.log(`[SuppliersService] findAll: search="${search}", storeId="${storeId}"`);
     const where: Prisma.SupplierWhereInput = { tenantId };
 
     if (storeId) {

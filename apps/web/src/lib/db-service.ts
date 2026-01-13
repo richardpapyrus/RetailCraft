@@ -100,16 +100,19 @@ export const DataService = {
             return { data, total };
         } else {
             try {
-                const response = await api.customers.list(skip, take, storeId);
+                const response = await api.customers.list(skip, take, storeId, search);
                 const { data, total } = response;
 
-                db.transaction('rw', db.customers, async () => {
-                    // Only clear if we are fetching the first page (refresh)
-                    if (skip === 0) {
-                        await db.customers.clear();
-                    }
-                    await db.customers.bulkPut(data);
-                }).catch(err => console.error("[DataService] Failed to cache customers", err));
+                // Only cache if we are fetching all customers (no search filter)
+                if (!search) {
+                    db.transaction('rw', db.customers, async () => {
+                        // Only clear if we are fetching the first page (refresh)
+                        if (skip === 0) {
+                            await db.customers.clear();
+                        }
+                        await db.customers.bulkPut(data);
+                    }).catch(err => console.error("[DataService] Failed to cache customers", err));
+                }
 
                 return { data, total };
             } catch (e) {

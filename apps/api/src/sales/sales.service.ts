@@ -315,6 +315,7 @@ export class SalesService {
   }
 
   async findAll(tenantId: string, storeId?: string, skip?: number, take?: number, search?: string) {
+    // console.log(`[SalesService] findAll: search="${search}", storeId="${storeId}"`);
     const where: Prisma.SaleWhereInput = { tenantId };
     if (storeId) where.storeId = storeId;
 
@@ -331,6 +332,8 @@ export class SalesService {
           { id: { startsWith: search } }, // Partial ID match (short codes)
           { customer: { name: { contains: search, mode: 'insensitive' } } },
           { user: { name: { contains: search, mode: 'insensitive' } } },
+          { user: { email: { contains: search, mode: 'insensitive' } } }, // Added Email
+          { items: { some: { product: { name: { contains: search, mode: 'insensitive' } } } } } // Added Product Name
         ];
       }
     }
