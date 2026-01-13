@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
+import { useAuth, formatCurrency } from '@/lib/useAuth';
 
 interface CloseTillModalProps {
     isOpen: boolean;
@@ -9,6 +10,7 @@ interface CloseTillModalProps {
 }
 
 export default function CloseTillModal({ isOpen, sessionId, onClose, onSuccess }: CloseTillModalProps) {
+    const { user } = useAuth();
     const [closingCash, setClosingCash] = useState('');
     const [summary, setSummary] = useState<any>(null);
     const [loading, setLoading] = useState(false);
@@ -82,23 +84,23 @@ export default function CloseTillModal({ isOpen, sessionId, onClose, onSuccess }
                         <div className="bg-gray-50 p-4 rounded-xl space-y-2 text-sm text-gray-600">
                             <div className="flex justify-between">
                                 <span>Opening Float</span>
-                                <span className="font-bold">${Number(summary?.openingFloat || 0).toFixed(2)}</span>
+                                <span className="font-bold">{formatCurrency(summary?.openingFloat || 0, user?.currency)}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span>Cash Sales</span>
-                                <span className="font-bold">${Number(summary?.totals?.sales || 0).toFixed(2)}</span>
+                                <span className="font-bold">{formatCurrency(summary?.totals?.sales || 0, user?.currency)}</span>
                             </div>
                             {/* Can add cash in/out display here */}
                             <div className="border-t pt-2 flex justify-between text-base font-bold text-gray-800">
                                 <span>Expected Cash</span>
-                                <span>${expectedCash.toFixed(2)}</span>
+                                <span>{formatCurrency(expectedCash, user?.currency)}</span>
                             </div>
                         </div>
 
                         <div className="space-y-2">
                             <label className="text-sm font-bold text-gray-700">Counted Cash</label>
                             <div className="relative">
-                                <span className="absolute left-4 top-3 text-gray-400">$</span>
+                                <span className="absolute left-4 top-3 text-gray-400">{user?.currency === 'NGN' ? '₦' : '$'}</span>
                                 <input
                                     type="number"
                                     step="0.01"
@@ -112,7 +114,7 @@ export default function CloseTillModal({ isOpen, sessionId, onClose, onSuccess }
                             </div>
                             {closingCash && (
                                 <div className={`text-sm text-right font-bold ${Math.abs(variance) < 0.01 ? 'text-green-600' : 'text-red-500'}`}>
-                                    Variance: ${variance.toFixed(2)}
+                                    Variance: {formatCurrency(variance, user?.currency)}
                                 </div>
                             )}
                         </div>
