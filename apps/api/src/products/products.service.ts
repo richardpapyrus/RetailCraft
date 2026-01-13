@@ -284,23 +284,38 @@ export class ProductsService {
       updateData.barcode = null;
     }
     if (updateData.category === "" || updateData.category === null) {
-      // updateData.category = null; // Cannot set Relation to null if required (Wait, schema says NotNull)
-      // If clearing category, set to Default? Or forbid?
-      // Assuming frontend sends ID. If empty, ignore or set default.
-      // Rename to categoryId
-      delete updateData.category; // Ensure legacy field is gone
+      delete updateData.category; // Legacy
     } else if (updateData.category) {
       updateData.categoryId = updateData.category;
       delete updateData.category;
+    }
+
+    // Sanitize categoryId (Frontend sends "" for clear/empty)
+    if (updateData.categoryId === "" || updateData.categoryId === null) {
+      updateData.categoryId = null;
     }
     if (updateData.supplierId === "" || updateData.supplierId === null) {
       updateData.supplierId = null;
     }
 
-    return prisma.product.update({
-      where: { id },
-      data: updateData,
-    });
+    try {
+      return await prisma.product.update({
+        where: { id },
+        data: updateData,
+      });
+    } catch (error: any) {
+      if (error.code === 'P2002') {
+        throw new BadRequestException("Product with this SKU or Barcode already exists.");
+      }
+      if (error.code === 'P2003') {
+        throw new BadRequestException("Invalid Supplier or Category reference (ID mismatch).");
+      }
+      if (error.code === 'P2025') {
+        throw new BadRequestException("Product not found.");
+      }
+      // Re-throw generic limits/other errors
+      throw error;
+    }
   }
 
   async findAll(

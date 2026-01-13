@@ -114,14 +114,14 @@ export default function LoyaltyPage() {
                                 <TrendingUp className="w-8 h-8 text-indigo-300" />
                                 <div>
                                     <p className="text-xs text-indigo-200 uppercase font-bold tracking-widest">Earning</p>
-                                    <p className="font-bold text-lg">{settings.earnRate} Point{settings.earnRate !== 1 ? 's' : ''} per {formatCurrency(1)} spent</p>
+                                    <p className="font-bold text-lg">{settings.earnRate} Point{settings.earnRate !== 1 ? 's' : ''} per {formatCurrency(1, user?.currency, user?.locale)} spent</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-4 bg-white/10 p-4 rounded-xl backdrop-blur-sm">
                                 <Gift className="w-8 h-8 text-pink-300" />
                                 <div>
                                     <p className="text-xs text-indigo-200 uppercase font-bold tracking-widest">Redemption</p>
-                                    <p className="font-bold text-lg">1 Point = {formatCurrency(settings.redeemRate)} discount</p>
+                                    <p className="font-bold text-lg">1 Point = {formatCurrency(settings.redeemRate, user?.currency, user?.locale)} discount</p>
                                 </div>
                             </div>
                         </div>
@@ -132,7 +132,7 @@ export default function LoyaltyPage() {
                         <div className="space-y-3 text-sm">
                             <div className="flex justify-between">
                                 <span>Spend</span>
-                                <span className="font-mono">{formatCurrency(100)}</span>
+                                <span className="font-mono">{formatCurrency(100, user?.currency, user?.locale)}</span>
                             </div>
                             <div className="flex justify-between text-green-300">
                                 <span>Earn</span>
@@ -140,7 +140,7 @@ export default function LoyaltyPage() {
                             </div>
                             <div className="flex justify-between text-pink-300 pt-2 border-t border-white/10 mt-2">
                                 <span>Redeem Value</span>
-                                <span className="font-bold font-mono">{formatCurrency((100 * settings.earnRate) * settings.redeemRate)}</span>
+                                <span className="font-bold font-mono">{formatCurrency((100 * settings.earnRate) * settings.redeemRate, user?.currency, user?.locale)}</span>
                             </div>
                             <div className="mt-4 text-xs text-indigo-200">
                                 * Points expire after {settings.expiryDays} days of inactivity
@@ -176,7 +176,7 @@ export default function LoyaltyPage() {
                 <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
                     <div className="flex justify-between items-start mb-4">
                         <div className="bg-green-100 p-3 rounded-xl text-green-600">
-                            <span className="font-bold text-xl">$</span>
+                            <span className="font-bold text-xl">{user?.currency === 'NGN' ? '₦' : '$'}</span>
                         </div>
                     </div>
                     <div className="text-4xl font-black text-gray-900 mb-1">
@@ -268,7 +268,7 @@ export default function LoyaltyPage() {
                                     />
                                     <span className="absolute right-4 top-3 text-sm text-gray-400 font-bold">Pts / {user?.currency || '$'}</span>
                                 </div>
-                                <p className="text-xs text-gray-400 mt-1">Example: 1.0 = 1 Point for every $1 spent</p>
+                                <p className="text-xs text-gray-400 mt-1">Example: 1.0 = 1 Point for every {formatCurrency(1, user?.currency, user?.locale)} spent</p>
                             </div>
 
                             <div>
@@ -276,7 +276,7 @@ export default function LoyaltyPage() {
                                     Redemption Value per Point
                                 </label>
                                 <div className="relative">
-                                    <span className="absolute left-4 top-3 text-lg font-bold text-gray-400">$</span>
+                                    <span className="absolute left-4 top-3 text-lg font-bold text-gray-400">{user?.currency === 'NGN' ? '₦' : '$'}</span>
                                     <input
                                         type="number"
                                         step="0.01"
@@ -285,7 +285,7 @@ export default function LoyaltyPage() {
                                         onChange={e => setEditSettings({ ...editSettings, redeemRate: parseFloat(e.target.value) })}
                                     />
                                 </div>
-                                <p className="text-xs text-gray-400 mt-1">Example: 0.10 = 10 Points is $1.00 Discount</p>
+                                <p className="text-xs text-gray-400 mt-1">Example: 0.10 = 10 Points is {formatCurrency(1, user?.currency, user?.locale)} Discount</p>
                             </div>
 
                             <div>
