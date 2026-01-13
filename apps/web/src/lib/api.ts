@@ -163,9 +163,10 @@ export const api = {
         getEvents: (id: string, skip: number, take: number) => fetchClient(`/products/${id}/events?skip=${skip}&take=${take}`).then(res => res as { data: any[], total: number }),
     },
     suppliers: {
-        list: (storeId?: string) => {
+        list: (storeId?: string, search?: string) => {
             const params = new URLSearchParams();
             if (storeId) params.append('storeId', storeId);
+            if (search) params.append('search', search);
             return fetchClient(`/suppliers?${params.toString()}`).then(res => res as any[]);
         },
         create: (data: any) => fetchClient('/suppliers', { method: 'POST', body: JSON.stringify(data) }),
@@ -193,7 +194,7 @@ export const api = {
             }),
     },
     sales: {
-        list: (skip: number = 0, take: number = 50, storeId?: string) => {
+        list: (skip: number = 0, take: number = 50, storeId?: string, search?: string) => {
             // Currently backend /sales doesn't support pagination/filtering in the controller list method?
             // Let's assume it does or I will need to update backend too.
             // Actually currently getting ALL sales might be heavy.
@@ -201,6 +202,7 @@ export const api = {
             if (storeId) params.append('storeId', storeId);
             params.append('skip', skip.toString());
             params.append('take', take.toString());
+            if (search) params.append('search', search);
             return fetchClient(`/sales?${params.toString()}`);
         },
         create: (data: { items: { productId: string; quantity: number }[]; paymentMethod?: string; payments?: { method: string; amount: number; reference?: string }[]; customerId?: string; discount?: any; tillSessionId?: string; redeemPoints?: number; loyaltyDiscountAmount?: number; storeId?: string }) =>
@@ -234,11 +236,12 @@ export const api = {
         },
     },
     customers: {
-        list: (skip: number = 0, take: number = 50, storeId?: string) => {
+        list: (skip: number = 0, take: number = 50, storeId?: string, search?: string) => {
             const params = new URLSearchParams();
             params.append('skip', skip.toString());
             params.append('take', take.toString());
             if (storeId) params.append('storeId', storeId);
+            if (search) params.append('search', search);
             return fetchClient(`/customers?${params.toString()}`).then(res => res as { data: any[], total: number });
         },
         get: (id: string) => fetchClient(`/customers/${id}`).then(res => res as any),

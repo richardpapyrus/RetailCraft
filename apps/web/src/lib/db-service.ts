@@ -92,7 +92,7 @@ export const DataService = {
         };
     },
 
-    async getCustomers(skip: number = 0, take: number = 50, storeId?: string): Promise<{ data: any[], total: number }> {
+    async getCustomers(skip: number = 0, take: number = 50, storeId?: string, search?: string): Promise<{ data: any[], total: number }> {
         if (typeof navigator !== 'undefined' && !navigator.onLine) {
             console.log("App is offline, skipping customer fetch.");
             const total = await db.customers.count();

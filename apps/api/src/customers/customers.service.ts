@@ -19,12 +19,21 @@ export class CustomersService {
     return prisma.customer.create({ data: data as Prisma.CustomerCreateInput });
   }
 
-  async findAll(tenantId: string, skip: number = 0, take: number = 50, storeId?: string) {
-    const where: any = { tenantId };
+  async findAll(tenantId: string, skip: number = 0, take: number = 50, storeId?: string, search?: string) {
+    const where: Prisma.CustomerWhereInput = { tenantId };
 
     // STRICT ISOLATION:
     if (storeId) {
       where.storeId = storeId;
+    }
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+        { phone: { contains: search, mode: 'insensitive' } },
+        { code: { contains: search, mode: 'insensitive' } }
+      ];
     }
 
     const [total, data] = await prisma.$transaction([

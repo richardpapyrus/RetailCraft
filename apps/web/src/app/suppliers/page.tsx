@@ -14,6 +14,8 @@ export default function SuppliersPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [formData, setFormData] = useState({ id: '', name: '', contact: '', phone: '', email: '' });
     const [isEditing, setIsEditing] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
 
     useEffect(() => {
         if (!isHydrated) return;
@@ -22,11 +24,25 @@ export default function SuppliersPage() {
             return;
         }
         loadSuppliers();
-    }, [token, router, isHydrated, selectedStoreId]);
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchTerm);
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+
+    useEffect(() => {
+        if (!isHydrated) return;
+        if (!token) {
+            router.push('/login');
+            return;
+        }
+        loadSuppliers();
+    }, [token, router, isHydrated, selectedStoreId, debouncedSearch]);
 
     const loadSuppliers = async () => {
         try {
-            const data = await api.suppliers.list(selectedStoreId || undefined);
+            const data = await api.suppliers.list(selectedStoreId || undefined, debouncedSearch);
             setSuppliers(data);
         } catch (e) {
             console.error(e);
@@ -108,6 +124,16 @@ export default function SuppliersPage() {
                         >
                             + Add Supplier
                         </button>
+                    </div>
+
+                    <div className="mb-4">
+                        <input
+                            type="text"
+                            placeholder="Search suppliers..."
+                            className="w-full px-4 py-2 border rounded-lg"
+                            value={searchTerm}
+                            onChange={e => setSearchTerm(e.target.value)}
+                        />
                     </div>
 
                     <div className="bg-white rounded-lg shadow overflow-hidden">
