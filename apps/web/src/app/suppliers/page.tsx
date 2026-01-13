@@ -43,7 +43,11 @@ export default function SuppliersPage() {
             } else {
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 const { id, ...data } = formData;
-                await api.suppliers.create({ ...data, storeId: selectedStoreId || undefined });
+                await api.suppliers.create({
+                    ...data,
+                    currency: user?.currency || 'USD',
+                    storeId: selectedStoreId || undefined
+                });
             }
             setIsModalOpen(false);
             setFormData({ id: '', name: '', contact: '', phone: '', email: '' });

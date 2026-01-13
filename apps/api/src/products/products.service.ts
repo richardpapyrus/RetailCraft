@@ -298,10 +298,24 @@ export class ProductsService {
       updateData.supplierId = null;
     }
 
-    return prisma.product.update({
-      where: { id },
-      data: updateData,
-    });
+    try {
+      return await prisma.product.update({
+        where: { id },
+        data: updateData,
+      });
+    } catch (error: any) {
+      if (error.code === 'P2002') {
+        throw new BadRequestException("Product with this SKU or Barcode already exists.");
+      }
+      if (error.code === 'P2003') {
+        throw new BadRequestException("Invalid Supplier or Category reference (ID mismatch).");
+      }
+      if (error.code === 'P2025') {
+        throw new BadRequestException("Product not found.");
+      }
+      // Re-throw generic limits/other errors
+      throw error;
+    }
   }
 
   async findAll(
