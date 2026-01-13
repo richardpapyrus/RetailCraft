@@ -284,14 +284,15 @@ export class ProductsService {
       updateData.barcode = null;
     }
     if (updateData.category === "" || updateData.category === null) {
-      // updateData.category = null; // Cannot set Relation to null if required (Wait, schema says NotNull)
-      // If clearing category, set to Default? Or forbid?
-      // Assuming frontend sends ID. If empty, ignore or set default.
-      // Rename to categoryId
-      delete updateData.category; // Ensure legacy field is gone
+      delete updateData.category; // Legacy
     } else if (updateData.category) {
       updateData.categoryId = updateData.category;
       delete updateData.category;
+    }
+
+    // Sanitize categoryId (Frontend sends "" for clear/empty)
+    if (updateData.categoryId === "" || updateData.categoryId === null) {
+      updateData.categoryId = null;
     }
     if (updateData.supplierId === "" || updateData.supplierId === null) {
       updateData.supplierId = null;
