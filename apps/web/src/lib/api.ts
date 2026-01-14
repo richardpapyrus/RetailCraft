@@ -316,6 +316,7 @@ export const api = {
         closeSession: (id: string, data: { closingCash: number }) => fetchClient(`/tills/session/${id}/close`, { method: 'POST', body: JSON.stringify(data) }),
         recordTransaction: (data: { tillSessionId: string; type: 'CASH_IN' | 'CASH_OUT'; amount: number; reason: string }) => fetchClient('/tills/transaction', { method: 'POST', body: JSON.stringify(data) }),
         getSessions: (id: string) => fetchClient(`/tills/${id}/sessions`),
+        getReport: (sessionId: string) => fetchClient(`/tills/session/${sessionId}/report`).then(res => res as any),
     },
     auth: {
         me: (email: string) => fetchClient('/auth/profile', { method: 'POST', body: JSON.stringify({ email }) }),

@@ -14,6 +14,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { Package, AlertCircle, Award, User, Phone } from 'lucide-react';
 import ReceiptTemplate from '@/components/pos/ReceiptTemplate';
+import { TillReport } from '@/components/tills/TillReport';
 
 interface CartItem extends Product {
     cartQty: number;
@@ -37,6 +38,7 @@ export default function POSPage() {
     const [isTillModalOpen, setIsTillModalOpen] = useState(false);
     const [checkingSession, setCheckingSession] = useState(true);
     const [closeTillModalOpen, setCloseTillModalOpen] = useState(false);
+    const [reportSessionId, setReportSessionId] = useState<string | null>(null);
 
     const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
     const [tendered, setTendered] = useState<string>('');
@@ -1367,14 +1369,48 @@ export default function POSPage() {
                     sessionId={activeSession?.id}
                     onClose={() => setCloseTillModalOpen(false)}
                     onSuccess={() => {
+                        const closedId = activeSession?.id;
                         setCloseTillModalOpen(false);
                         setActiveSession(null);
-                        setIsTillModalOpen(true);
+                        if (closedId) setReportSessionId(closedId);
+                        else setIsTillModalOpen(true);
                     }}
                 />
             </div>
 
             <ReceiptTemplate sale={lastSale} user={user} store={activeStore} />
+            {reportSessionId && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center">
+                    <ReportResult
+                        sessionId={reportSessionId}
+                        onClose={() => {
+                            setReportSessionId(null);
+                            setIsTillModalOpen(true);
+                        }}
+                    />
+                </div>
+            )}
         </div>
     );
+}
+
+function ReportResult({ sessionId, onClose }: { sessionId: string; onClose: () => void }) {
+    const [data, setData] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        api.tills.getReport(sessionId)
+            .then(setData)
+            .catch(err => {
+                console.error(err);
+                toast.error('Failed to load session report');
+                onClose();
+            })
+            .finally(() => setLoading(false));
+    }, [sessionId, onClose]);
+
+    if (loading) return <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center text-white font-bold">Loading Report...</div>;
+    if (!data) return null;
+
+    return <TillReport data={data} onClose={onClose} />;
 }
