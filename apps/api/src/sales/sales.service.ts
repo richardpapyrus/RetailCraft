@@ -329,7 +329,7 @@ export class SalesService {
         where.id = search;
       } else {
         where.OR = [
-          { id: { startsWith: search } }, // Partial ID match (short codes)
+          { id: { contains: search.replace(/^#/, ''), mode: 'insensitive' } }, // Partial ID match (short codes)
           { customer: { name: { contains: search, mode: 'insensitive' } } },
           { user: { name: { contains: search, mode: 'insensitive' } } },
           { user: { email: { contains: search, mode: 'insensitive' } } }, // Added Email
