@@ -34,8 +34,6 @@ export class SalesController {
     @Request() req,
     @Query("storeId") queryStoreId?: string,
     @Query("skip") skip?: number,
-    @Query("storeId") queryStoreId?: string,
-    @Query("skip") skip?: number,
     @Query("take") take?: number,
     @Query("search") search?: string
   ) {
