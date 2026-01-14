@@ -787,7 +787,7 @@ export default function POSPage() {
                             <div className="text-center mb-8">
                                 <p className="text-gray-500 text-sm uppercase tracking-wider mb-1">Total to Pay</p>
                                 <div className="text-5xl font-bold text-gray-800">
-                                    ${cartTotal.toFixed(2)}
+                                    {formatCurrency(cartTotal, user?.currency, user?.locale)}
                                 </div>
                             </div>
 
@@ -832,12 +832,14 @@ export default function POSPage() {
                                             {splitPayments.length} Payments Added
                                         </div>
                                         <div className="font-mono font-bold text-green-700">
-                                            ${splitPayments.reduce((s, p) => s + p.amount, 0).toFixed(2)}
+                                            {formatCurrency(splitPayments.reduce((s, p) => s + p.amount, 0), user?.currency, user?.locale)}
                                         </div>
                                     </div>
                                 ) : (
                                     <div className="relative">
-                                        <span className="absolute left-4 top-4 text-gray-400 text-lg">$</span>
+                                        <span className="absolute left-4 top-4 text-gray-400 text-lg">
+                                            {formatCurrency(0, user?.currency, user?.locale).replace(/[\d\s.,]/g, '')}
+                                        </span>
                                         <input
                                             type="number"
                                             autoFocus
@@ -894,7 +896,7 @@ export default function POSPage() {
                                         <div className="mt-3">
                                             <div className="flex justify-between items-center text-xs text-gray-500 mb-1">
                                                 <span>Points to Redeem</span>
-                                                <span className="font-bold text-green-600">-${(pointsToRedeem * (Number(user?.tenant?.loyaltyRedeemRate) || 0.10)).toFixed(2)}</span>
+                                                <span className="font-bold text-green-600">-{formatCurrency((pointsToRedeem * (Number(user?.tenant?.loyaltyRedeemRate) || 0.10)), user?.currency, user?.locale)}</span>
                                             </div>
                                             <input
                                                 type="range"
@@ -963,7 +965,7 @@ export default function POSPage() {
                                     <div className="space-y-6">
                                         <div>
                                             <div className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Total Amount</div>
-                                            <div className="text-3xl font-mono font-bold tracking-tight">${cartTotal.toFixed(2)}</div>
+                                            <div className="text-3xl font-mono font-bold tracking-tight">{formatCurrency(cartTotal, user?.currency, user?.locale)}</div>
                                         </div>
 
                                         <div className="h-px bg-slate-800"></div>
@@ -971,14 +973,14 @@ export default function POSPage() {
                                         <div>
                                             <div className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Paid So Far</div>
                                             <div className="text-2xl font-mono text-green-400 font-bold">
-                                                ${splitPayments.reduce((s, p) => s + p.amount, 0).toFixed(2)}
+                                                {formatCurrency(splitPayments.reduce((s, p) => s + p.amount, 0), user?.currency, user?.locale)}
                                             </div>
                                         </div>
 
                                         <div>
                                             <div className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Remaining</div>
                                             <div className={`text-4xl font-mono font-bold tracking-tighter ${cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0) <= 0.01 ? 'text-green-400' : 'text-orange-400'}`}>
-                                                ${Math.max(0, cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0)).toFixed(2)}
+                                                {formatCurrency(Math.max(0, cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0)), user?.currency, user?.locale)}
                                             </div>
                                         </div>
                                     </div>
@@ -1005,7 +1007,9 @@ export default function POSPage() {
                                     {/* Input Amount */}
                                     <div className="mb-6">
                                         <div className="relative group">
-                                            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl pointer-events-none group-focus-within:text-indigo-500 transition-colors">$</span>
+                                            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl pointer-events-none group-focus-within:text-indigo-500 transition-colors">
+                                                {formatCurrency(0, user?.currency, user?.locale).replace(/[\d\s.,]/g, '')}
+                                            </span>
                                             <input
                                                 type="number"
                                                 value={splitAmount}
@@ -1061,7 +1065,7 @@ export default function POSPage() {
                                                         <span className="font-bold text-gray-700 text-sm">{p.method}</span>
                                                     </div>
                                                     <div className="flex items-center gap-3">
-                                                        <span className="font-mono font-bold text-gray-900">${p.amount.toFixed(2)}</span>
+                                                        <span className="font-mono font-bold text-gray-900">{formatCurrency(p.amount, user?.currency, user?.locale)}</span>
                                                         <button onClick={() => setSplitPayments(prev => prev.filter((_, i) => i !== idx))} className="text-gray-300 hover:text-red-500 transition-colors">✕</button>
                                                     </div>
                                                 </div>
@@ -1201,7 +1205,7 @@ export default function POSPage() {
                                                     onClick={() => setManualDiscountType('FIXED')}
                                                     className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${manualDiscountType === 'FIXED' ? 'bg-white shadow text-gray-900' : 'text-gray-500'}`}
                                                 >
-                                                    $ Fixed
+                                                    {formatCurrency(0, user?.currency, user?.locale).replace(/[\d\s.,]/g, '')} Fixed
                                                 </button>
                                                 <button
                                                     onClick={() => setManualDiscountType('PERCENTAGE')}
@@ -1213,7 +1217,7 @@ export default function POSPage() {
                                         </div>
                                         <div className="relative">
                                             <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 font-bold">
-                                                {manualDiscountType === 'FIXED' ? '$' : '%'}
+                                                {manualDiscountType === 'FIXED' ? formatCurrency(0, user?.currency, user?.locale).replace(/[\d\s.,]/g, '') : '%'}
                                             </span>
                                             <input
                                                 type="number"
@@ -1278,7 +1282,7 @@ export default function POSPage() {
                                             >
                                                 <div className="font-bold text-indigo-700">{d.name}</div>
                                                 <div className="text-xs text-gray-500">
-                                                    {d.type === 'PERCENTAGE' ? `${d.value}% Off` : `-$${d.value}`}
+                                                    {d.type === 'PERCENTAGE' ? `${d.value}% Off` : `-${formatCurrency(Number(d.value), user?.currency, user?.locale)}`}
                                                 </div>
                                             </button>
                                         ))}
