@@ -14,10 +14,9 @@ RUN npm install
 
 COPY . .
 
-WORKDIR /app
+WORKDIR /app/apps/api
 RUN npx prisma generate
 
-WORKDIR /app/apps/api
 RUN npm run build
 
 CMD ["npm", "run", "start:prod"]
