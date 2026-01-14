@@ -82,8 +82,8 @@ export default function ReceiptTemplate({ sale, user, store: propStore }: Receip
                         <p>{new Date(sale.date || sale.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                     </div>
                     <div className="text-right">
-                        <p>Rcpt: #{sale.id?.slice(-6).toUpperCase()}</p>
-                        <p>Cashier: {user?.name?.split(' ')[0]}</p>
+                        <p>Rcpt: #{sale.id?.slice(-8, -1).toUpperCase()}</p>
+                        <p>Cashier: {(sale.user?.name || user?.name)?.split(' ')[0]}</p>
                     </div>
                 </div>
                 {sale.customerName && (
@@ -103,21 +103,30 @@ export default function ReceiptTemplate({ sale, user, store: propStore }: Receip
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-dotted divide-gray-400">
-                        {sale.items.map((item: any, idx: number) => (
-                            <tr key={idx}>
-                                <td className="py-1 pr-1 align-top">
-                                    <span className="font-bold block">{item.name}</span>
-                                    {item.sku && <span className="text-[9px] text-gray-600 block">{item.sku}</span>}
-                                </td>
-                                <td className="py-1 text-right align-top">
-                                    {formatCurrency(Number(item.price), user?.currency, user?.locale)}
-                                </td>
-                                <td className="py-1 text-center align-top">{item.cartQty || item.quantity}</td>
-                                <td className="py-1 text-right font-bold align-top">
-                                    {formatCurrency(Number(item.price) * (item.cartQty || item.quantity), user?.currency, user?.locale)}
-                                </td>
-                            </tr>
-                        ))}
+                        {sale.items.map((item: any, idx: number) => {
+                            // Logic to handle both SaleItem (history) and CartItem (POS) structures
+                            const price = Number(item.priceAtSale || item.unitPrice || item.price || 0);
+                            const name = item.product?.name || item.name || 'Unknown Item';
+                            const sku = item.product?.sku || item.sku;
+                            const qty = item.quantity || item.cartQty || 0;
+
+                            return (
+                                <tr key={idx}>
+                                    <td className="py-1 pr-1 align-top">
+                                        <span className="font-bold block">{name}</span>
+                                        {sku && <span className="text-[9px] text-gray-600 block">{sku}</span>}
+                                        {price === 0 && <span className="text-[8px] text-red-500 block italic">Price Unknown</span>}
+                                    </td>
+                                    <td className="py-1 text-right align-top">
+                                        {formatCurrency(price, user?.currency, user?.locale)}
+                                    </td>
+                                    <td className="py-1 text-center align-top">{qty}</td>
+                                    <td className="py-1 text-right font-bold align-top">
+                                        {formatCurrency(price * qty, user?.currency, user?.locale)}
+                                    </td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
             </div>

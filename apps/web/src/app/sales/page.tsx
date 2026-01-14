@@ -199,7 +199,7 @@ export default function SalesHistoryPage() {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
-                                            ${Number(sale.total).toFixed(2)}
+                                            {formatCurrency(sale.total, user?.currency, user?.locale)}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                             <button
