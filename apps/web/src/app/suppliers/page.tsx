@@ -14,6 +14,8 @@ export default function SuppliersPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [formData, setFormData] = useState({ id: '', name: '', contact: '', phone: '', email: '' });
     const [isEditing, setIsEditing] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
 
     useEffect(() => {
         if (!isHydrated) return;
@@ -24,9 +26,25 @@ export default function SuppliersPage() {
         loadSuppliers();
     }, [token, router, isHydrated, selectedStoreId]);
 
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchTerm);
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+
+    useEffect(() => {
+        if (!isHydrated) return;
+        if (!token) {
+            router.push('/login');
+            return;
+        }
+        loadSuppliers();
+    }, [token, router, isHydrated, selectedStoreId, debouncedSearch]);
+
     const loadSuppliers = async () => {
         try {
-            const data = await api.suppliers.list(selectedStoreId || undefined);
+            const data = await api.suppliers.list(selectedStoreId || undefined, debouncedSearch);
             setSuppliers(data);
         } catch (e) {
             console.error(e);
@@ -96,18 +114,27 @@ export default function SuppliersPage() {
                 <div className="max-w-4xl mx-auto">
                     <div className="flex justify-between items-center mb-6">
                         <h1 className="text-2xl font-bold text-gray-800">Suppliers</h1>
-                        <button
-                            onClick={() => {
-                                if (!selectedStoreId) {
-                                    toast.error("Please select a store to create a supplier.");
-                                    return;
-                                }
-                                openCreate();
-                            }}
-                            className={`px-4 py-2 rounded transition shadow-sm ${!selectedStoreId ? 'bg-gray-300 cursor-not-allowed text-gray-500' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
-                        >
-                            + Add Supplier
-                        </button>
+                        <div className="flex items-center gap-4">
+                            <input
+                                type="text"
+                                placeholder="Search suppliers..."
+                                className="px-4 py-2 border rounded-lg w-64"
+                                value={searchTerm}
+                                onChange={e => setSearchTerm(e.target.value)}
+                            />
+                            <button
+                                onClick={() => {
+                                    if (!selectedStoreId) {
+                                        toast.error("Please select a store to create a supplier.");
+                                        return;
+                                    }
+                                    openCreate();
+                                }}
+                                className={`px-4 py-2 rounded transition shadow-sm ${!selectedStoreId ? 'bg-gray-300 cursor-not-allowed text-gray-500' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+                            >
+                                + Add Supplier
+                            </button>
+                        </div>
                     </div>
 
                     <div className="bg-white rounded-lg shadow overflow-hidden">

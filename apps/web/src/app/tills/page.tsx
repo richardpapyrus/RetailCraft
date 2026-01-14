@@ -7,6 +7,7 @@ import { api } from '@/lib/api';
 import { Sidebar } from '@/components/Sidebar';
 import { toast } from 'react-hot-toast';
 import { FileText } from 'lucide-react';
+import { TillReport } from '@/components/tills/TillReport';
 
 export default function TillsPage() {
     const router = useRouter();
@@ -81,6 +82,7 @@ export default function TillsPage() {
 
     const [historyTill, setHistoryTill] = useState<any>(null);
     const [historySessions, setHistorySessions] = useState<any[]>([]);
+    const [reportSessionId, setReportSessionId] = useState<string | null>(null);
 
     const fetchHistory = async (till: any) => {
         setHistoryTill(till);
@@ -247,6 +249,7 @@ export default function TillsPage() {
                                             <th className="p-4 text-right">Expected</th>
                                             <th className="p-4 text-right">Actual</th>
                                             <th className="p-4 text-right">Variance</th>
+                                            <th className="p-4 text-right">Reports</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y">
@@ -264,6 +267,14 @@ export default function TillsPage() {
                                                 <td className={`p-4 text-right font-bold ${Number(session.variance) < 0 ? 'text-red-500' : Number(session.variance) > 0 ? 'text-green-500' : 'text-gray-400'}`}>
                                                     {Number(session.variance) > 0 ? '+' : ''}{Number(session.variance).toFixed(2)}
                                                 </td>
+                                                <td className="p-4 text-right">
+                                                    <button
+                                                        onClick={() => setReportSessionId(session.id)}
+                                                        className="text-xs font-bold text-indigo-600 hover:text-indigo-800 underline"
+                                                    >
+                                                        View Report
+                                                    </button>
+                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -277,6 +288,32 @@ export default function TillsPage() {
                 )
             }
 
+            {/* Report Modal */}
+            {
+                reportSessionId && (
+                    <ReportResult
+                        sessionId={reportSessionId}
+                        onClose={() => setReportSessionId(null)}
+                    />
+                )
+            }
         </div>
     );
+}
+
+function ReportResult({ sessionId, onClose }: { sessionId: string; onClose: () => void }) {
+    const [data, setData] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        api.tills.getReport(sessionId)
+            .then(setData)
+            .catch(err => toast.error('Failed to load report'))
+            .finally(() => setLoading(false));
+    }, [sessionId]);
+
+    if (loading) return <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] text-white">Loading Report...</div>;
+    if (!data) return null;
+
+    return <TillReport data={data} onClose={onClose} />;
 }

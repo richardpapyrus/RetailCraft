@@ -11,12 +11,31 @@ interface SaleDetailModalProps {
 
 export function SaleDetailModal({ sale, onClose, onReturn }: SaleDetailModalProps) {
     const { user } = useAuth();
+    console.log('[SaleDetailModal] Sale Data:', sale);
+    console.log('[SaleDetailModal] Returns:', sale?.returns);
+
 
     if (!sale) return null;
 
     const formatDate = (dateStr: string) => {
         return new Date(dateStr).toLocaleString();
     };
+
+    // Calculate Returns
+    const returnsMap = new Map<string, number>();
+    let totalRefunded = 0;
+
+    if (sale.returns && Array.isArray(sale.returns)) {
+        sale.returns.forEach((ret: any) => {
+            totalRefunded += Number(ret.total || 0);
+            if (ret.items && Array.isArray(ret.items)) {
+                ret.items.forEach((item: any) => {
+                    const current = returnsMap.get(item.productId) || 0;
+                    returnsMap.set(item.productId, current + item.quantity);
+                });
+            }
+        });
+    }
 
     return (
         <>
@@ -42,17 +61,39 @@ export function SaleDetailModal({ sale, onClose, onReturn }: SaleDetailModalProp
                         </div>
 
                         <div className="space-y-4">
-                            {sale.items.map((item: any) => (
-                                <div key={item.id} className="flex justify-between text-sm">
-                                    <div>
-                                        <div className="font-medium text-gray-900">{item.product.name}</div>
-                                        <div className="text-xs text-gray-500">{item.quantity} x {formatCurrency(item.priceAtSale, user?.currency, user?.locale)}</div>
+                            {sale.items.map((item: any) => {
+                                const returnedQty = returnsMap.get(item.productId) || 0;
+                                const isReturned = returnedQty > 0;
+                                const isFullyReturned = returnedQty >= item.quantity;
+
+                                return (
+                                    <div key={item.id} className={`flex justify-between text-sm ${isFullyReturned ? 'opacity-50' : ''}`}>
+                                        <div>
+                                            <div className={`font-medium text-gray-900 ${isFullyReturned ? 'line-through' : ''}`}>
+                                                {item.product.name}
+                                            </div>
+                                            <div className="text-xs text-gray-500">
+                                                {item.quantity} x {formatCurrency(item.priceAtSale, user?.currency, user?.locale)}
+                                            </div>
+                                            {isReturned && (
+                                                <div className="text-xs text-red-600 font-semibold">
+                                                    Returned: {returnedQty}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="text-right">
+                                            <div className={`font-medium ${isFullyReturned ? 'line-through text-gray-400' : 'text-gray-900'}`}>
+                                                {formatCurrency(item.quantity * Number(item.priceAtSale), user?.currency, user?.locale)}
+                                            </div>
+                                            {isReturned && (
+                                                <div className="text-xs text-red-600">
+                                                    -{formatCurrency(returnedQty * Number(item.priceAtSale), user?.currency, user?.locale)}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                    <div className="font-medium text-gray-900">
-                                        {formatCurrency(item.quantity * Number(item.priceAtSale), user?.currency, user?.locale)}
-                                    </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
 
                         <div className="border-t border-gray-200 mt-6 pt-4 space-y-2">
@@ -60,7 +101,22 @@ export function SaleDetailModal({ sale, onClose, onReturn }: SaleDetailModalProp
                                 <span>Total</span>
                                 <span>{formatCurrency(sale.total, user?.currency, user?.locale)}</span>
                             </div>
-                            <div className="flex justify-between text-sm text-gray-500">
+
+                            {totalRefunded > 0 && (
+                                <>
+                                    <div className="flex justify-between text-sm text-red-600 font-medium">
+                                        <span>Refunded</span>
+                                        <span>-{formatCurrency(totalRefunded, user?.currency, user?.locale)}</span>
+                                    </div>
+                                    <div className="flex justify-between font-bold text-lg border-t border-dashed pt-2">
+                                        <span>Net Total</span>
+                                        <span>{formatCurrency(Number(sale.total) - totalRefunded, user?.currency, user?.locale)}</span>
+                                    </div>
+                                </>
+                            )}
+
+
+                            <div className="flex justify-between text-sm text-gray-500 mt-4">
                                 <span>Payment Method</span>
                                 <span>{sale.paymentMethod}</span>
                             </div>

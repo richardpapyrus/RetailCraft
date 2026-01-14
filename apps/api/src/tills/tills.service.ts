@@ -154,6 +154,87 @@ export class TillsService {
     };
   }
 
+  async getReport(sessionId: string) {
+    const session = await prisma.tillSession.findUnique({
+      where: { id: sessionId },
+      include: {
+        till: true,
+        user: { select: { name: true, email: true } }
+      }
+    });
+    if (!session) throw new NotFoundException("Session not found");
+
+    // Fetch Details
+    const sales = await prisma.sale.findMany({
+      where: { tillSessionId: sessionId },
+      include: {
+        items: { include: { product: true } },
+        payments: true,
+        user: { select: { name: true, email: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const cashTransactions = await prisma.cashTransaction.findMany({
+      where: { tillSessionId: sessionId },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    // Calculations
+    let totalSalesValue = 0;
+    let totalChangeGiven = 0;
+    const paymentsByMethod: Record<string, number> = {};
+
+    sales.forEach(sale => {
+      totalSalesValue += Number(sale.total);
+
+      // Payment Breakdown
+      let salePaid = 0;
+      sale.payments.forEach(p => {
+        const amount = Number(p.amount);
+        salePaid += amount;
+        paymentsByMethod[p.method] = (paymentsByMethod[p.method] || 0) + amount;
+      });
+
+      // Change (Only for Cash or Split involving Cash?)
+      // Simplistic: If Total Paid > Sale Total, Difference is Change
+      // AND we assume change is given in CASH.
+      if (salePaid > Number(sale.total)) {
+        totalChangeGiven += (salePaid - Number(sale.total));
+      }
+    });
+
+    // Cash Logic
+    const cashIn = cashTransactions.filter(t => t.type === 'CASH_IN').reduce((acc, t) => acc + Number(t.amount), 0);
+    const cashOut = cashTransactions.filter(t => t.type === 'CASH_OUT').reduce((acc, t) => acc + Number(t.amount), 0);
+
+    // Total Cash Collected (From Sales)
+    // Should match paymentsByMethod['CASH'] - totalChangeGiven?
+    // "Money Collected" usually means Net Cash Added to Till.
+    const cashCollectedFromSales = (paymentsByMethod['CASH'] || 0);
+
+    // Net Cash Movement: (Cash Sales) - (Change Given) + (Cash In) - (Cash Out)
+    const netCashChange = cashCollectedFromSales - totalChangeGiven + cashIn - cashOut;
+    const closingBalance = Number(session.openingFloat) + netCashChange;
+
+    return {
+      session,
+      sales,
+      cashTransactions,
+      summary: {
+        totalSalesValue,
+        totalChangeGiven,
+        paymentsByMethod,
+        cashIn,
+        cashOut,
+        openingFloat: Number(session.openingFloat),
+        closingBalance, // Expected Cash
+        actualClosingCash: Number(session.closingCash || 0),
+        variance: Number(session.variance || 0)
+      }
+    };
+  }
+
   async closeSession(sessionId: string, closingCash: number) {
     const summary = await this.getSessionSummary(sessionId);
     const expected = summary.totals.expectedCash;

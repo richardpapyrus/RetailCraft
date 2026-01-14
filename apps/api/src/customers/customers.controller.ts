@@ -54,6 +54,7 @@ export class CustomersController {
     @Query("skip") skip: string,
     @Query("take") take: string,
     @Query("storeId") queryStoreId?: string,
+    @Query("search") search?: string,
   ) {
     const isSystemAdmin = req.user.role === 'Administrator' || req.user.permissions?.includes('*');
     let storeId = queryStoreId; // Accept query param
@@ -67,7 +68,8 @@ export class CustomersController {
       req.user.tenantId,
       parseInt(skip || "0"),
       parseInt(take || "50"),
-      storeId // Pass strict filter
+      storeId, // Pass strict filter
+      search
     );
   }
 

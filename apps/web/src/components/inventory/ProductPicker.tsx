@@ -3,6 +3,7 @@ import { DataService } from '@/lib/db-service';
 import { Product } from '@/lib/api';
 import { Search, Package, AlertCircle, Plus, Filter, LayoutGrid, List as ListIcon } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useAuth, formatCurrency } from '@/lib/useAuth';
 
 interface ProductPickerProps {
     onSelect: (product: Product) => void;
@@ -11,6 +12,7 @@ interface ProductPickerProps {
 }
 
 export function ProductPicker({ onSelect, storeId, className = "" }: ProductPickerProps) {
+    const { user } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
     const debouncedSearch = useDebounce(searchTerm, 300);
     const [products, setProducts] = useState<Product[]>([]);
@@ -105,7 +107,7 @@ export function ProductPicker({ onSelect, storeId, className = "" }: ProductPick
                                         <div className="flex-1 min-w-0 pr-3">
                                             <div className="flex items-center justify-between">
                                                 <span className="font-semibold text-gray-800 text-sm truncate group-hover:text-indigo-900">{product.name}</span>
-                                                <span className="font-bold text-gray-900 text-sm ml-2">${Number(product.price).toFixed(2)}</span>
+                                                <span className="font-bold text-gray-900 text-sm ml-2">{formatCurrency(product.price, user?.currency)}</span>
                                             </div>
                                             <div className="flex items-center justify-between mt-0.5">
                                                 <span className="text-[10px] text-gray-400 font-mono truncate">{product.sku}</span>

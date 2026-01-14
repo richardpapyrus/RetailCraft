@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import Link from 'next/link';
+import { useAuth, formatCurrency } from '@/lib/useAuth';
 
 export default function BestSellersWidget({ from, to, storeId }: { from?: string, to?: string, storeId?: string }) {
+    const { user } = useAuth();
     const [products, setProducts] = useState<any[]>([]);
     const [sortBy, setSortBy] = useState<'value' | 'count'>('value');
     const [loading, setLoading] = useState(true);
@@ -68,10 +70,10 @@ export default function BestSellersWidget({ from, to, storeId }: { from?: string
                                 </div>
                                 <div className="text-right">
                                     <div className="font-bold text-gray-900 text-lg">
-                                        {sortBy === 'value' ? `$${p.value.toFixed(2)}` : p.quantity}
+                                        {sortBy === 'value' ? formatCurrency(p.value, user?.currency) : p.quantity}
                                     </div>
                                     <div className="text-xs font-medium text-gray-400">
-                                        {sortBy === 'value' ? `${p.quantity} sold` : `$${p.value.toFixed(2)}`}
+                                        {sortBy === 'value' ? `${p.quantity} sold` : formatCurrency(p.value, user?.currency)}
                                     </div>
                                 </div>
                             </div>

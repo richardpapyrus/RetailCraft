@@ -91,6 +91,11 @@ export class TillsController {
     return this.tillsService.getSessionSummary(id);
   }
 
+  @Get("session/:id/report")
+  getReport(@Param("id") id: string) {
+    return this.tillsService.getReport(id);
+  }
+
   @Post("session/:id/close")
   closeSession(@Param("id") id: string, @Body() body: { closingCash: number }) {
     return this.tillsService.closeSession(id, body.closingCash);

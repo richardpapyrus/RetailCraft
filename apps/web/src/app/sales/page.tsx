@@ -46,6 +46,8 @@ export default function SalesHistoryPage() {
 
     const [totalSales, setTotalSales] = useState(0);
     const [page, setPage] = useState(1);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
     const limit = 50;
 
     useEffect(() => {
@@ -55,13 +57,30 @@ export default function SalesHistoryPage() {
             return;
         }
         loadSales();
-    }, [token, router, isHydrated, selectedStoreId, page]);
+    }, [token, router, isHydrated, selectedStoreId]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchTerm);
+            setPage(1); // Reset page on search
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+
+    useEffect(() => {
+        if (!isHydrated) return;
+        if (!token) {
+            router.push('/login');
+            return;
+        }
+        loadSales();
+    }, [token, router, isHydrated, selectedStoreId, page, debouncedSearch]);
 
     const loadSales = async () => {
         setLoading(true);
         try {
             const skip = (page - 1) * limit;
-            const res: any = await api.sales.list(skip, limit, selectedStoreId || undefined);
+            const res: any = await api.sales.list(skip, limit, selectedStoreId || undefined, debouncedSearch);
 
             // Handle new response structure { data, total } or fallback
             if (res && res.data && Array.isArray(res.data)) {
@@ -119,13 +138,22 @@ export default function SalesHistoryPage() {
                         <h1 className="text-2xl font-bold">Sales History</h1>
                         <p className="text-sm text-gray-500">Showing {sales.length} of {totalSales} records</p>
                     </div>
-                    <button
-                        onClick={handleExport}
-                        disabled={exporting}
-                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2"
-                    >
-                        {exporting ? 'Exporting...' : 'Export CSV'}
-                    </button>
+                    <div className="flex gap-2">
+                        <input
+                            type="text"
+                            placeholder="Search receipts, customers..."
+                            className="px-4 py-2 border rounded-lg"
+                            value={searchTerm}
+                            onChange={e => setSearchTerm(e.target.value)}
+                        />
+                        <button
+                            onClick={handleExport}
+                            disabled={exporting}
+                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2"
+                        >
+                            {exporting ? 'Exporting...' : 'Export CSV'}
+                        </button>
+                    </div>
                 </div>
 
                 <div className="bg-white shadow rounded-lg overflow-hidden flex flex-col">
@@ -162,7 +190,7 @@ export default function SalesHistoryPage() {
                                             )}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {sale.user?.email || '-'}
+                                            {sale.user?.name || sale.user?.email || '-'}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <span className={`px-2 py-1 rounded text-xs font-bold ${sale.paymentMethod === 'CASH' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
@@ -216,7 +244,7 @@ export default function SalesHistoryPage() {
                 </div>
 
                 {/* RECEIPT DETAIL MODAL */}
-                {selectedSale && (
+                {selectedSale && !returnModalOpen && (
                     <SaleDetailModal
                         sale={selectedSale}
                         onClose={() => setSelectedSale(null)}

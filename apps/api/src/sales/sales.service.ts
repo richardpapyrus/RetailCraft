@@ -1,5 +1,5 @@
 import { Injectable, BadRequestException } from "@nestjs/common";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -314,9 +314,29 @@ export class SalesService {
     });
   }
 
-  async findAll(tenantId: string, storeId?: string, skip?: number, take?: number) {
-    const where: any = { tenantId };
+  async findAll(tenantId: string, storeId?: string, skip?: number, take?: number, search?: string) {
+    // console.log(`[SalesService] findAll: search="${search}", storeId="${storeId}"`);
+    const where: Prisma.SaleWhereInput = { tenantId };
     if (storeId) where.storeId = storeId;
+
+    if (search) {
+      if (
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          search
+        )
+      ) {
+        // Exact UUID match optimized
+        where.id = search;
+      } else {
+        where.OR = [
+          { id: { contains: search.replace(/^#/, ''), mode: 'insensitive' } }, // Partial ID match (short codes)
+          { customer: { name: { contains: search, mode: 'insensitive' } } },
+          { user: { name: { contains: search, mode: 'insensitive' } } },
+          { user: { email: { contains: search, mode: 'insensitive' } } }, // Added Email
+          { items: { some: { product: { name: { contains: search, mode: 'insensitive' } } } } } // Added Product Name
+        ];
+      }
+    }
 
     const [data, total] = await Promise.all([
       prisma.sale.findMany({
@@ -330,6 +350,11 @@ export class SalesService {
             },
           },
           payments: true, // Include split details
+          returns: {
+            include: {
+              items: true
+            }
+          },
           customer: true,
           user: {
             select: { email: true, name: true },

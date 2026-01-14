@@ -129,7 +129,7 @@ export default function OpenTillModal({ isOpen, onClose, onSuccess }: OpenTillMo
                     <div className="space-y-2">
                         <label className="text-sm font-bold text-gray-700">Opening Float</label>
                         <div className="relative">
-                            <span className="absolute left-4 top-3 text-gray-400">$</span>
+                            <span className="absolute left-4 top-3 text-gray-400">{user?.currency === 'NGN' ? '₦' : '$'}</span>
                             <input
                                 type="number"
                                 step="0.01"

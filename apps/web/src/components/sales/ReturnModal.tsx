@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { api } from '@/lib/api';
+import { useAuth, formatCurrency } from '@/lib/useAuth';
 
 interface SaleItem {
     id: string;
@@ -34,6 +35,7 @@ interface ReturnModalProps {
 }
 
 export function ReturnModal({ isOpen, onClose, sale, onSuccess }: ReturnModalProps) {
+    const { user } = useAuth();
     const [selectedItems, setSelectedItems] = useState<{ [key: string]: number }>({});
     const [restockMap, setRestockMap] = useState<{ [key: string]: boolean }>({});
     const [loading, setLoading] = useState(false);
@@ -139,7 +141,7 @@ export function ReturnModal({ isOpen, onClose, sale, onSuccess }: ReturnModalPro
                                     <tr key={item.id}>
                                         <td className="px-4 py-2">
                                             <div className="text-sm font-medium text-gray-900">{item.product.name}</div>
-                                            <div className="text-xs text-gray-500">${Number(item.priceAtSale).toFixed(2)}</div>
+                                            <div className="text-xs text-gray-500">{formatCurrency(item.priceAtSale, user?.currency)}</div>
                                         </td>
                                         <td className="px-4 py-2 text-sm text-gray-500">{item.quantity}</td>
                                         <td className="px-4 py-2">
@@ -169,7 +171,7 @@ export function ReturnModal({ isOpen, onClose, sale, onSuccess }: ReturnModalPro
                     <div className="mt-6 flex justify-end items-center gap-4">
                         <div className="text-right">
                             <span className="block text-xs text-gray-500">Refund Total</span>
-                            <span className="block text-2xl font-bold text-red-600">${totalRefund.toFixed(2)}</span>
+                            <span className="block text-2xl font-bold text-red-600">{formatCurrency(totalRefund, user?.currency)}</span>
                         </div>
                     </div>
                 </div>

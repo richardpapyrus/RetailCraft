@@ -18,6 +18,8 @@ export default function CustomersPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [formData, setFormData] = useState({ name: '', phone: '', email: '', isLoyaltyMember: false });
+    const [searchTerm, setSearchTerm] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
 
     useEffect(() => {
         if (!isHydrated) return;
@@ -29,13 +31,31 @@ export default function CustomersPage() {
         loadCustomers(true);
     }, [token, router, isHydrated, selectedStoreId]);
 
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchTerm);
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+
+    useEffect(() => {
+        if (!isHydrated) return;
+
+        if (!token) {
+            router.push('/login');
+            return;
+        }
+        // When searching, force reset list
+        loadCustomers(true);
+    }, [token, router, isHydrated, selectedStoreId, debouncedSearch]);
+
     const loadCustomers = async (reset = false) => {
         try {
             if (reset) setLoading(true);
             else setLoadingMore(true);
 
             const skip = reset ? 0 : customers.length;
-            const { data, total } = await DataService.getCustomers(skip, 50, selectedStoreId || undefined);
+            const { data, total } = await DataService.getCustomers(skip, 50, selectedStoreId || undefined, debouncedSearch);
 
             if (reset) setCustomers(data);
             else setCustomers(prev => [...prev, ...data]);
@@ -101,6 +121,13 @@ export default function CustomersPage() {
                                 <Award size={18} className="text-indigo-600" />
                                 Loyalty Program
                             </button>
+                            <input
+                                type="text"
+                                placeholder="Search customers..."
+                                className="px-3 py-2 border rounded-lg text-sm w-64"
+                                value={searchTerm}
+                                onChange={e => setSearchTerm(e.target.value)}
+                            />
                             <button
                                 onClick={() => {
                                     if (!selectedStoreId) {

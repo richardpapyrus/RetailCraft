@@ -161,7 +161,7 @@ export class AuthService {
         data: {
           email: data.email,
           password: hashedPassword,
-          name: "Admin",
+          name: data.name || "Admin",
           roleId: adminRole.id, // Link to Role
 
           tenantId: tenant.id,

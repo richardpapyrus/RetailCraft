@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -29,10 +29,44 @@ export class SuppliersService {
     });
   }
 
-  async findAll(tenantId: string, storeId?: string) {
-    const where: any = { tenantId };
+  async findAll(tenantId: string, storeId?: string, search?: string) {
+    // console.log(`[SuppliersService] findAll: search="${search}", storeId="${storeId}"`);
+    const where: Prisma.SupplierWhereInput = { tenantId };
 
     if (storeId) {
+      where.OR = [
+        { storeId: storeId },
+        { storeId: null } // Include Global/System Suppliers
+      ];
+    }
+
+    if (search) {
+      // Note: if storeId logic used OR, we need AND (OR search)
+      // Prisma doesn't support implicit AND with root OR well if mixed.
+      // Current structure: where.OR = [storeId cond].
+      // We need (StoreMatch) AND (SearchMatch).
+      // So we move StoreMatch to AND?
+      // Actually simpler:
+      const storeCondition = storeId ? {
+        OR: [
+          { storeId: storeId },
+          { storeId: null }
+        ]
+      } : {};
+
+      where.AND = [
+        storeCondition,
+        {
+          OR: [
+            { name: { contains: search, mode: 'insensitive' } },
+            { contact: { contains: search, mode: 'insensitive' } },
+            { email: { contains: search, mode: 'insensitive' } }
+          ]
+        }
+      ];
+      delete where.OR; // Remove root OR if set by storeId logic above
+    } else if (storeId) {
+      // Original logic if no search
       where.OR = [
         { storeId: storeId },
         { storeId: null } // Include Global/System Suppliers

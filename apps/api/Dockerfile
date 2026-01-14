@@ -1,6 +1,6 @@
-FROM node:18-alpine
+FROM node:18-slim
 
-RUN apk add --no-cache openssl libc6-compat python3 make g++
+RUN apt-get update -y && apt-get install -y openssl python3 make g++
 
 WORKDIR /app
 
@@ -17,4 +17,6 @@ COPY . .
 WORKDIR /app/apps/api
 RUN npx prisma generate
 
-CMD ["npm", "run", "start:dev"]
+RUN npm run build
+
+CMD ["npm", "run", "start:prod"]

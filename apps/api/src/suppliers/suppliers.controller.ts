@@ -40,14 +40,14 @@ export class SuppliersController {
   }
 
   @Get()
-  findAll(@Request() req, @Query("storeId") queryStoreId?: string) {
+  findAll(@Request() req, @Query("storeId") queryStoreId?: string, @Query("search") search?: string) {
     let storeId = queryStoreId;
     const isSystemAdmin = req.user.role === 'Administrator' || req.user.permissions?.includes('*');
     if (!isSystemAdmin) {
       if (req.user.storeId) storeId = req.user.storeId;
       else storeId = 'invalid-store-id';
     }
-    return this.suppliersService.findAll(req.user.tenantId, storeId);
+    return this.suppliersService.findAll(req.user.tenantId, storeId, search);
   }
 
   @Get(":id")
