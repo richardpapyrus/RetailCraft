@@ -14,6 +14,9 @@ export default function TeamSettings() {
     const [isCreating, setIsCreating] = useState(false);
 
     // Form State
+    const [editingUserId, setEditingUserId] = useState<string | null>(null);
+
+    // Form State
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -34,8 +37,8 @@ export default function TeamSettings() {
             setStores(storesData);
             setRoles(rolesData);
 
-            if (storesData.length > 0) setStoreId(storesData[0].id);
-            if (rolesData.length > 0) setRoleId(rolesData[0].id);
+            if (storesData.length > 0) !storeId && setStoreId(storesData[0].id);
+            if (rolesData.length > 0) !roleId && setRoleId(rolesData[0].id);
 
         } catch (e) {
             console.error(e);
@@ -48,26 +51,55 @@ export default function TeamSettings() {
         fetchData();
     }, [selectedStoreId]); // Re-fetch when store selection changes
 
-    const handleCreate = async () => {
-        if (!email || !password || !roleId) return;
-        try {
-            await api.users.create({
-                name,
-                email,
-                password,
-                roleId,
-                storeId: storeId || undefined
-            });
-            setIsCreating(false);
-            // Reset form
-            setName('');
-            setEmail('');
-            setPassword('');
-            fetchData(); // Reload all
-            toast.success('User created successfully');
-        } catch (e) {
-            toast.error('Failed to create user');
+    const handleSave = async () => {
+        if (!email || (!editingUserId && !password) || !roleId) {
+            toast.error("Please fill in all required fields");
+            return;
         }
+
+        try {
+            if (editingUserId) {
+                // Update
+                const data: any = { name, email, roleId, storeId: storeId || undefined };
+                if (password) data.password = password; // Only send if changed
+
+                await api.users.update(editingUserId, data);
+                toast.success('User updated successfully');
+            } else {
+                // Create
+                await api.users.create({
+                    name,
+                    email,
+                    password,
+                    roleId,
+                    storeId: storeId || undefined
+                });
+                toast.success('User created successfully');
+            }
+
+            closeForm();
+            fetchData(); // Reload all
+        } catch (e: any) {
+            toast.error(e.message || 'Failed to save user');
+        }
+    };
+
+    const handleEdit = (user: any) => {
+        setEditingUserId(user.id);
+        setName(user.name || '');
+        setEmail(user.email);
+        setPassword(''); // Don't fill password
+        setRoleId(user.roleId || user.roleDef?.id || roles.find(r => r.name === user.role)?.id || '');
+        setStoreId(user.storeId || '');
+        setIsCreating(true);
+    };
+
+    const closeForm = () => {
+        setIsCreating(false);
+        setEditingUserId(null);
+        setName('');
+        setEmail('');
+        setPassword('');
     };
 
     const handleDelete = async (userId: string) => {
@@ -85,21 +117,23 @@ export default function TeamSettings() {
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold text-gray-800">Team Members</h2>
-                <button
-                    onClick={() => setIsCreating(true)}
-                    className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
-                >
-                    + Add User
-                </button>
+                {!isCreating && (
+                    <button
+                        onClick={() => { setIsCreating(true); setEditingUserId(null); }}
+                        className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+                    >
+                        + Add User
+                    </button>
+                )}
             </div>
 
             {isCreating && (
                 <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                    <h3 className="font-medium mb-4">New User</h3>
+                    <h3 className="font-medium mb-4">{editingUserId ? 'Edit User' : 'New User'}</h3>
                     <div className="grid grid-cols-2 gap-4 mb-4">
                         <input type="text" placeholder="Name" className="p-2 border rounded-lg" value={name} onChange={e => setName(e.target.value)} />
                         <input type="email" placeholder="Email" className="p-2 border rounded-lg" value={email} onChange={e => setEmail(e.target.value)} />
-                        <input type="password" placeholder="Password" className="p-2 border rounded-lg" value={password} onChange={e => setPassword(e.target.value)} />
+                        <input type="password" placeholder={editingUserId ? "Password (Leave blank to keep)" : "Password"} className="p-2 border rounded-lg" value={password} onChange={e => setPassword(e.target.value)} />
 
                         <select
                             className="p-2 border rounded-lg"
@@ -113,6 +147,7 @@ export default function TeamSettings() {
                                     setStoreId('');
                                 }
                             }}
+                            disabled={editingUserId !== null && (roles.find(r => r.id === roleId)?.isSystem || roles.find(r => r.id === roleId)?.name === 'Administrator')}
                         >
                             <option value="">Select Role</option>
                             {roles.map(r => (
@@ -142,8 +177,8 @@ export default function TeamSettings() {
                         </div>
                     </div>
                     <div className="flex gap-2">
-                        <button onClick={handleCreate} className="bg-green-600 text-white px-4 py-2 rounded-lg">Save User</button>
-                        <button onClick={() => setIsCreating(false)} className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg">Cancel</button>
+                        <button onClick={handleSave} className="bg-green-600 text-white px-4 py-2 rounded-lg">{editingUserId ? 'Update User' : 'Save User'}</button>
+                        <button onClick={closeForm} className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg">Cancel</button>
                     </div>
                 </div>
             )}
@@ -179,18 +214,22 @@ export default function TeamSettings() {
                                     </td>
                                     <td className="py-3 text-sm text-gray-600">{user.store?.name || 'All Locations'}</td>
                                     <td className="py-3 text-right">
-                                        {canDelete ? (
+                                        <div className="flex justify-end gap-2">
                                             <button
-                                                onClick={() => handleDelete(user.id)}
-                                                className="text-red-600 hover:text-red-800 hover:underline text-sm font-medium"
+                                                onClick={() => handleEdit(user)}
+                                                className="text-indigo-600 hover:text-indigo-800 hover:underline text-sm font-medium"
                                             >
-                                                Remove
+                                                Edit
                                             </button>
-                                        ) : (
-                                            <span className="text-gray-300 text-sm italic cursor-not-allowed" title={isSelf ? "Cannot delete yourself" : "Cannot delete Admin"}>
-                                                Remove
-                                            </span>
-                                        )}
+                                            {canDelete && (
+                                                <button
+                                                    onClick={() => handleDelete(user.id)}
+                                                    className="text-red-600 hover:text-red-800 hover:underline text-sm font-medium"
+                                                >
+                                                    Remove
+                                                </button>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             );

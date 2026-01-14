@@ -11,6 +11,7 @@ export default function RegisterPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [formData, setFormData] = useState({
+        fullName: '',
         businessName: '',
         storeName: '',
         email: '',
@@ -23,7 +24,10 @@ export default function RegisterPage() {
         setError('');
 
         try {
-            await register(formData);
+            await register({
+                ...formData,
+                name: formData.fullName
+            });
             router.push('/onboarding'); // Redirect to wizard
         } catch (err: any) {
             setError(err.response?.data?.message || err.message || 'Registration failed. Please try again.');
@@ -102,6 +106,19 @@ export default function RegisterPage() {
                                 placeholder="Password"
                                 value={formData.password}
                                 onChange={e => setFormData({ ...formData, password: e.target.value })}
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="full-name" className="sr-only">Full Name</label>
+                            <input
+                                id="full-name"
+                                name="fullName"
+                                type="text"
+                                required
+                                className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                                placeholder="Full Name"
+                                value={formData.fullName}
+                                onChange={e => setFormData({ ...formData, fullName: e.target.value })}
                             />
                         </div>
                     </div>
