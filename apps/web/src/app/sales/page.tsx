@@ -244,7 +244,7 @@ export default function SalesHistoryPage() {
                 </div>
 
                 {/* RECEIPT DETAIL MODAL */}
-                {selectedSale && (
+                {selectedSale && !returnModalOpen && (
                     <SaleDetailModal
                         sale={selectedSale}
                         onClose={() => setSelectedSale(null)}

@@ -350,6 +350,11 @@ export class SalesService {
             },
           },
           payments: true, // Include split details
+          returns: {
+            include: {
+              items: true
+            }
+          },
           customer: true,
           user: {
             select: { email: true, name: true },
