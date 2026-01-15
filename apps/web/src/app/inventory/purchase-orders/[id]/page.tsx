@@ -10,7 +10,7 @@ import { toast } from 'react-hot-toast';
 
 export default function PODetailPage() {
     const { id } = useParams();
-    const { token, isHydrated } = useAuth();
+    const { user, token, isHydrated } = useAuth();
     const router = useRouter();
     const [po, setPo] = useState<any>(null);
     const [loading, setLoading] = useState(true);
