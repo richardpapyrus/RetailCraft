@@ -74,6 +74,12 @@ model User {
   name      String?
   password  String   // Hashed
   
+  // Invitation & Onboarding
+  isInvited       Boolean  @default(false)
+  invitationToken String?  @unique
+  invitationExpires DateTime?
+  forcePasswordChange Boolean @default(false)
+
   // RBAC Relations
   roleId    String?
   roleDef   Role?    @relation(fields: [roleId], references: [id])
