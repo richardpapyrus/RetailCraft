@@ -4,7 +4,8 @@ dist
 .git
 .DS_Store
 
-# Uploads
-uploads
-apps/api/uploads
-**/uploads
+# Uploads (Binaries only)
+uploads/
+apps/api/uploads/
+# Do NOT use **/uploads as it ignores src/uploads code
+

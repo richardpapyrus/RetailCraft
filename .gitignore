@@ -40,7 +40,7 @@ dist
 # Docker
 
 # Uploads
-**/uploads/
+uploads/
 apps/api/uploads/
 
 # Logs
