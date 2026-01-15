@@ -106,7 +106,7 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
                         <div className="text-right">
                             <div className="text-sm text-gray-500">Total Spent</div>
                             <div className="text-2xl font-bold text-indigo-600">
-                                ${customer.sales?.reduce((acc, curr) => acc + Number(curr.total), 0).toFixed(2)}
+                                {formatCurrency(customer.sales?.reduce((acc, curr) => acc + Number(curr.total), 0) || 0, user?.currency, user?.locale)}
                             </div>
                         </div>
                     </div>
@@ -146,9 +146,9 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
                                             )}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-gray-900">
-                                            <div>${Number(sale.total).toFixed(2)}</div>
+                                            <div>{formatCurrency(sale.total, user?.currency, user?.locale)}</div>
                                             {sale.loyaltyDiscountAmount && Number(sale.loyaltyDiscountAmount) > 0 && (
-                                                <div className="text-[10px] text-green-600">Saved ${Number(sale.loyaltyDiscountAmount).toFixed(2)}</div>
+                                                <div className="text-[10px] text-green-600">Saved {formatCurrency(sale.loyaltyDiscountAmount, user?.currency, user?.locale)}</div>
                                             )}
                                         </td>
                                     </tr>

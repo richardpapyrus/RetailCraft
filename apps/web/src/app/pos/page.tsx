@@ -318,7 +318,7 @@ export default function POSPage() {
             const result = await DataService.saveSale({
                 items: cart.map(i => ({ productId: i.id, quantity: i.cartQty })),
                 paymentMethod: isSplit ? 'SPLIT' : selectedPaymentMethod,
-                payments: isSplit ? splitPayments : undefined,
+                payments: isSplit ? splitPayments : [{ method: selectedPaymentMethod, amount: tenderedVal || cartTotal }],
                 total: cartTotal,
                 customerId: selectedCustomer?.id,
                 tillSessionId: activeSession?.id,
@@ -1330,7 +1330,7 @@ export default function POSPage() {
                                     </div>
                                     <div className="flex justify-between items-center text-sm">
                                         <span className="text-gray-500 font-bold uppercase tracking-wider">Change</span>
-                                        <span className="text-xl font-bold text-green-600">{formatCurrency(lastSale.change, user?.currency, user?.locale)}</span>
+                                        <span className="text-xl font-bold text-green-600">{formatCurrency(lastSale.changeGiven, user?.currency, user?.locale)}</span>
                                     </div>
                                 </div>
 

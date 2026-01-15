@@ -3,8 +3,8 @@
 
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-import { useAuth } from '@/lib/useAuth';
 import { useRouter, useParams } from 'next/navigation';
+import { useAuth, formatCurrency } from '@/lib/useAuth';
 import { ArrowLeft, Truck, CheckCircle, FileText } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -116,7 +116,7 @@ export default function PODetailPage() {
                         <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Financials</h3>
                         <div className="flex justify-between mb-2">
                             <span className="text-gray-600">Total Amount</span>
-                            <span className="font-bold text-lg">{Number(po.totalAmount).toLocaleString('en-US', { style: 'currency', currency: po.supplier?.currency || 'USD' })}</span>
+                            <span className="font-bold text-lg">{formatCurrency(po.totalAmount, po.supplier?.currency || user?.currency, user?.locale)}</span>
                         </div>
                         <div className="flex justify-between">
                             <span className="text-gray-600">Items</span>
@@ -174,10 +174,10 @@ export default function PODetailPage() {
                                         {Math.max(0, item.quantityOrdered - item.quantityReceived)}
                                     </td>
                                     <td className="p-4 text-right font-mono">
-                                        {Number(item.unitCost).toFixed(2)}
+                                        {formatCurrency(item.unitCost, po.supplier?.currency || user?.currency, user?.locale)}
                                     </td>
                                     <td className="p-4 text-right font-mono font-bold">
-                                        {(Number(item.unitCost) * item.quantityOrdered).toFixed(2)}
+                                        {formatCurrency(Number(item.unitCost) * item.quantityOrdered, po.supplier?.currency || user?.currency, user?.locale)}
                                     </td>
                                 </tr>
                             ))}

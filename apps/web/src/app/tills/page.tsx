@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/useAuth';
+import { formatCurrency, useAuth } from '@/lib/useAuth';
 import { api } from '@/lib/api';
 import { Sidebar } from '@/components/Sidebar';
 import { toast } from 'react-hot-toast';
@@ -208,7 +208,7 @@ export default function TillsPage() {
                                         {till.sessions && till.sessions.length > 0 ? (
                                             <div className="text-sm">
                                                 <div className="font-bold">Open since {new Date(till.sessions[0].openedAt).toLocaleTimeString()}</div>
-                                                <div className="text-gray-400">Float: ${Number(till.sessions[0].openingFloat).toFixed(2)}</div>
+                                                <div className="text-gray-400">Float: {formatCurrency(till.sessions[0].openingFloat, user?.currency, user?.locale)}</div>
                                             </div>
                                         ) : <span className="text-gray-400">-</span>}
                                     </td>
@@ -261,11 +261,11 @@ export default function TillsPage() {
                                                 <td className="p-4">{new Date(session.openedAt).toLocaleString()}</td>
                                                 <td className="p-4">{new Date(session.closedAt).toLocaleString()}</td>
                                                 <td className="p-4 font-medium">{session.user?.name || session.user?.email || 'Unknown'}</td>
-                                                <td className="p-4 text-right">${Number(session.openingFloat).toFixed(2)}</td>
-                                                <td className="p-4 text-right font-mono">${Number(session.expectedCash).toFixed(2)}</td>
-                                                <td className="p-4 text-right font-mono">${Number(session.closingCash).toFixed(2)}</td>
+                                                <td className="p-4 text-right">{formatCurrency(session.openingFloat, user?.currency, user?.locale)}</td>
+                                                <td className="p-4 text-right font-mono">{formatCurrency(session.expectedCash, user?.currency, user?.locale)}</td>
+                                                <td className="p-4 text-right font-mono">{formatCurrency(session.closingCash, user?.currency, user?.locale)}</td>
                                                 <td className={`p-4 text-right font-bold ${Number(session.variance) < 0 ? 'text-red-500' : Number(session.variance) > 0 ? 'text-green-500' : 'text-gray-400'}`}>
-                                                    {Number(session.variance) > 0 ? '+' : ''}{Number(session.variance).toFixed(2)}
+                                                    {formatCurrency(session.variance, user?.currency, user?.locale)}
                                                 </td>
                                                 <td className="p-4 text-right">
                                                     <button

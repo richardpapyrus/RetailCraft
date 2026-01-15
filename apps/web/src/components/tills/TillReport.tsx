@@ -1,6 +1,6 @@
 "use client";
 
-import { formatCurrency } from '@/lib/useAuth';
+import { formatCurrency, useAuth } from '@/lib/useAuth';
 import { useRef, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Printer } from 'lucide-react';
@@ -12,6 +12,7 @@ interface TillReportProps {
 
 export function TillReport({ data, onClose }: TillReportProps) {
     const componentRef = useRef<HTMLDivElement>(null);
+    const { user } = useAuth();
     const { session, summary, sales } = data;
     const [mounted, setMounted] = useState(false);
 
@@ -170,37 +171,37 @@ export function TillReport({ data, onClose }: TillReportProps) {
                             <h4 className="text-xs font-bold uppercase text-gray-400 mb-2">Cash Handling</h4>
                             <div className="flex justify-between text-sm mb-1">
                                 <span>Opening Float</span>
-                                <span className="font-mono">{formatCurrency(summary.openingFloat)}</span>
+                                <span className="font-mono">{formatCurrency(summary.openingFloat, user?.currency, user?.locale)}</span>
                             </div>
                             <div className="flex justify-between text-sm mb-1 text-green-600">
                                 <span>+ Cash In</span>
-                                <span className="font-mono">{formatCurrency(summary.cashIn)}</span>
+                                <span className="font-mono">{formatCurrency(summary.cashIn, user?.currency, user?.locale)}</span>
                             </div>
                             <div className="flex justify-between text-sm mb-1 text-blue-600">
                                 <span>+ Cash Sales Collected</span>
-                                <span className="font-mono">{formatCurrency(summary.paymentsByMethod?.['CASH'] || 0)}</span>
+                                <span className="font-mono">{formatCurrency(summary.paymentsByMethod?.['CASH'] || 0, user?.currency, user?.locale)}</span>
                             </div>
                             <div className="flex justify-between text-sm mb-1 text-orange-600">
                                 <span>- Change Given</span>
-                                <span className="font-mono">{formatCurrency(summary.totalChangeGiven)}</span>
+                                <span className="font-mono">{formatCurrency(summary.totalChangeGiven, user?.currency, user?.locale)}</span>
                             </div>
                             <div className="flex justify-between text-sm mb-1 text-red-600">
                                 <span>- Cash Out</span>
-                                <span className="font-mono">{formatCurrency(summary.cashOut)}</span>
+                                <span className="font-mono">{formatCurrency(summary.cashOut, user?.currency, user?.locale)}</span>
                             </div>
                             <div className="border-t border-gray-200 mt-2 pt-2 flex justify-between font-bold">
                                 <span>Expected Cash</span>
-                                <span className="font-mono">{formatCurrency(summary.closingBalance)}</span>
+                                <span className="font-mono">{formatCurrency(summary.closingBalance, user?.currency, user?.locale)}</span>
                             </div>
                             {session.status === 'CLOSED' && (
                                 <>
                                     <div className="flex justify-between text-sm mt-1">
                                         <span>Actual Count</span>
-                                        <span className="font-mono">{formatCurrency(summary.actualClosingCash)}</span>
+                                        <span className="font-mono">{formatCurrency(summary.actualClosingCash, user?.currency, user?.locale)}</span>
                                     </div>
                                     <div className={`flex justify-between text-sm mt-1 font-bold ${summary.variance < 0 ? 'text-red-600' : 'text-green-600'}`}>
                                         <span>Variance</span>
-                                        <span className="font-mono">{summary.variance > 0 ? '+' : ''}{formatCurrency(summary.variance)}</span>
+                                        <span className="font-mono">{summary.variance > 0 ? '+' : ''}{formatCurrency(summary.variance, user?.currency, user?.locale)}</span>
                                     </div>
                                 </>
                             )}
@@ -210,7 +211,7 @@ export function TillReport({ data, onClose }: TillReportProps) {
                             <h4 className="text-xs font-bold uppercase text-gray-400 mb-2">Sales Summary</h4>
                             <div className="flex justify-between text-sm mb-1 font-bold">
                                 <span>Gross Sales Total</span>
-                                <span className="font-mono">{formatCurrency(summary.totalSalesValue)}</span>
+                                <span className="font-mono">{formatCurrency(summary.totalSalesValue, user?.currency, user?.locale)}</span>
                             </div>
 
                             <div className="mt-4">
@@ -218,7 +219,7 @@ export function TillReport({ data, onClose }: TillReportProps) {
                                 {Object.entries(summary.paymentsByMethod || {}).map(([method, amount]: [string, any]) => (
                                     <div key={method} className="flex justify-between text-sm mb-1">
                                         <span className="capitalize">{method.toLowerCase()}</span>
-                                        <span className="font-mono">{formatCurrency(amount)}</span>
+                                        <span className="font-mono">{formatCurrency(amount, user?.currency, user?.locale)}</span>
                                     </div>
                                 ))}
                             </div>
@@ -243,7 +244,7 @@ export function TillReport({ data, onClose }: TillReportProps) {
                                     <td className="py-2 text-gray-600">{new Date(sale.createdAt).toLocaleTimeString()}</td>
                                     <td className="py-2 font-mono text-xs">#{sale.id.slice(0, 8)}</td>
                                     <td className="py-2 text-right">{sale.items.length}</td>
-                                    <td className="py-2 text-right font-medium">{formatCurrency(sale.total)}</td>
+                                    <td className="py-2 text-right font-medium">{formatCurrency(sale.total, user?.currency, user?.locale)}</td>
                                     <td className="py-2 text-right text-gray-500">
                                         {sale.payments.map((p: any) => p.method).join(', ')}
                                     </td>
