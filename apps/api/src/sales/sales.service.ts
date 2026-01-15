@@ -250,6 +250,8 @@ export class SalesService {
       const isSplit = finalPayments.length > 1;
       const summaryMethod = isSplit ? "SPLIT" : finalPayments[0].method;
 
+      const changeGiven = Math.max(0, totalPaid - finalTotal);
+
       // 6. Create Sale
       const sale = await tx.sale.create({
         data: {
@@ -258,6 +260,7 @@ export class SalesService {
           discountTotal: discountAmount,
           taxTotal: taxAmount,
           paymentMethod: summaryMethod,
+          changeGiven: changeGiven,
           payments: {
             create: finalPayments.map(p => ({
               method: p.method,

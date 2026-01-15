@@ -33,7 +33,8 @@ export class TillReportsService {
                 total: true,
                 subtotal: true,
                 taxTotal: true,
-                discountTotal: true
+                discountTotal: true,
+                changeGiven: true
             },
             _count: { _all: true }
         });
@@ -67,6 +68,7 @@ export class TillReportsService {
                 totalCollected: Number(salesAgg._sum.total || 0),
                 totalTax: Number(salesAgg._sum.taxTotal || 0),
                 totalDiscount: Number(salesAgg._sum.discountTotal || 0),
+                totalChangeGiven: Number(salesAgg._sum.changeGiven || 0),
                 transactionCount: Number(salesAgg._count._all || 0),
                 refundTotal: Number(refundAgg._sum.total || 0),
                 refundCount: Number(refundAgg._count._all || 0)

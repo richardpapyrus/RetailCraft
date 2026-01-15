@@ -256,7 +256,9 @@ model Sale {
   taxTotal      Decimal    @default(0.0)
   discountTotal Decimal    @default(0.0)
   paymentMethod String     @default("CASH") // Primary/Summary method
+  priorPaymentMethod String? // Backup store
   payments      SalePayment[]
+  changeGiven   Decimal    @default(0.0)
   status        String     @default("COMPLETED")
   
   tenantId      String

@@ -118,7 +118,7 @@ export default function TopProductsPage() {
                                             {p.quantity}
                                         </td>
                                         <td className="px-6 py-4 text-right font-bold text-gray-900">
-                                            ${p.value.toFixed(2)}
+                                            {formatCurrency(p.value, user?.currency, user?.locale)}
                                         </td>
                                     </tr>
                                 ))

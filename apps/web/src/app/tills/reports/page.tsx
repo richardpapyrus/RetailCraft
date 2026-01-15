@@ -188,7 +188,7 @@ export default function TillReportsPage() {
                             <h3 className="text-sm font-medium text-gray-500">Gross Sales</h3>
                             <Activity className="w-4 h-4 text-green-500" />
                         </div>
-                        <p className="text-2xl font-bold text-gray-900">{formatCurrency(overview.sales.grossSales)}</p>
+                        <p className="text-2xl font-bold text-gray-900">{formatCurrency(overview.sales.grossSales, user?.currency, user?.locale)}</p>
                         <p className="text-xs text-gray-500 mt-1">{overview.sales.transactionCount} transactions</p>
                     </div>
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
@@ -196,14 +196,14 @@ export default function TillReportsPage() {
                             <h3 className="text-sm font-medium text-gray-500">Discounts</h3>
                             <Activity className="w-4 h-4 text-orange-500" />
                         </div>
-                        <p className="text-2xl font-bold text-gray-900">{formatCurrency(overview.sales.totalDiscount)}</p>
+                        <p className="text-2xl font-bold text-gray-900">{formatCurrency(overview.sales.totalDiscount, user?.currency, user?.locale)}</p>
                     </div>
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-sm font-medium text-gray-500">Refunds</h3>
                             <Activity className="w-4 h-4 text-red-500" />
                         </div>
-                        <p className="text-2xl font-bold text-gray-900">{formatCurrency(overview.sales.refundTotal)}</p>
+                        <p className="text-2xl font-bold text-gray-900">{formatCurrency(overview.sales.refundTotal, user?.currency, user?.locale)}</p>
                         <p className="text-xs text-gray-500 mt-1">{overview.sales.refundCount} refunds</p>
                     </div>
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
@@ -211,7 +211,7 @@ export default function TillReportsPage() {
                             <h3 className="text-sm font-medium text-gray-500">Net Collected</h3>
                             <Activity className="w-4 h-4 text-indigo-500" />
                         </div>
-                        <p className="text-2xl font-bold text-indigo-600">{formatCurrency(overview.sales.totalCollected)}</p>
+                        <p className="text-2xl font-bold text-indigo-600">{formatCurrency(overview.sales.totalCollected, user?.currency, user?.locale)}</p>
                     </div>
                 </div>
 
@@ -229,7 +229,7 @@ export default function TillReportsPage() {
                                         <p className="font-bold text-gray-700">{p.method}</p>
                                         <p className="text-xs text-gray-500">{p.count} txns</p>
                                     </div>
-                                    <p className="font-bold text-gray-900">{formatCurrency(p.amount)}</p>
+                                    <p className="font-bold text-gray-900">{formatCurrency(p.amount, user?.currency, user?.locale)}</p>
                                 </div>
                             ))}
                             {overview.payments.length === 0 && <p className="text-gray-400 italic">No payments recorded</p>}
@@ -266,7 +266,7 @@ export default function TillReportsPage() {
                                             </td>
                                             <td className={`px-4 py-3 text-right font-bold ${s.variance < 0 ? 'text-red-500' : s.variance > 0 ? 'text-green-500' : 'text-gray-400'
                                                 }`}>
-                                                {s.variance !== null ? formatCurrency(s.variance) : '-'}
+                                                {s.variance !== null ? formatCurrency(s.variance, user?.currency, user?.locale) : '-'}
                                             </td>
                                         </tr>
                                     ))}
@@ -298,7 +298,7 @@ export default function TillReportsPage() {
                                         <td className="px-4 py-3 text-red-600 font-bold">REFUND</td>
                                         <td className="px-4 py-3">{r.user.name}</td>
                                         <td className="px-4 py-3 text-gray-500">{new Date(r.createdAt).toLocaleTimeString()}</td>
-                                        <td className="px-4 py-3 text-right font-bold text-red-600">-{formatCurrency(r.total)}</td>
+                                        <td className="px-4 py-3 text-right font-bold text-red-600">-{formatCurrency(r.total, user?.currency, user?.locale)}</td>
                                     </tr>
                                 ))}
                                 {exceptions.voids.map((v: any) => (
@@ -314,7 +314,7 @@ export default function TillReportsPage() {
                                         <td className="px-4 py-3 font-bold">{c.type}</td>
                                         <td className="px-4 py-3">-</td>
                                         <td className="px-4 py-3 text-gray-500">{new Date(c.createdAt).toLocaleTimeString()}</td>
-                                        <td className="px-4 py-3 text-right font-bold">{formatCurrency(c.amount)}</td>
+                                        <td className="px-4 py-3 text-right font-bold">{formatCurrency(c.amount, user?.currency, user?.locale)}</td>
                                     </tr>
                                 ))}
                                 {exceptions.refunds.length === 0 && exceptions.voids.length === 0 && exceptions.cashEvents.length === 0 && (
