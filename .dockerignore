@@ -3,3 +3,8 @@ dist
 .next
 .git
 .DS_Store
+
+# Uploads
+uploads
+apps/api/uploads
+**/uploads
