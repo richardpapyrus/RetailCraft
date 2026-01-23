@@ -12,7 +12,14 @@ export class GrnService {
         poId: string;
         userId: string;
         storeId: string; // Must match PO store
-        items: { productId: string; quantityReceived: number; batchNumber?: string; expiryDate?: Date }[];
+        items: {
+            productId: string;
+            quantityReceived: number;
+            costPrice?: number;
+            sellingPrice?: number;
+            batchNumber?: string;
+            expiryDate?: Date
+        }[];
         notes?: string;
     }) {
         const po = await prisma.purchaseOrder.findUnique({
@@ -73,10 +80,23 @@ export class GrnService {
                     }
                 });
 
+                // B2. Update Product Pricing (New Feature)
+                if (receivedItem.costPrice !== undefined && receivedItem.sellingPrice !== undefined) {
+                    await tx.product.update({
+                        where: { id: receivedItem.productId },
+                        data: {
+                            costPrice: receivedItem.costPrice,
+                            price: receivedItem.sellingPrice
+                        }
+                    });
+                }
+
                 // C. Update Supplier Cost (Tracking)
+                const costToUse = receivedItem.costPrice !== undefined ? receivedItem.costPrice : (po.items.find(p => p.productId === receivedItem.productId)?.unitCost || 0);
+
                 await tx.supplierProduct.updateMany({
                     where: { supplierId: po.supplierId, productId: receivedItem.productId },
-                    data: { lastCost: po.items.find(p => p.productId === receivedItem.productId)?.unitCost || 0 }
+                    data: { lastCost: costToUse }
                 });
 
                 // D. Update PO Item

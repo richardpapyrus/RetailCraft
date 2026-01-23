@@ -41,4 +41,12 @@
 ## Project Structure
 - `apps/api`: NestJS Backend
 - `apps/web`: Next.js Frontend
+- `apps/docs`: Next.js Documentation (Port 3001)
 - `docker/`: Docker configurations
+
+## Documentation
+For detailed guides on how to use the POS system, run the documentation app:
+```bash
+cd apps/docs && npm run dev
+```
+Then visit [http://localhost:3001](http://localhost:3001).

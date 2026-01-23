@@ -41,6 +41,8 @@ export default function ReceivePOPage() {
                 receivedSoFar: i.quantityReceived,
                 // User Request: Pre-populate with Actual Quantity Ordered
                 toReceive: i.quantityOrdered, // Fixed
+                costPrice: i.unitCost, // New: Purchase Unit Price
+                sellingPrice: i.product.price, // New: Selling Price
                 batchNumber: '',
                 expiryDate: ''
             })));
@@ -70,6 +72,8 @@ export default function ReceivePOPage() {
                 items: itemsToReceive.map(i => ({
                     productId: i.productId,
                     quantityReceived: Number(i.toReceive),
+                    costPrice: Number(i.costPrice),
+                    sellingPrice: Number(i.sellingPrice),
                     batchNumber: i.batchNumber || null,
                     expiryDate: i.expiryDate ? new Date(i.expiryDate).toISOString() : null
                 }))
@@ -108,6 +112,8 @@ export default function ReceivePOPage() {
                                 <th className="p-4">Product</th>
                                 <th className="p-4 text-center w-28 font-extrabold text-gray-900 border-l border-r">Qty Ordered</th>
                                 <th className="p-4 text-center w-24">Prev. Recv</th>
+                                <th className="p-4 w-32 border-l">Unit Cost</th>
+                                <th className="p-4 w-32">Selling Price</th>
                                 <th className="p-4 w-40 border-l bg-indigo-50 text-indigo-900 font-bold">Quantity Received</th>
                                 <th className="p-4 w-40">Batch #</th>
                                 <th className="p-4 w-40">Expiry Date</th>
@@ -119,6 +125,26 @@ export default function ReceivePOPage() {
                                     <td className="p-4 font-bold">{item.productName}</td>
                                     <td className="p-4 text-center font-extrabold text-gray-900 text-lg border-l border-r bg-gray-50">{item.ordered}</td>
                                     <td className="p-4 text-center text-gray-600">{item.receivedSoFar}</td>
+                                    <td className="p-4 border-l">
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            className="w-full p-2 border rounded text-right"
+                                            value={item.costPrice}
+                                            onChange={e => handleUpdate(item.id, 'costPrice', e.target.value)}
+                                        />
+                                    </td>
+                                    <td className="p-4">
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            className="w-full p-2 border rounded text-right"
+                                            value={item.sellingPrice}
+                                            onChange={e => handleUpdate(item.id, 'sellingPrice', e.target.value)}
+                                        />
+                                    </td>
                                     <td className="p-4 border-l bg-indigo-50">
                                         <input
                                             type="number"
