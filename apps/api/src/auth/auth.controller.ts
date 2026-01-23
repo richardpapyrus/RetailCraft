@@ -11,7 +11,7 @@ import { AuthService } from "./auth.service";
 
 @Controller("auth")
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) { }
 
   @Get("ping")
   ping() {
@@ -43,6 +43,14 @@ export class AuthController {
   @Post("register")
   async register(@Body() body: any) {
     return this.authService.register(body);
+  }
+
+  @Post("accept-invite")
+  async acceptInvite(@Body() body: { token: string; password: string }) {
+    if (!body.token || !body.password) {
+      throw new UnauthorizedException("Missing token or password");
+    }
+    return this.authService.acceptInvite(body.token, body.password);
   }
 
   @Post("profile")

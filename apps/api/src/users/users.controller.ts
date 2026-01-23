@@ -35,6 +35,16 @@ export class UsersController {
     return this.usersService.create(req.user.tenantId, body);
   }
 
+  @Post('invite')
+  async invite(@Request() req, @Body() body: { email: string; roleId: string; storeId?: string }) {
+    return this.usersService.inviteUser(
+      req.user.tenantId,
+      body.email,
+      body.roleId,
+      body.storeId
+    );
+  }
+
   @Patch(":id")
   async update(@Request() req, @Param("id") id: string, @Body() body) {
     if (body.password) {

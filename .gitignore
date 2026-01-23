@@ -38,4 +38,13 @@ next-env.d.ts
 dist
 
 # Docker
-docker/postgres
+
+# Uploads
+uploads/
+apps/api/uploads/
+
+# Logs
+**/*.log
+
+# Temp
+**/tmp/

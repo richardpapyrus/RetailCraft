@@ -1,10 +1,13 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, ConflictException } from "@nestjs/common";
 import { PrismaClient } from "@prisma/client";
+import * as crypto from 'crypto';
+import { EmailService } from "../common/email/email.service";
 
 const prisma = new PrismaClient();
 
 @Injectable()
 export class UsersService {
+  constructor(private readonly emailService: EmailService) { }
   async findAll(tenantId: string, storeId?: string) {
     return prisma.user.findMany({
       where: {
@@ -46,6 +49,41 @@ export class UsersService {
         tenantId,
       },
     });
+  }
+
+  async inviteUser(tenantId: string, email: string, roleId: string, storeId?: string) {
+    const existing = await prisma.user.findUnique({
+      where: { email },
+    });
+    if (existing) {
+      throw new ConflictException("User already exists");
+    }
+
+    const invitationToken = crypto.randomBytes(32).toString('hex');
+    const invitationExpires = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours
+
+    // Create user with placeholder password (they must set it)
+    // Using a random unguessable string as placeholder
+    const placeholderPassword = crypto.randomBytes(16).toString('hex');
+
+    const newUser = await prisma.user.create({
+      data: {
+        email,
+        password: placeholderPassword, // Will be replaced on accept
+        tenantId,
+        roleId,
+        storeId,
+        isInvited: true,
+        invitationToken,
+        invitationExpires,
+        forcePasswordChange: true,
+      },
+    });
+
+    const inviteLink = `${process.env.FRONTEND_URL || 'http://localhost:4200'}/auth/accept-invite?token=${invitationToken}`;
+    await this.emailService.sendInvitationEmail(email, inviteLink);
+
+    return newUser;
   }
 
   async update(id: string, tenantId: string, data: any) {

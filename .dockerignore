@@ -3,3 +3,9 @@ dist
 .next
 .git
 .DS_Store
+
+# Uploads (Binaries only)
+uploads/
+apps/api/uploads/
+# Do NOT use **/uploads as it ignores src/uploads code
+

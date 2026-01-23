@@ -1,0 +1,56 @@
+import { StepByStep, Step } from '@/components/StepByStep';
+
+export default function NavigationPage() {
+    const steps: Step[] = [
+        {
+            title: 'Dashboard Overview',
+            content: (
+                <p>
+                    The dashboard is your central hub. Here you see a quick overview of today's sales,
+                    customer traffic, and critical alerts. The <strong>Sidebar</strong> on the left gives you access
+                    to all major modules like Sales, Inventory, and Customers.
+                </p>
+            ),
+            image: 'https://placehold.co/1200x600/e2e8f0/475569?text=Dashboard+Overview',
+            imageAlt: 'Dashboard Screenshot',
+            alert: {
+                type: 'tip',
+                message: 'You can collapse the sidebar by clicking the icon at the bottom for more screen real estate.',
+            }
+        },
+        {
+            title: 'Accessing the Sales Terminal',
+            content: (
+                <p>
+                    Click on the <strong>POS</strong> icon in the sidebar to open the sales terminal.
+                    This is where your cashiers will spend most of their time processing transactions.
+                </p>
+            ),
+            image: 'https://placehold.co/1200x600/e2e8f0/475569?text=Sales+Terminal+View',
+            imageAlt: 'POS Terminal Screenshot',
+        },
+        {
+            title: 'Managing Settings',
+            content: (
+                <p>
+                    To configure tax rates, receipt headers, or add new users, navigate to the <strong>Settings</strong> page.
+                    You need administrative privileges to access this section.
+                </p>
+            ),
+            image: 'https://placehold.co/1200x600/e2e8f0/475569?text=Settings+Panel',
+            imageAlt: 'Settings Page Screenshot',
+            alert: {
+                type: 'warning',
+                message: 'Always double-check tax settings before applying changes as they affect all future transactions immediately.',
+            }
+        },
+    ];
+
+    return (
+        <StepByStep
+            title="How to Navigate RetailCraft"
+            description="Learn the basics of getting around the RetailCraft interface and finding what you need effectively."
+            steps={steps}
+        />
+    );
+}

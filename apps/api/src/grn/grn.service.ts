@@ -12,9 +12,19 @@ export class GrnService {
         poId: string;
         userId: string;
         storeId: string; // Must match PO store
-        items: { productId: string; quantityReceived: number; batchNumber?: string; expiryDate?: Date }[];
+        items: {
+            productId: string;
+            quantityReceived: number;
+            costPrice?: number;
+            sellingPrice?: number;
+            batchNumber?: string;
+            expiryDate?: Date
+        }[];
         notes?: string;
     }) {
+        // SHORT CIRCUIT TO TEST CONTROLLER/ROUTING
+        // return { id: "test", grnNumber: "GRN-TEST" } as any;
+
         const po = await prisma.purchaseOrder.findUnique({
             where: { id: data.poId },
             include: { items: true }
@@ -26,9 +36,21 @@ export class GrnService {
 
         // Transaction: Create GRN + Update Inventory + Update PO
         return prisma.$transaction(async (tx) => {
-            // 1. Generate GRN Number (Tenant-wide to avoid collisions)
-            const count = await tx.goodsReceivedNote.count({ where: { purchaseOrder: { tenantId: po.tenantId } } });
-            const grnNumber = `GRN-${new Date().getFullYear()}-${(count + 1).toString().padStart(4, '0')}`;
+            // 1. Generate GRN Number (Robust to deletions, Global Sequence)
+            const lastGRN = await tx.goodsReceivedNote.findFirst({
+                orderBy: { grnNumber: 'desc' }
+            });
+
+            let nextNumber = 1;
+            if (lastGRN && lastGRN.grnNumber) {
+                const parts = lastGRN.grnNumber.split('-');
+                const lastSeq = parseInt(parts[parts.length - 1]);
+                if (!isNaN(lastSeq)) {
+                    nextNumber = lastSeq + 1;
+                }
+            }
+
+            const grnNumber = `GRN-${new Date().getFullYear()}-${nextNumber.toString().padStart(4, '0')}`;
 
             // 2. Create GRN
             const grn = await tx.goodsReceivedNote.create({
@@ -73,10 +95,24 @@ export class GrnService {
                     }
                 });
 
+                // B2. Update Product Pricing (New Feature)
+                if (receivedItem.costPrice !== undefined && receivedItem.sellingPrice !== undefined) {
+                    console.log(`[GRN] Updating Product ${receivedItem.productId} -> Cost: ${receivedItem.costPrice}, Price: ${receivedItem.sellingPrice}`);
+                    await tx.product.update({
+                        where: { id: receivedItem.productId },
+                        data: {
+                            costPrice: receivedItem.costPrice,
+                            price: receivedItem.sellingPrice
+                        }
+                    });
+                }
+
                 // C. Update Supplier Cost (Tracking)
+                const costToUse = receivedItem.costPrice !== undefined ? receivedItem.costPrice : (po.items.find(p => p.productId === receivedItem.productId)?.unitCost || 0);
+
                 await tx.supplierProduct.updateMany({
                     where: { supplierId: po.supplierId, productId: receivedItem.productId },
-                    data: { lastCost: po.items.find(p => p.productId === receivedItem.productId)?.unitCost || 0 }
+                    data: { lastCost: costToUse }
                 });
 
                 // D. Update PO Item

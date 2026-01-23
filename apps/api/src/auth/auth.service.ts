@@ -174,4 +174,33 @@ export class AuthService {
 
     return this.login(user);
   }
+
+  async acceptInvite(token: string, password: string): Promise<any> {
+    const user = await this.prisma.user.findUnique({
+      where: { invitationToken: token },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException("Invalid invitation token");
+    }
+
+    if (user.invitationExpires && new Date() > user.invitationExpires) {
+      throw new UnauthorizedException("Invitation expired");
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashedPassword,
+        isInvited: false, // Invite accepted
+        invitationToken: null,
+        invitationExpires: null,
+        forcePasswordChange: false, // Password set
+      },
+    });
+
+    return this.login(updatedUser);
+  }
 }

@@ -20,6 +20,13 @@ if (typeof window !== 'undefined') {
 // Only fallback to computedUrl if NEXT_PUBLIC_API_URL is undefined or empty.
 let finalUrl = process.env.NEXT_PUBLIC_API_URL || computedUrl;
 
+// DOCKER FIX: If running server-side (Next.js SSR), use the internal Docker URL if available
+// This prevents "ECONNREFUSED ::1:..." errors when container tries to access localhost
+if (typeof window === 'undefined' && process.env.INTERNAL_API_URL) {
+    finalUrl = process.env.INTERNAL_API_URL;
+    console.info(`[RetailCraft Config] Using Internal Docker API URL: ${finalUrl}`);
+}
+
 if (typeof window !== 'undefined') {
     const isRemoteOrigin = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
     const isLocalhostApi = finalUrl.includes('localhost') || finalUrl.includes('127.0.0.1');
@@ -210,6 +217,13 @@ export const api = {
                 method: 'POST',
                 body: JSON.stringify(data)
             }),
+        getProductSummary: (storeId?: string, from?: string, to?: string) => {
+            const params = new URLSearchParams();
+            if (storeId) params.append('storeId', storeId);
+            if (from) params.append('from', from);
+            if (to) params.append('to', to);
+            return fetchClient(`/sales/daily-summary?${params.toString()}`);
+        },
         stats: (from?: string, to?: string, storeId?: string) => {
             const query = new URLSearchParams();
             if (from) query.append('from', from);
