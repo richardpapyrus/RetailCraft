@@ -1,0 +1,6 @@
+{
+    "name": "retailcraft-scripts",
+    "scripts": {
+        "restore:admin": "ts-node scripts/restore-admin.ts"
+    }
+}
