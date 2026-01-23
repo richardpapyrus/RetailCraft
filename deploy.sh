@@ -26,6 +26,12 @@ npx prisma migrate deploy
 echo "   🌱 Seeding Database (Ensuring Admin User exists)..."
 npx prisma db seed
 
+# Optional: Run User Restoration if script exists
+if [ -f "../../scripts/restore-admin.ts" ]; then
+    echo "   👤 Running Admin Restoration Script..."
+    npx ts-node ../../scripts/restore-admin.ts
+fi
+
 echo "   Building API..."
 npm run build
 
