@@ -100,9 +100,41 @@ export class ReturnsService {
       }
     }
 
-    // 3. Transaction
+    // 3. Check for Active Till Session
+    const tillSession = await prisma.tillSession.findFirst({
+      where: {
+        userId,
+        status: "OPEN",
+        till: { storeId },
+      },
+    });
+
+    // 4. Prepare Till Update (if applicable)
+    // If original sale was CASH, we assume refund is CASH out of till.
+    // If original was CARD, typically refund is CARD (no cash movement), but depends on policy.
+    // For now, let's assume if it is a "Return", we are giving money back.
+    // Using sale.paymentMethod to determine.
+    const transactionUpdates: any[] = [];
+
+    // We only deduct from Till if the original payment was CASH or SPLIT involving Cash (simplified to CASH for now)
+    // OR if we want to enforce Cash Refunds for everything (common in small POS).
+    // Let's stick to: If Sale was CASH -> Refund is CASH_OUT.
+    if (tillSession && (sale.paymentMethod === 'CASH' || sale.paymentMethod === 'SPLIT')) {
+      transactionUpdates.push(
+        prisma.cashTransaction.create({
+          data: {
+            tillSessionId: tillSession.id,
+            type: 'CASH_OUT',
+            amount: totalRefund,
+            reason: `Refund for Sale #${sale.id.slice(0, 8)}`,
+            description: `Items returned: ${items.map(i => i.productId).join(', ')}`
+          }
+        })
+      );
+    }
+
+    // 5. Transaction
     return await prisma.$transaction([
-      // Create Return Record
       // Create Return Record
       prisma.salesReturn.create({
         data: {
@@ -119,6 +151,8 @@ export class ReturnsService {
       }),
       // Execute Inventory Updates if any
       ...inventoryUpdates,
+      // Execute Till Updates
+      ...transactionUpdates,
     ]);
   }
 }

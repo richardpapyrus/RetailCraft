@@ -260,7 +260,7 @@ export class SalesService {
           discountTotal: discountAmount,
           taxTotal: taxAmount,
           paymentMethod: summaryMethod,
-          changeGiven: changeGiven,
+
           payments: {
             create: finalPayments.map(p => ({
               method: p.method,
@@ -273,7 +273,7 @@ export class SalesService {
           store: { connect: { id: storeId } },
           user: { connect: { id: userId } },
           customer: customerId ? { connect: { id: customerId } } : undefined,
-          tillSession: { connect: { id: tillSessionId } },
+          tillSession: tillSessionId ? { connect: { id: tillSessionId } } : undefined,
           loyaltyPointsUsed: pointsUsed,
           loyaltyPointsEarned: pointsEarned,
         },
@@ -738,5 +738,101 @@ export class SalesService {
     });
 
     return [header, ...rows].join("\n");
+  }
+
+  async getProductSummary(
+    tenantId: string,
+    storeId?: string,
+    from?: string,
+    to?: string,
+  ) {
+    const now = new Date();
+    const startDate = from ? new Date(from) : now;
+    // Ensure start is 00:00:00
+    startDate.setHours(0, 0, 0, 0);
+
+    const endDate = to ? new Date(to) : new Date(startDate);
+    // Ensure end is 23:59:59
+    endDate.setHours(23, 59, 59, 999);
+
+    console.log(`[SalesService] getProductSummary Params: from=${from}, to=${to}`);
+    console.log(`[SalesService] Resolved Range: ${startDate.toISOString()} - ${endDate.toISOString()}`);
+
+    // 1. Fetch Sales Items for the Range
+    const saleItems = await prisma.saleItem.findMany({
+      where: {
+        sale: {
+          tenantId,
+          storeId: storeId || undefined,
+          status: "COMPLETED",
+          createdAt: { gte: startDate, lte: endDate },
+        },
+      },
+      include: {
+        product: true,
+      },
+    });
+
+    // 2. Aggregate Data
+    const summaryMap = new Map<string, {
+      productId: string;
+      name: string;
+      sku: string;
+      quantitySold: number;
+      totalValue: number;
+    }>();
+
+    saleItems.forEach(item => {
+      const existing = summaryMap.get(item.productId);
+      if (existing) {
+        existing.quantitySold += item.quantity;
+        existing.totalValue += Number(item.priceAtSale) * item.quantity;
+      } else {
+        summaryMap.set(item.productId, {
+          productId: item.productId,
+          name: item.product?.name || 'Unknown',
+          sku: item.product?.sku || 'N/A',
+          quantitySold: item.quantity,
+          totalValue: Number(item.priceAtSale) * item.quantity,
+        });
+      }
+    });
+
+    // 3. Fetch Current Inventory for these products
+    const productIds = Array.from(summaryMap.keys());
+
+    // We need inventory for the specific store if storeId is provided, or sum of all stores? 
+    // Request implies "Current Stock" relevant to the sales view. 
+    // If viewing ALL stores, stock should likely be SUM. 
+    // If viewing specific store, stock should be specific store.
+
+    const inventoryWhere: Prisma.InventoryWhereInput = {
+      productId: { in: productIds },
+    };
+    if (storeId) {
+      inventoryWhere.storeId = storeId;
+    }
+
+    const inventoryItems = await prisma.inventory.findMany({
+      where: inventoryWhere,
+    });
+
+    // Map inventory by Product ID
+    const stockMap = new Map<string, number>();
+    inventoryItems.forEach(inv => {
+      const current = stockMap.get(inv.productId) || 0;
+      stockMap.set(inv.productId, current + inv.quantity);
+    });
+
+    // 4. Merge and Result
+    const result = Array.from(summaryMap.values()).map(item => ({
+      ...item,
+      currentStock: stockMap.get(item.productId) || 0,
+    }));
+
+    // Sort by Quantity Sold Descending
+    result.sort((a, b) => b.quantitySold - a.quantitySold);
+
+    return result;
   }
 }

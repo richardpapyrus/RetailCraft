@@ -142,6 +142,29 @@ export class SalesController {
     res.send(csv);
   }
 
+  @Get("daily-summary")
+
+  async getProductSummary(
+    @Request() req,
+    @Query("from") from?: string,
+    @Query("to") to?: string,
+    @Query("storeId") queryStoreId?: string,
+  ) {
+    let storeId = queryStoreId;
+    const isSystemAdmin = req.user.role === 'Administrator' || req.user.permissions?.includes('*');
+    if (!isSystemAdmin) {
+      if (req.user.storeId) storeId = req.user.storeId;
+      else storeId = 'invalid-store-id';
+    }
+
+    return this.salesService.getProductSummary(
+      req.user.tenantId,
+      storeId,
+      from,
+      to
+    );
+  }
+
   @Post()
   async create(
     @Request() req,
