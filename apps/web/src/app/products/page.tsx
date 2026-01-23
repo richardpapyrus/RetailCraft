@@ -22,6 +22,7 @@ export default function ProductsPage() {
     const [search, setSearch] = useState('');
     const [category, setCategory] = useState('');
     const [showLowStock, setShowLowStock] = useState(false);
+    const [showArchived, setShowArchived] = useState(false);
 
     // Categories
     const [categories, setCategories] = useState<any[]>([]);
@@ -60,7 +61,7 @@ export default function ProductsPage() {
             loadProducts(1);
         }, 800);
         return () => clearTimeout(timeout);
-    }, [search, category, showLowStock]);
+    }, [search, category, showLowStock, showArchived]);
 
     useEffect(() => {
         if (!isHydrated) return;
@@ -110,7 +111,12 @@ export default function ProductsPage() {
             setLoading(true);
             const skip = (pageToLoad - 1) * limit;
             const filters = { search, category, lowStock: showLowStock };
-            const { data, total } = await DataService.getProducts(skip, limit, filters, selectedStoreId || undefined);
+            // Note: DataService needs update or bypass? Let's use direct api call if showArchived is true or just update DataService?
+            // Let's use api.products.list directly for now to support the new flag, bypassing cache if archived is involved.
+            // Or update Data/Service. Let's update api.products.list call here directly as DataService might not handle the new flag yet.
+
+            // Actually, let's just stick to api.products.list to ensure we get the fresh data with the flag.
+            const { data, total } = await api.products.list(skip, limit, filters, selectedStoreId || undefined, showArchived);
 
             setProducts(data);
             setTotalProducts(total);
@@ -247,6 +253,25 @@ export default function ProductsPage() {
         }
     };
 
+    // Archive Action
+    const handleArchiveToggle = async (product: Product, e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!confirm(product.isArchived ? `Restore ${product.name}?` : `Archive ${product.name}?`)) return;
+
+        try {
+            if (product.isArchived) {
+                await api.products.unarchive(product.id);
+                toast.success('Product Restored');
+            } else {
+                await api.products.archive(product.id);
+                toast.success('Product Archived');
+            }
+            loadProducts(page);
+        } catch (err: any) {
+            toast.error('Operation failed');
+        }
+    };
+
     if (!isHydrated) return <div className="p-8">Loading...</div>;
 
     // Separate Initial Full Page Load from Filter Updates
@@ -374,6 +399,18 @@ export default function ProductsPage() {
                         />
                         <label htmlFor="lowStock" className="text-gray-700 font-medium cursor-pointer">Low Stock Only</label>
                     </div>
+                    {(hasPermission('MANAGE_PRODUCTS') || hasPermission('admin')) && (
+                        <div className="flex items-center gap-2 ml-4 pl-4 border-l border-gray-200">
+                            <input
+                                type="checkbox"
+                                id="showArchived"
+                                checked={showArchived}
+                                onChange={(e) => setShowArchived(e.target.checked)}
+                                className="w-5 h-5 text-orange-600 rounded focus:ring-orange-500"
+                            />
+                            <label htmlFor="showArchived" className="text-gray-700 font-medium cursor-pointer">Show Archived</label>
+                        </div>
+                    )}
                 </div>
 
                 {/* Create Modal */}
@@ -682,9 +719,11 @@ export default function ProductsPage() {
                                     const stock = p.inventory?.reduce((acc, curr) => acc + curr.quantity, 0) || 0;
                                     const isLowStock = stock <= (p.minStockLevel || 0);
                                     return (
-                                        <tr key={p.id} className={`hover:bg-gray-50 cursor-pointer ${isLowStock ? 'bg-red-50' : ''}`} onClick={() => router.push(`/products/${p.id}`)}>
+                                        <tr key={p.id} className={`hover:bg-gray-50 cursor-pointer ${isLowStock ? 'bg-red-50' : ''} ${p.isArchived ? 'opacity-60 bg-gray-100' : ''}`} onClick={() => router.push(`/products/${p.id}`)}>
                                             <td className="px-6 py-4">
-                                                <div className="text-sm font-medium text-gray-900 max-w-[200px] truncate" title={p.name}>{p.name}</div>
+                                                <div className="text-sm font-medium text-gray-900 max-w-[200px] truncate" title={p.name}>
+                                                    {p.name} {p.isArchived && <span className="ml-2 text-xs bg-gray-500 text-white px-2 py-0.5 rounded">Archived</span>}
+                                                </div>
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="text-sm text-gray-500 max-w-[150px] truncate" title={p.sku}>{p.sku}</div>
@@ -737,12 +776,22 @@ export default function ProductsPage() {
                                                         </>
                                                     )}
                                                     {hasPermission('MANAGE_PRODUCTS') && (
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); startEdit(p); }}
-                                                            className="text-blue-600 hover:text-blue-900 ml-4 font-medium"
-                                                        >
-                                                            Edit
-                                                        </button>
+                                                        <>
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); startEdit(p); }}
+                                                                className="text-blue-600 hover:text-blue-900 ml-4 font-medium"
+                                                            >
+                                                                Edit
+                                                            </button>
+                                                            {(hasPermission('MANAGE_PRODUCTS') || hasPermission('admin')) && (
+                                                                <button
+                                                                    onClick={(e) => handleArchiveToggle(p, e)}
+                                                                    className={`ml-4 font-medium ${p.isArchived ? 'text-green-600 hover:text-green-900' : 'text-red-500 hover:text-red-800'}`}
+                                                                >
+                                                                    {p.isArchived ? 'Restore' : 'Archive'}
+                                                                </button>
+                                                            )}
+                                                        </>
                                                     )}
                                                 </td>
                                             )}

@@ -318,12 +318,27 @@ export class ProductsService {
     }
   }
 
+  async archive(id: string) {
+    return prisma.product.update({
+      where: { id },
+      data: { isArchived: true }
+    });
+  }
+
+  async unarchive(id: string) {
+    return prisma.product.update({
+      where: { id },
+      data: { isArchived: false }
+    });
+  }
+
   async findAll(
     tenantId: string,
     skip: number = 0,
     take: number = 50,
     filters: { search?: string; category?: string; lowStock?: boolean } = {},
     storeId?: string, // NEW: Optional Store Filter
+    includeArchived: boolean = false // default hidden
   ) {
     // If lowStock filter is active, we MUST use raw query for aggregation
     if (filters.lowStock) {
@@ -383,6 +398,10 @@ export class ProductsService {
     // STRICT ISOLATION: If storeId is provided, we strictly filter by it.
 
     const where: any = { tenantId };
+
+    if (!includeArchived) {
+      where.isArchived = false;
+    }
 
     if (filters.search) {
       where.OR = [

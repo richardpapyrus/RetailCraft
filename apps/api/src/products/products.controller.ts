@@ -119,6 +119,18 @@ Example Product,EX-001,10.00,Description here,General,12345678,5.00,10,100`;
     });
   }
 
+  @Patch(":id/archive")
+  @Permissions("MANAGE_PRODUCTS")
+  async archive(@Param("id") id: string) {
+    return this.productsService.archive(id);
+  }
+
+  @Patch(":id/unarchive")
+  @Permissions("MANAGE_PRODUCTS")
+  async unarchive(@Param("id") id: string) {
+    return this.productsService.unarchive(id);
+  }
+
   @Patch(":id")
   @Permissions("MANAGE_PRODUCTS")
   async update(@Param("id") id: string, @Body() body: any) {
@@ -168,6 +180,7 @@ Example Product,EX-001,10.00,Description here,General,12345678,5.00,10,100`;
     @Query("category") category: string,
     @Query("lowStock") lowStock: string,
     @Query("storeId") queryStoreId: string,
+    @Query("includeArchived") includeArchived: string,
   ) {
     const tenantId = req.user.tenantId; // strict security
     if (!tenantId) throw new Error("Start Session: Tenant ID missing in token");
@@ -178,13 +191,15 @@ Example Product,EX-001,10.00,Description here,General,12345678,5.00,10,100`;
       storeId = req.user.storeId;
     }
 
+    // Only Admins or Products Managers can see archived
+    const showArchived = includeArchived === "true" && (isSystemAdmin || req.user.permissions?.includes('MANAGE_PRODUCTS'));
 
     return this.productsService
       .findAll(tenantId, parseInt(skip || "0"), parseInt(take || "50"), {
         search,
         category,
         lowStock: lowStock === "true",
-      }, storeId)
+      }, storeId, showArchived)
       .then((res) => {
 
         return res;

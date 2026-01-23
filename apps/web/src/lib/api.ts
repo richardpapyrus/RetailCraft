@@ -120,6 +120,7 @@ export interface Product {
     description?: string;
     inventory?: { quantity: number }[];
     supplier?: { id: string; name: string };
+    isArchived?: boolean;
 }
 
 export interface ReturnRequest {
@@ -133,7 +134,7 @@ export interface ReturnResponse {
 
 export const api = {
     products: {
-        list: (skip: number = 0, take: number = 50, filters: { search?: string; category?: string; lowStock?: boolean } = {}, storeId?: string) => {
+        list: (skip: number = 0, take: number = 50, filters: { search?: string; category?: string; lowStock?: boolean } = {}, storeId?: string, includeArchived?: boolean) => {
             const params = new URLSearchParams();
             params.append('skip', skip.toString());
             params.append('take', take.toString());
@@ -141,6 +142,7 @@ export const api = {
             if (filters.category) params.append('category', filters.category);
             if (filters.lowStock) params.append('lowStock', 'true');
             if (storeId) params.append('storeId', storeId);
+            if (includeArchived) params.append('includeArchived', 'true');
             return fetchClient(`/products?${params.toString()}`).then(res => res as { data: Product[], total: number });
         },
         getStats: (storeId?: string) => {
@@ -167,6 +169,8 @@ export const api = {
             method: 'PATCH',
             body: JSON.stringify(data),
         }),
+        archive: (id: string) => fetchClient(`/products/${id}/archive`, { method: 'PATCH' }),
+        unarchive: (id: string) => fetchClient(`/products/${id}/unarchive`, { method: 'PATCH' }),
         getEvents: (id: string, skip: number, take: number) => fetchClient(`/products/${id}/events?skip=${skip}&take=${take}`).then(res => res as { data: any[], total: number }),
     },
     suppliers: {

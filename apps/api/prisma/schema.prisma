@@ -132,6 +132,7 @@ model Product {
   costPrice   Decimal  @default(0.0) // Purchase Price
   minStockLevel Int    @default(0)
   taxRate     Decimal  @default(0.0)
+  isArchived  Boolean  @default(false)
   tenantId    String
   tenant      Tenant   @relation(fields: [tenantId], references: [id])
   supplierId  String?
