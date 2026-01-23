@@ -27,9 +27,9 @@ echo "   🌱 Seeding Database (Ensuring Admin User exists)..."
 npx prisma db seed
 
 # Optional: Run User Restoration if script exists
-if [ -f "../../scripts/restore-admin.ts" ]; then
+if [ -f "../../scripts/restore-admin.js" ]; then
     echo "   👤 Running Admin Restoration Script..."
-    npx ts-node ../../scripts/restore-admin.ts
+    node ../../scripts/restore-admin.js
 fi
 
 echo "   Building API..."

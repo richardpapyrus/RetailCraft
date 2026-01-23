@@ -1,6 +1,12 @@
 
-import { PrismaClient } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
+const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcrypt');
+const dotenv = require('dotenv');
+const path = require('path');
+
+// Try loading from .env in root or current dir
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../apps/api/.env') });
 
 const prisma = new PrismaClient();
 
