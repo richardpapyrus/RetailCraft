@@ -445,74 +445,57 @@ export class SalesService {
         // Payment Breakdown (Net)
         if (sale.payments && sale.payments.length > 0) {
           // Multi-Tender: Distributing refund across payments? 
-          // Complex. Heuristic: Deduct from total. 
-          // We can't know exactly which split was refunded without more data.
-          // We will aggregate Gross then subtract Refund from "SPLIT" or distribute.
-          // Simplest for Dashboard: If Split, just reduce the "SPLIT" category if we used that key?
-          // No, we keyed by specific methods.
-          // Strategy: We subtract the refund from the *Breakdown*?
+          // A. Process Sales (Add)
+          sales.forEach((sale) => {
+            const total = Number(sale.total);
+            revenue += total;
+            tax += Number(sale.taxTotal || 0);
 
-          // Actually, `paymentBreakdown` is used for the Pie Chart.
-          // If I refunded $50 from a $100 Cash Sale.
-          // Cash: +100. Refund: -50. Net Cash: 50.
+            if (sale.payments && sale.payments.length > 0) {
+              sale.payments.forEach(p => {
+                const m = p.method;
+                paymentBreakdown[m] = (paymentBreakdown[m] || 0) + Number(p.amount);
+              });
+            } else {
+              const method = sale.paymentMethod || "UNKNOWN";
+              paymentBreakdown[method] = (paymentBreakdown[method] || 0) + total;
+            }
 
-          // If I refunded $50 from a $100 Split (50 Cash, 50 Card).
-          // If generic refund: Which one reduced?
-          // We don't know. 
-          // Safest approach: Create a separate "REFUNDS" bucket or deduct from Weighted Average?
-          // Given "same method" request, let's assume single-method sales (99% of cases).
-
-          // If single-payment sale:
-          if (sale.payments.length === 1) {
-            const m = sale.payments[0].method;
-            const netAmount = Number(sale.payments[0].amount) - refunds;
-            paymentBreakdown[m] = (paymentBreakdown[m] || 0) + netAmount;
-          } else {
-            // Split: We have to guess. 
-            // Let's subtract from the FIRST payment method for now or leave as Gross?
-            // Deducting indiscriminately might yield negative.
-            // Let's just track Gross Stats for Split for now to avoid breaking charts?
-            // OR: Pro-rate the refund across the methods?
-            // Example: Paid 50/50. Refund 100%. Deduct 50/50.
-            const totalPaid = sale.payments.reduce((s, p) => s + Number(p.amount), 0);
-            sale.payments.forEach(p => {
-              const m = p.method;
-              const ratio = totalPaid > 0 ? Number(p.amount) / totalPaid : 0;
-              const portion = Number(p.amount) - (refunds * ratio);
-              paymentBreakdown[m] = (paymentBreakdown[m] || 0) + portion;
+            sale.items.forEach((item) => {
+              cost += Number(item.costAtSale) * item.quantity;
             });
-          }
-        } else {
-          // Fallback (Legacy)
-          const method = sale.paymentMethod || "UNKNOWN";
-          const net = Number(sale.total) - refunds;
-          paymentBreakdown[method] = (paymentBreakdown[method] || 0) + net;
-        }
+          });
 
-        sale.items.forEach((item) => {
-          // Cost of Goods Sold.
-          // If returned, we got the item back (if restocked).
-          // If restocked, COGS should be reversed.
-          // We need to check `restock` flag on ReturnItems.
-          // (sale as any).returns...
-          const returnedItems = (sale as any).returns?.flatMap(r => r.items) || [];
-          // Find if this item was returned AND restocked
-          // This is getting deep. For Dashboard Speed, maybe ignoring COGS reversal is acceptable?
-          // Let's at least reverse the quantity if we have the data.
-          // Simplified: Revenue - Cost.
-          // If I sold item (Cost 50). Profit 50.
-          // Returned. Revenue 0. Cost 0 (if restocked). Profit 0.
-          // If I don't reverse Cost, Profit = -50. Wrong.
+          // B. Process Returns (Subtract)
+          returns.forEach((ret) => {
+            const refundAmount = Number(ret.total);
+            revenue -= refundAmount;
 
-          // Let's try to find returned quantity for this product
-          const returnedQty = returnedItems
-            .filter(ri => ri.productId === item.productId && ri.restock)
-            .reduce((q, ri) => q + ri.quantity, 0);
+            const saleTotal = Number(ret.sale.total);
+            const saleTax = Number(ret.sale.taxTotal);
+            if (saleTotal > 0) {
+              tax -= (refundAmount / saleTotal) * saleTax;
+            }
 
-          const netQty = item.quantity - returnedQty;
-          cost += Number(item.costAtSale) * netQty;
+            const sale = ret.sale;
+            if (sale.payments && sale.payments.length > 0) {
+              const totalPaid = sale.payments.reduce((s, p) => s + Number(p.amount), 0);
+              sale.payments.forEach(p => {
+                const m = p.method;
+                const ratio = totalPaid > 0 ? Number(p.amount) / totalPaid : 0;
+                const portion = refundAmount * ratio;
+                paymentBreakdown[m] = (paymentBreakdown[m] || 0) - portion;
+              });
+
+              // Let's try to find returned quantity for this product
+              const returnedQty = returnedItems
+                .filter(ri => ri.productId === item.productId && ri.restock)
+                .reduce((q, ri) => q + ri.quantity, 0);
+
+              const netQty = item.quantity - returnedQty;
+              cost += Number(item.costAtSale) * netQty;
+            });
         });
-      });
       return {
         revenue,
         cost,
