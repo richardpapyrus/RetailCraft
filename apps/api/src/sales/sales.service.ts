@@ -526,7 +526,7 @@ export class SalesService {
       Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 0, 23, 59, 59),
     );
 
-    // Fetch MTD Chart Data
+    // Fetch MTD Chart Data (GROSS)
     const mtdSales = await prisma.sale.findMany({
       where: {
         tenantId,
@@ -547,9 +547,29 @@ export class SalesService {
       select: { createdAt: true, total: true },
     });
 
+    // Fetch MTD Returns (NET)
+    const mtdReturns = await prisma.salesReturn.findMany({
+      where: {
+        tenantId,
+        storeId: storeId || undefined,
+        createdAt: { gte: startOfMonth },
+      },
+      select: { createdAt: true, total: true },
+    });
+
+    const prevMonthReturns = await prisma.salesReturn.findMany({
+      where: {
+        tenantId,
+        storeId: storeId || undefined,
+        createdAt: { gte: startOfPrevMonth, lte: endOfPrevMonth },
+      },
+      select: { createdAt: true, total: true },
+    });
+
     // Group by "Day of Month" (1-31) for comparison
     const trendMap = new Map<number, { current: number; previous: number }>();
 
+    // Add Sales
     mtdSales.forEach((s) => {
       const day = s.createdAt.getUTCDate();
       const curr = trendMap.get(day) || { current: 0, previous: 0 };
@@ -561,6 +581,21 @@ export class SalesService {
       const day = s.createdAt.getUTCDate();
       const curr = trendMap.get(day) || { current: 0, previous: 0 };
       curr.previous += Number(s.total);
+      trendMap.set(day, curr);
+    });
+
+    // Subtract Returns
+    mtdReturns.forEach((r) => {
+      const day = r.createdAt.getUTCDate();
+      const curr = trendMap.get(day) || { current: 0, previous: 0 };
+      curr.current -= Number(r.total);
+      trendMap.set(day, curr);
+    });
+
+    prevMonthReturns.forEach((r) => {
+      const day = r.createdAt.getUTCDate();
+      const curr = trendMap.get(day) || { current: 0, previous: 0 };
+      curr.previous -= Number(r.total);
       trendMap.set(day, curr);
     });
 
@@ -580,6 +615,10 @@ export class SalesService {
       if (i > todayDay) {
         currentVal = null;
       }
+
+      // Prevent negative (logic artifact?) or keep it if returns > sales on a day?
+      // Net Revenue CAN be negative on a heavy refund day.
+      // Keeping it raw is truthful.
 
       trendChartData.push({
         day: i,
@@ -658,9 +697,21 @@ export class SalesService {
       },
     });
 
+    // 2a. Fetch Returns (Items)
+    const returnedItems = await prisma.salesReturnItem.findMany({
+      where: {
+        return: {
+          tenantId,
+          storeId: storeId || undefined,
+          createdAt: { gte: start, lte: end }
+        }
+      }
+    });
+
     // Aggregate in memory
     const productStats = new Map<string, { quantity: number; value: number }>();
 
+    // Add Sales
     items.forEach((item) => {
       const stats = productStats.get(item.productId) || {
         quantity: 0,
@@ -669,6 +720,19 @@ export class SalesService {
       stats.quantity += item.quantity;
       stats.value += Number(item.priceAtSale) * item.quantity;
       productStats.set(item.productId, stats);
+    });
+
+    // Subtract Returns
+    returnedItems.forEach((ri) => {
+      const stats = productStats.get(ri.productId);
+      if (stats) {
+        stats.quantity -= ri.quantity;
+        stats.value -= Number(ri.refundAmount) || 0;
+        // Prevent negative? Theoretically possible if return date < sale date range, but we filter by return createdAt.
+        // So if I return today something bought last month, "Best Sellers Today" will show Negative for that item.
+        // This is arguably correct: "Net Sales Today".
+        productStats.set(ri.productId, stats);
+      }
     });
 
     // Convert to array
