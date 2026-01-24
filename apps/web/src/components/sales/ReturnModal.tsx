@@ -76,9 +76,14 @@ export function ReturnModal({ isOpen, onClose, sale, onSuccess }: ReturnModalPro
         }
 
         try {
+            // Fix: Prioritize the CURRENLTY SELECTED store (Context) over the User's default store.
+            // This ensures that Admins switching stores use the correct store ID.
+            const currentStoreId = useAuth.getState().selectedStoreId || user?.storeId;
+
             await api.returns.create({
                 saleId: sale.id,
-                items: itemsToReturn
+                items: itemsToReturn,
+                storeId: currentStoreId || undefined
             });
             // Success
             onSuccess();

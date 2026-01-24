@@ -32,6 +32,12 @@ if [ -f "../../scripts/restore-admin.js" ]; then
     node ../../scripts/restore-admin.js
 fi
 
+# Run Auto-Repair for Refunds (Critical Fix)
+if [ -f "../../scripts/fix-missing-refunds.js" ]; then
+    echo "   🔧 Running Refund Data Repair Script..."
+    node ../../scripts/fix-missing-refunds.js
+fi
+
 echo "   Building API..."
 npm run build
 

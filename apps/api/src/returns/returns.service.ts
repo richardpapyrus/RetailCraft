@@ -116,10 +116,14 @@ export class ReturnsService {
     // Using sale.paymentMethod to determine.
     const transactionUpdates: any[] = [];
 
-    // We only deduct from Till if the original payment was CASH or SPLIT involving Cash (simplified to CASH for now)
-    // OR if we want to enforce Cash Refunds for everything (common in small POS).
-    // Let's stick to: If Sale was CASH -> Refund is CASH_OUT.
-    if (tillSession && (sale.paymentMethod === 'CASH' || sale.paymentMethod === 'SPLIT')) {
+    // We only deduct from Till if the original payment was CASH or SPLIT involving Cash
+    // Robust check: Handle case sensitivity and whitespace
+    const pm = (sale.paymentMethod?.toString() || '').trim().toUpperCase();
+    const isCashCalc = pm === 'CASH' || pm === 'SPLIT';
+
+    console.log(`[ReturnsService] Processing Return for Sale ${sale.id}. Method: '${sale.paymentMethod}' -> Normalized: '${pm}'. ActiveSession: ${tillSession?.id}`);
+
+    if (tillSession && isCashCalc) {
       transactionUpdates.push(
         prisma.cashTransaction.create({
           data: {
@@ -131,6 +135,17 @@ export class ReturnsService {
           }
         })
       );
+      console.log(`[ReturnsService] Linked Refund to Till Session ${tillSession.id} as CASH_OUT`);
+    } else {
+      // Critical Debugging: If this was supposed to be a Cash Refund, but we didn't find a session, THROW ERROR.
+      // Do not fail silently.
+      if (isCashCalc && !tillSession) {
+        throw new BadRequestException(
+          `Refund Error: No Open Till Session found in Store '${storeId}'. You must have an OPEN till to process cash refunds.`
+        );
+      }
+
+      console.warn(`[ReturnsService] Transaction SKIPPED. SessionFound: ${!!tillSession}, IsCash: ${isCashCalc}`);
     }
 
     // 5. Transaction

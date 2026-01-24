@@ -255,7 +255,27 @@ export default function SalesHistoryPage() {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
-                                                {formatCurrency(sale.total, user?.currency, user?.locale)}
+                                                {(() => {
+                                                    // Calculate Refund
+                                                    const refundTotal = (sale as any).returns?.reduce((sum: number, ret: any) => sum + Number(ret.total), 0) || 0;
+                                                    const originalTotal = Number(sale.total);
+                                                    const netTotal = originalTotal - refundTotal;
+                                                    const hasRefund = refundTotal > 0;
+
+                                                    return (
+                                                        <div className="flex flex-col items-end">
+                                                            {hasRefund ? (
+                                                                <>
+                                                                    <span className="text-gray-400 line-through text-xs">{formatCurrency(originalTotal, user?.currency, user?.locale)}</span>
+                                                                    <span className="text-red-600">{formatCurrency(netTotal, user?.currency, user?.locale)}</span>
+                                                                    <span className="text-[10px] bg-red-100 text-red-600 px-1 rounded">Refunded</span>
+                                                                </>
+                                                            ) : (
+                                                                <span>{formatCurrency(originalTotal, user?.currency, user?.locale)}</span>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })()}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                 <button

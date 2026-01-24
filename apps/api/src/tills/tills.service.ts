@@ -121,7 +121,10 @@ export class TillsService {
 
     // Aggregate Sales (Cash)
     const sales = await prisma.sale.aggregate({
-      where: { tillSessionId: sessionId, paymentMethod: "CASH" },
+      where: {
+        tillSessionId: sessionId,
+        paymentMethod: { equals: "CASH", mode: "insensitive" }
+      },
       _sum: { total: true },
     });
 
