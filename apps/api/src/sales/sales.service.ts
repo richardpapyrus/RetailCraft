@@ -402,23 +402,37 @@ export class SalesService {
     const endOfPrev = new Date(startOfPeriod.getTime());
 
     const getAggregates = async (start: Date, end: Date) => {
-      // 1. Fetch Sales (GROSS)
-      const sales = await prisma.sale.findMany({
+      // 1. Fetch Sales (GROSS) - FETCH ALL, FILTER IN JS
+      // This eliminates any Prisma query ambiguity or status case sensitivity issues.
+      const salesRaw = await prisma.sale.findMany({
         where: {
           tenantId,
           storeId: storeId || undefined,
-          status: { notIn: ["CANCELED", "CANCELLED", "PENDING"] }, // Include REFUNDED/COMPLETED
+          // status: { notIn: ["CANCELED", "CANCELLED", "PENDING"] }, // REMOVED DB FILTER
           createdAt: { gte: start, lte: end },
         },
         include: { items: true, payments: true },
+        take: 5000 // Safety limit for memory
+      });
+
+      // Explicit JS Filtering
+      const sales = salesRaw.filter(s => {
+        const status = (s.status || '').toUpperCase();
+        const isExcluded = ["CANCELED", "CANCELLED", "PENDING", "VOID"].includes(status);
+        if (isExcluded) {
+          // console.log(`[getStats] Excluding Sale ${s.id} (Status: ${status})`);
+          return false;
+        }
+        return true;
       });
 
       // 2. Fetch Returns (Regardless of when sale happened, but RETURN happened in period)
-      const returns = await prisma.salesReturn.findMany({
+      const returnsRaw = await prisma.salesReturn.findMany({
         where: {
           tenantId,
           storeId: storeId || undefined,
           createdAt: { gte: start, lte: end },
+          // sale: { status: { notIn: ["CANCELED", "CANCELLED", "PENDING"] } } // Removed DB Filter
         },
         include: {
           items: true,
@@ -428,7 +442,16 @@ export class SalesService {
               items: true // Needed for Cost Lookup
             }
           }
-        }
+        },
+        take: 5000
+      });
+
+      // Filter Returns in JS
+      const returns = returnsRaw.filter(r => {
+        if (!r.sale) return true; // Orphan return? Keep it (shouldn't happen)
+        const status = (r.sale.status || '').toUpperCase();
+        if (["CANCELED", "CANCELLED", "PENDING", "VOID"].includes(status)) return false;
+        return true;
       });
 
       let revenue = 0;
@@ -460,6 +483,7 @@ export class SalesService {
       // B. Process Returns (Subtract)
       returns.forEach((ret) => {
         // Fix: Ignore returns if the original sale didn't count (e.g. CANCELED)
+        // Redundant check (filtered above) but double safety:
         if (["CANCELED", "CANCELLED", "PENDING"].includes(ret.sale.status)) return;
 
         const refundAmount = Number(ret.total);
@@ -529,47 +553,47 @@ export class SalesService {
       Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 0, 23, 59, 59),
     );
 
-    // Fetch MTD Chart Data (GROSS)
-    const mtdSales = await prisma.sale.findMany({
+    // Fetch MTD Chart Data (GROSS) - JS FILTER
+    const mtdSalesRaw = await prisma.sale.findMany({
       where: {
         tenantId,
         storeId: storeId || undefined, // Filter by store
-        status: { notIn: ["CANCELED", "CANCELLED", "PENDING"] },
         createdAt: { gte: startOfMonth },
       },
-      select: { createdAt: true, total: true },
+      select: { createdAt: true, total: true, status: true }, // Added status
     });
+    const mtdSales = mtdSalesRaw.filter(s => !["CANCELED", "CANCELLED", "PENDING", "VOID"].includes((s.status || '').toUpperCase()));
 
-    const prevMonthSales = await prisma.sale.findMany({
-      where: {
-        tenantId,
-        storeId: storeId || undefined,
-        status: { notIn: ["CANCELED", "CANCELLED", "PENDING"] },
-        createdAt: { gte: startOfPrevMonth, lte: endOfPrevMonth },
-      },
-      select: { createdAt: true, total: true },
-    });
-
-    // Fetch MTD Returns (NET)
-    const mtdReturns = await prisma.salesReturn.findMany({
-      where: {
-        tenantId,
-        storeId: storeId || undefined,
-        createdAt: { gte: startOfMonth },
-        sale: { status: { notIn: ["CANCELED", "CANCELLED", "PENDING"] } }
-      },
-      select: { createdAt: true, total: true },
-    });
-
-    const prevMonthReturns = await prisma.salesReturn.findMany({
+    const prevMonthSalesRaw = await prisma.sale.findMany({
       where: {
         tenantId,
         storeId: storeId || undefined,
         createdAt: { gte: startOfPrevMonth, lte: endOfPrevMonth },
-        sale: { status: { notIn: ["CANCELED", "CANCELLED", "PENDING"] } }
       },
-      select: { createdAt: true, total: true },
+      select: { createdAt: true, total: true, status: true },
     });
+    const prevMonthSales = prevMonthSalesRaw.filter(s => !["CANCELED", "CANCELLED", "PENDING", "VOID"].includes((s.status || '').toUpperCase()));
+
+    // Fetch MTD Returns (NET) - JS Filtering requires including Sale
+    const mtdReturnsRaw = await prisma.salesReturn.findMany({
+      where: {
+        tenantId,
+        storeId: storeId || undefined,
+        createdAt: { gte: startOfMonth },
+      },
+      select: { createdAt: true, total: true, sale: { select: { status: true } } },
+    });
+    const mtdReturns = mtdReturnsRaw.filter(r => !["CANCELED", "CANCELLED", "PENDING", "VOID"].includes((r.sale?.status || '').toUpperCase()));
+
+    const prevMonthReturnsRaw = await prisma.salesReturn.findMany({
+      where: {
+        tenantId,
+        storeId: storeId || undefined,
+        createdAt: { gte: startOfPrevMonth, lte: endOfPrevMonth },
+      },
+      select: { createdAt: true, total: true, sale: { select: { status: true } } },
+    });
+    const prevMonthReturns = prevMonthReturnsRaw.filter(r => !["CANCELED", "CANCELLED", "PENDING", "VOID"].includes((r.sale?.status || '').toUpperCase()));
 
     // Group by "Day of Month" (1-31) for comparison
     const trendMap = new Map<number, { current: number; previous: number }>();
@@ -691,28 +715,31 @@ export class SalesService {
 
     // Fetch all sales items for the period (Efficient enough for local-first/SMB)
     // We query SaleItems directly joined with Sale to filter by Tenant/Date
-    const items = await prisma.saleItem.findMany({
+    // Fetch all sales items - JS Filtering
+    const itemsRaw = await prisma.saleItem.findMany({
       where: {
         sale: {
           tenantId,
           storeId: storeId || undefined,
-          status: { notIn: ["CANCELED", "CANCELLED", "PENDING"] },
           createdAt: { gte: start, lte: end },
         },
       },
+      include: { sale: { select: { status: true } } }
     });
+    const items = itemsRaw.filter(i => !["CANCELED", "CANCELLED", "PENDING", "VOID"].includes((i.sale?.status || '').toUpperCase()));
 
-    // 2a. Fetch Returns (Items)
-    const returnedItems = await prisma.salesReturnItem.findMany({
+    // 2a. Fetch Returns (Items) - JS Filtering
+    const returnedItemsRaw = await prisma.salesReturnItem.findMany({
       where: {
         return: {
           tenantId,
           storeId: storeId || undefined,
           createdAt: { gte: start, lte: end },
-          sale: { status: { notIn: ["CANCELED", "CANCELLED", "PENDING"] } }
-        }
-      }
+        },
+      },
+      include: { return: { include: { sale: { select: { status: true } } } } }
     });
+    const returnedItems = returnedItemsRaw.filter(ri => !["CANCELED", "CANCELLED", "PENDING", "VOID"].includes((ri.return?.sale?.status || '').toUpperCase()));
 
     // Aggregate in memory
     const productStats = new Map<string, { quantity: number; value: number }>();
