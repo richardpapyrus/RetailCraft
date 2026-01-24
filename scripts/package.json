@@ -1,6 +1,8 @@
 {
     "name": "retailcraft-scripts",
     "scripts": {
-        "restore:admin": "node scripts/restore-admin.js"
+        "restore:admin": "node scripts/restore-admin.js",
+        "fix:refunds": "node scripts/fix-missing-refunds.js",
+        "diagnose:return": "node scripts/diagnose-latest-return.js"
     }
 }
