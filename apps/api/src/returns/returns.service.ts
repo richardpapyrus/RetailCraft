@@ -137,6 +137,14 @@ export class ReturnsService {
       );
       console.log(`[ReturnsService] Linked Refund to Till Session ${tillSession.id} as CASH_OUT`);
     } else {
+      // Critical Debugging: If this was supposed to be a Cash Refund, but we didn't find a session, THROW ERROR.
+      // Do not fail silently.
+      if (isCashCalc && !tillSession) {
+        throw new BadRequestException(
+          `Refund Error: No Open Till Session found in Store '${storeId}'. You must have an OPEN till to process cash refunds.`
+        );
+      }
+
       console.warn(`[ReturnsService] Transaction SKIPPED. SessionFound: ${!!tillSession}, IsCash: ${isCashCalc}`);
     }
 
