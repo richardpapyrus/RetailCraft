@@ -28,4 +28,4 @@ jobs:
 
       - name: Deploy on server
         run: |
-          ssh -i ~/.ssh/retail-craft root@165.227.26.131 "cd /root/retail-craft-app/ && echo 'APP_URL=https://app.retailcraft.com.ng' > .env && echo 'API_URL=https://app.retailcraft.com.ng/api' >> .env && echo 'NEXT_PUBLIC_API_URL=https://app.retailcraft.com.ng/api' >> .env && docker compose down -v && docker system prune -af && docker compose up --build -d --remove-orphans && docker compose run --rm api npx prisma db push --accept-data-loss"
+          ssh -i ~/.ssh/retail-craft root@165.227.26.131 "cd /root/retail-craft-app/ && echo 'APP_URL=https://app.retailcraft.com.ng' > .env && echo 'API_URL=https://app.retailcraft.com.ng/api' >> .env && echo 'NEXT_PUBLIC_API_URL=https://app.retailcraft.com.ng/api' >> .env && docker compose down && docker system prune -af && docker compose up --build -d --remove-orphans && docker compose run --rm api npx prisma migrate deploy"
