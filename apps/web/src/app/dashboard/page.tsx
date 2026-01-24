@@ -287,8 +287,23 @@ export default function DashboardPage() {
                                                     </div>
                                                 </div>
                                                 <div className="text-right">
-                                                    <div className="font-bold text-gray-900 text-base">{formatCurrency(sale.total, user?.currency, user?.locale)}</div>
-                                                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                                                    {(() => {
+                                                        const refundTotal = (sale as any).returns?.reduce((sum: number, ret: any) => sum + Number(ret.total), 0) || 0;
+                                                        const originalTotal = Number(sale.total);
+                                                        const netTotal = originalTotal - refundTotal;
+                                                        const hasRefund = refundTotal > 0;
+
+                                                        return hasRefund ? (
+                                                            <div className="flex flex-col items-end">
+                                                                <span className="text-gray-400 line-through text-xs">{formatCurrency(originalTotal, user?.currency, user?.locale)}</span>
+                                                                <span className="font-bold text-red-600 text-base">{formatCurrency(netTotal, user?.currency, user?.locale)}</span>
+                                                                <span className="text-[9px] bg-red-100 text-red-600 px-1 rounded uppercase tracking-wider mt-0.5">Refunded</span>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="font-bold text-gray-900 text-base">{formatCurrency(originalTotal, user?.currency, user?.locale)}</div>
+                                                        );
+                                                    })()}
+                                                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-1">
                                                         {sale.paymentMethod}
                                                     </div>
                                                 </div>
