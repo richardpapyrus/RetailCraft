@@ -28,4 +28,4 @@ jobs:
 
       - name: Deploy on server
         run: |
-          ssh -i ~/.ssh/retail-craft root@165.227.26.131 "cd /root/retail-craft-staging/ && docker compose -f docker-compose.staging.yml down -v && docker system prune -af && docker compose -f docker-compose.staging.yml up --build -d --remove-orphans && docker compose -f docker-compose.staging.yml run --rm staging_api npx prisma db push --accept-data-loss"
+          ssh -i ~/.ssh/retail-craft root@165.227.26.131 "cd /root/retail-craft-staging/ && docker compose -f docker-compose.staging.yml down && docker system prune -af && docker compose -f docker-compose.staging.yml up --build -d --remove-orphans && docker compose -f docker-compose.staging.yml run --rm staging_api npx prisma migrate deploy && docker compose -f docker-compose.staging.yml run --rm staging_api npx prisma db seed"

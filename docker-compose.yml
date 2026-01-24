@@ -1,23 +1,4 @@
 services:
-  postgres:
-    image: postgres:15-alpine
-    container_name: pos_postgres
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: pos_db
-    restart: always
-    volumes:
-      - ./docker/postgres:/var/lib/postgresql/data
-    networks:
-      - pos_network
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U admin -d pos_db" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   redis:
     image: redis:7-alpine
@@ -36,15 +17,13 @@ services:
       - "4000:4000"
     restart: always
     depends_on:
-      postgres:
-        condition: service_healthy
       redis:
         condition: service_started
 
     networks:
       - pos_network
     environment:
-      DATABASE_URL: postgresql://admin:password@postgres:5432/pos_db
+      DATABASE_URL: postgresql://doadmin:AVNS_iNZVQYj-RX036W3B0oS@retail-craft-db-postgres-do-user-24373738-0.k.db.ondigitalocean.com:25060/pos_db?sslmode=require
       APP_URL: ${APP_URL:-http://localhost:3000}
       API_URL: ${API_URL:-http://localhost:4000}
     volumes:
