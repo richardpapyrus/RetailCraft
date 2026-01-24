@@ -126,6 +126,7 @@ export interface Product {
 export interface ReturnRequest {
     saleId: string;
     items: { productId: string; quantity: number; restock: boolean }[];
+    storeId?: string;
 }
 
 export interface ReturnResponse {

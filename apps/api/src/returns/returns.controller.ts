@@ -12,14 +12,15 @@ import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 @Controller("returns")
 @UseGuards(JwtAuthGuard)
 export class ReturnsController {
-  constructor(private readonly returnsService: ReturnsService) {}
+  constructor(private readonly returnsService: ReturnsService) { }
 
   @Post()
   create(@Request() req, @Body() body: any) {
-    // body: { saleId, items: [{ productId, quantity, restock }] }
+    // body: { saleId, items: [{ productId, quantity, restock }], storeId? }
     const tenantId = req.user.tenantId;
     const userId = req.user.userId;
-    const storeId = req.user.storeId;
+    // Fix: Prioritize explicitly sent storeId (from UI context) over Token storeId (which might be stale)
+    const storeId = body.storeId || req.user.storeId;
 
     if (!storeId)
       throw new BadRequestException(

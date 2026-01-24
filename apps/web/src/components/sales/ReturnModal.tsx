@@ -76,9 +76,12 @@ export function ReturnModal({ isOpen, onClose, sale, onSuccess }: ReturnModalPro
         }
 
         try {
+            const currentStoreId = user?.storeId || (useAuth.getState().selectedStoreId);
+
             await api.returns.create({
                 saleId: sale.id,
-                items: itemsToReturn
+                items: itemsToReturn,
+                storeId: currentStoreId || undefined
             });
             // Success
             onSuccess();
