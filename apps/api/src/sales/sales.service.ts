@@ -459,6 +459,9 @@ export class SalesService {
 
       // B. Process Returns (Subtract)
       returns.forEach((ret) => {
+        // Fix: Ignore returns if the original sale didn't count (e.g. CANCELED)
+        if (["CANCELED", "CANCELLED", "PENDING"].includes(ret.sale.status)) return;
+
         const refundAmount = Number(ret.total);
         revenue -= refundAmount;
 
@@ -553,6 +556,7 @@ export class SalesService {
         tenantId,
         storeId: storeId || undefined,
         createdAt: { gte: startOfMonth },
+        sale: { status: { notIn: ["CANCELED", "CANCELLED", "PENDING"] } }
       },
       select: { createdAt: true, total: true },
     });
@@ -562,6 +566,7 @@ export class SalesService {
         tenantId,
         storeId: storeId || undefined,
         createdAt: { gte: startOfPrevMonth, lte: endOfPrevMonth },
+        sale: { status: { notIn: ["CANCELED", "CANCELLED", "PENDING"] } }
       },
       select: { createdAt: true, total: true },
     });
@@ -703,7 +708,8 @@ export class SalesService {
         return: {
           tenantId,
           storeId: storeId || undefined,
-          createdAt: { gte: start, lte: end }
+          createdAt: { gte: start, lte: end },
+          sale: { status: { notIn: ["CANCELED", "CANCELLED", "PENDING"] } }
         }
       }
     });
