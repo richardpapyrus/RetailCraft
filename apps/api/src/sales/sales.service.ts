@@ -402,18 +402,33 @@ export class SalesService {
     const endOfPrev = new Date(startOfPeriod.getTime());
 
     const getAggregates = async (start: Date, end: Date) => {
-      const data = await prisma.sale.findMany({
+      // 1. Fetch Sales (GROSS)
+      const sales = await prisma.sale.findMany({
         where: {
           tenantId,
           storeId: storeId || undefined,
           status: "COMPLETED",
           createdAt: { gte: start, lte: end },
         },
+        include: { items: true, payments: true },
+      });
+
+      // 2. Fetch Returns (Regardless of when sale happened, but RETURN happened in period)
+      const returns = await prisma.salesReturn.findMany({
+        where: {
+          tenantId,
+          storeId: storeId || undefined,
+          createdAt: { gte: start, lte: end },
+        },
         include: {
           items: true,
-          payments: true,
-          returns: { include: { items: true } } // Fetch returns for Net Calc
-        },
+          sale: {
+            include: {
+              payments: true,
+              items: true // Needed for Cost Lookup
+            }
+          }
+        }
       });
 
       let revenue = 0;
@@ -421,86 +436,71 @@ export class SalesService {
       let tax = 0;
       const paymentBreakdown: Record<string, number> = {};
 
-      data.forEach((sale) => {
-        let saleNetTotal = Number(sale.total);
+      // A. Process Sales (Add)
+      sales.forEach((sale) => {
+        const total = Number(sale.total);
+        revenue += total;
+        tax += Number(sale.taxTotal || 0);
 
-        // Calculate Refund for this sale (if any)
-        // Accessing returns via 'any' cast because Typescript might not see the include yet unless typed
-        const refunds = (sale as any).returns?.reduce((sum, r) => sum + Number(r.total), 0) || 0;
-
-        saleNetTotal -= refunds;
-
-        // Global Revenue (Net)
-        revenue += saleNetTotal;
-
-        // Tax (Approximation: Net Tax = Tax - (Refund/Total * Tax)? 
-        // Or simpler: Just assume Revenue reported is Net. Tax handling is complex without line items.
-        // For MVP Dashboard: Revenue is Net.
-        // tax += Number(sale.taxTotal || 0); // Keeping Gross Tax for now or adjust? 
-        // User asked for "Cash Analysis". Revenue is key.
-        // Let's adjust tax proportionally for correctness.
-        const taxRatio = Number(sale.total) > 0 ? (saleNetTotal / Number(sale.total)) : 0;
-        tax += Number(sale.taxTotal || 0) * taxRatio;
-
-        // Payment Breakdown (Net)
         if (sale.payments && sale.payments.length > 0) {
-          // Multi-Tender: Distributing refund across payments? 
-          // A. Process Sales (Add)
-          sales.forEach((sale) => {
-            const total = Number(sale.total);
-            revenue += total;
-            tax += Number(sale.taxTotal || 0);
-
-            if (sale.payments && sale.payments.length > 0) {
-              sale.payments.forEach(p => {
-                const m = p.method;
-                paymentBreakdown[m] = (paymentBreakdown[m] || 0) + Number(p.amount);
-              });
-            } else {
-              const method = sale.paymentMethod || "UNKNOWN";
-              paymentBreakdown[method] = (paymentBreakdown[method] || 0) + total;
-            }
-
-            sale.items.forEach((item) => {
-              cost += Number(item.costAtSale) * item.quantity;
-            });
+          sale.payments.forEach(p => {
+            const m = p.method;
+            paymentBreakdown[m] = (paymentBreakdown[m] || 0) + Number(p.amount);
           });
+        } else {
+          const method = sale.paymentMethod || "UNKNOWN";
+          paymentBreakdown[method] = (paymentBreakdown[method] || 0) + total;
+        }
 
-          // B. Process Returns (Subtract)
-          returns.forEach((ret) => {
-            const refundAmount = Number(ret.total);
-            revenue -= refundAmount;
-
-            const saleTotal = Number(ret.sale.total);
-            const saleTax = Number(ret.sale.taxTotal);
-            if (saleTotal > 0) {
-              tax -= (refundAmount / saleTotal) * saleTax;
-            }
-
-            const sale = ret.sale;
-            if (sale.payments && sale.payments.length > 0) {
-              const totalPaid = sale.payments.reduce((s, p) => s + Number(p.amount), 0);
-              sale.payments.forEach(p => {
-                const m = p.method;
-                const ratio = totalPaid > 0 ? Number(p.amount) / totalPaid : 0;
-                const portion = refundAmount * ratio;
-                paymentBreakdown[m] = (paymentBreakdown[m] || 0) - portion;
-              });
-
-              // Let's try to find returned quantity for this product
-              const returnedQty = returnedItems
-                .filter(ri => ri.productId === item.productId && ri.restock)
-                .reduce((q, ri) => q + ri.quantity, 0);
-
-              const netQty = item.quantity - returnedQty;
-              cost += Number(item.costAtSale) * netQty;
-            });
+        sale.items.forEach((item) => {
+          cost += Number(item.costAtSale) * item.quantity;
         });
+      });
+
+      // B. Process Returns (Subtract)
+      returns.forEach((ret) => {
+        const refundAmount = Number(ret.total);
+        revenue -= refundAmount;
+
+        const saleTotal = Number(ret.sale.total);
+        const saleTax = Number(ret.sale.taxTotal);
+        if (saleTotal > 0) {
+          tax -= (refundAmount / saleTotal) * saleTax;
+        }
+
+        const sale = ret.sale;
+        if (sale.payments && sale.payments.length > 0) {
+          const totalPaid = sale.payments.reduce((s, p) => s + Number(p.amount), 0);
+          if (totalPaid > 0) {
+            sale.payments.forEach(p => {
+              const m = p.method;
+              const ratio = Number(p.amount) / totalPaid;
+              const portion = refundAmount * ratio;
+              paymentBreakdown[m] = (paymentBreakdown[m] || 0) - portion;
+            });
+          }
+        } else {
+          const method = sale.paymentMethod || "UNKNOWN";
+          paymentBreakdown[method] = (paymentBreakdown[method] || 0) - refundAmount;
+        }
+
+        // Adjust Cost (Re-stocking)
+        ret.items.forEach(ri => {
+          if (ri.restock) {
+            // Find original cost
+            const originalItem = sale.items.find(si => si.productId === ri.productId);
+            if (originalItem) {
+              cost -= Number(originalItem.costAtSale) * ri.quantity;
+            }
+          }
+        });
+      });
+
       return {
         revenue,
         cost,
         tax,
-        count: data.length, // Transactions count stays same? Or Net? Usually Gross Count is useful.
+        count: sales.length,
         profit: revenue - cost,
         paymentBreakdown,
       };
