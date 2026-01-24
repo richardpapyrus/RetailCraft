@@ -407,7 +407,7 @@ export class SalesService {
         where: {
           tenantId,
           storeId: storeId || undefined,
-          status: "COMPLETED",
+          status: { notIn: ["CANCELED", "CANCELLED", "PENDING"] }, // Include REFUNDED/COMPLETED
           createdAt: { gte: start, lte: end },
         },
         include: { items: true, payments: true },
@@ -531,7 +531,7 @@ export class SalesService {
       where: {
         tenantId,
         storeId: storeId || undefined, // Filter by store
-        status: "COMPLETED",
+        status: { notIn: ["CANCELED", "CANCELLED", "PENDING"] },
         createdAt: { gte: startOfMonth },
       },
       select: { createdAt: true, total: true },
@@ -541,7 +541,7 @@ export class SalesService {
       where: {
         tenantId,
         storeId: storeId || undefined,
-        status: "COMPLETED",
+        status: { notIn: ["CANCELED", "CANCELLED", "PENDING"] },
         createdAt: { gte: startOfPrevMonth, lte: endOfPrevMonth },
       },
       select: { createdAt: true, total: true },
@@ -691,7 +691,7 @@ export class SalesService {
         sale: {
           tenantId,
           storeId: storeId || undefined,
-          status: "COMPLETED",
+          status: { notIn: ["CANCELED", "CANCELLED", "PENDING"] },
           createdAt: { gte: start, lte: end },
         },
       },
@@ -887,7 +887,7 @@ export class SalesService {
         sale: {
           tenantId,
           storeId: storeId || undefined,
-          status: "COMPLETED",
+          status: { notIn: ["CANCELED", "CANCELLED", "PENDING"] }, // Include REFUNDED/COMPLETED
           createdAt: { gte: startDate, lte: endDate },
         },
       },
