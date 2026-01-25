@@ -402,14 +402,56 @@ export class SalesService {
     const endOfPrev = new Date(startOfPeriod.getTime());
 
     const getAggregates = async (start: Date, end: Date) => {
-      const data = await prisma.sale.findMany({
+      // 1. Fetch Sales (GROSS) - FETCH ALL, FILTER IN JS
+      // This eliminates any Prisma query ambiguity or status case sensitivity issues.
+      const salesRaw = await prisma.sale.findMany({
         where: {
           tenantId,
           storeId: storeId || undefined,
-          status: "COMPLETED",
+          // status: { notIn: ["CANCELED", "CANCELLED", "PENDING"] }, // REMOVED DB FILTER
           createdAt: { gte: start, lte: end },
         },
-        include: { items: true, payments: true }, // Include payments
+        include: { items: true, payments: true },
+        take: 5000 // Safety limit for memory
+      });
+
+      // Explicit JS Filtering
+      const sales = salesRaw.filter(s => {
+        const status = (s.status || '').toUpperCase();
+        const isExcluded = ["CANCELED", "CANCELLED", "PENDING", "VOID"].includes(status);
+        if (isExcluded) {
+          // console.log(`[getStats] Excluding Sale ${s.id} (Status: ${status})`);
+          return false;
+        }
+        return true;
+      });
+
+      // 2. Fetch Returns (Regardless of when sale happened, but RETURN happened in period)
+      const returnsRaw = await prisma.salesReturn.findMany({
+        where: {
+          tenantId,
+          storeId: storeId || undefined,
+          createdAt: { gte: start, lte: end },
+          // sale: { status: { notIn: ["CANCELED", "CANCELLED", "PENDING"] } } // Removed DB Filter
+        },
+        include: {
+          items: true,
+          sale: {
+            include: {
+              payments: true,
+              items: true // Needed for Cost Lookup
+            }
+          }
+        },
+        take: 5000
+      });
+
+      // Filter Returns in JS
+      const returns = returnsRaw.filter(r => {
+        if (!r.sale) return true; // Orphan return? Keep it (shouldn't happen)
+        const status = (r.sale.status || '').toUpperCase();
+        if (["CANCELED", "CANCELLED", "PENDING", "VOID"].includes(status)) return false;
+        return true;
       });
 
       let revenue = 0;
@@ -417,19 +459,18 @@ export class SalesService {
       let tax = 0;
       const paymentBreakdown: Record<string, number> = {};
 
-      data.forEach((sale) => {
+      // A. Process Sales (Add)
+      sales.forEach((sale) => {
         const total = Number(sale.total);
         revenue += total;
         tax += Number(sale.taxTotal || 0);
 
-        // Logic for Payment Breakdown using SalePayment
         if (sale.payments && sale.payments.length > 0) {
           sale.payments.forEach(p => {
             const m = p.method;
             paymentBreakdown[m] = (paymentBreakdown[m] || 0) + Number(p.amount);
           });
         } else {
-          // Fallback for legacy
           const method = sale.paymentMethod || "UNKNOWN";
           paymentBreakdown[method] = (paymentBreakdown[method] || 0) + total;
         }
@@ -438,11 +479,55 @@ export class SalesService {
           cost += Number(item.costAtSale) * item.quantity;
         });
       });
+
+      // B. Process Returns (Subtract)
+      returns.forEach((ret) => {
+        // Fix: Ignore returns if the original sale didn't count (e.g. CANCELED)
+        // Redundant check (filtered above) but double safety:
+        if (["CANCELED", "CANCELLED", "PENDING"].includes(ret.sale.status)) return;
+
+        const refundAmount = Number(ret.total);
+        revenue -= refundAmount;
+
+        const saleTotal = Number(ret.sale.total);
+        const saleTax = Number(ret.sale.taxTotal);
+        if (saleTotal > 0) {
+          tax -= (refundAmount / saleTotal) * saleTax;
+        }
+
+        const sale = ret.sale;
+        if (sale.payments && sale.payments.length > 0) {
+          const totalPaid = sale.payments.reduce((s, p) => s + Number(p.amount), 0);
+          if (totalPaid > 0) {
+            sale.payments.forEach(p => {
+              const m = p.method;
+              const ratio = Number(p.amount) / totalPaid;
+              const portion = refundAmount * ratio;
+              paymentBreakdown[m] = (paymentBreakdown[m] || 0) - portion;
+            });
+          }
+        } else {
+          const method = sale.paymentMethod || "UNKNOWN";
+          paymentBreakdown[method] = (paymentBreakdown[method] || 0) - refundAmount;
+        }
+
+        // Adjust Cost (Re-stocking)
+        ret.items.forEach(ri => {
+          if (ri.restock) {
+            // Find original cost
+            const originalItem = sale.items.find(si => si.productId === ri.productId);
+            if (originalItem) {
+              cost -= Number(originalItem.costAtSale) * ri.quantity;
+            }
+          }
+        });
+      });
+
       return {
         revenue,
         cost,
         tax,
-        count: data.length,
+        count: sales.length,
         profit: revenue - cost,
         paymentBreakdown,
       };
@@ -468,30 +553,52 @@ export class SalesService {
       Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 0, 23, 59, 59),
     );
 
-    // Fetch MTD Chart Data
-    const mtdSales = await prisma.sale.findMany({
+    // Fetch MTD Chart Data (GROSS) - JS FILTER
+    const mtdSalesRaw = await prisma.sale.findMany({
       where: {
         tenantId,
         storeId: storeId || undefined, // Filter by store
-        status: "COMPLETED",
         createdAt: { gte: startOfMonth },
       },
-      select: { createdAt: true, total: true },
+      select: { createdAt: true, total: true, status: true }, // Added status
     });
+    const mtdSales = mtdSalesRaw.filter(s => !["CANCELED", "CANCELLED", "PENDING", "VOID"].includes((s.status || '').toUpperCase()));
 
-    const prevMonthSales = await prisma.sale.findMany({
+    const prevMonthSalesRaw = await prisma.sale.findMany({
       where: {
         tenantId,
         storeId: storeId || undefined,
-        status: "COMPLETED",
         createdAt: { gte: startOfPrevMonth, lte: endOfPrevMonth },
       },
-      select: { createdAt: true, total: true },
+      select: { createdAt: true, total: true, status: true },
     });
+    const prevMonthSales = prevMonthSalesRaw.filter(s => !["CANCELED", "CANCELLED", "PENDING", "VOID"].includes((s.status || '').toUpperCase()));
+
+    // Fetch MTD Returns (NET) - JS Filtering requires including Sale
+    const mtdReturnsRaw = await prisma.salesReturn.findMany({
+      where: {
+        tenantId,
+        storeId: storeId || undefined,
+        createdAt: { gte: startOfMonth },
+      },
+      select: { createdAt: true, total: true, sale: { select: { status: true } } },
+    });
+    const mtdReturns = mtdReturnsRaw.filter(r => !["CANCELED", "CANCELLED", "PENDING", "VOID"].includes((r.sale?.status || '').toUpperCase()));
+
+    const prevMonthReturnsRaw = await prisma.salesReturn.findMany({
+      where: {
+        tenantId,
+        storeId: storeId || undefined,
+        createdAt: { gte: startOfPrevMonth, lte: endOfPrevMonth },
+      },
+      select: { createdAt: true, total: true, sale: { select: { status: true } } },
+    });
+    const prevMonthReturns = prevMonthReturnsRaw.filter(r => !["CANCELED", "CANCELLED", "PENDING", "VOID"].includes((r.sale?.status || '').toUpperCase()));
 
     // Group by "Day of Month" (1-31) for comparison
     const trendMap = new Map<number, { current: number; previous: number }>();
 
+    // Add Sales
     mtdSales.forEach((s) => {
       const day = s.createdAt.getUTCDate();
       const curr = trendMap.get(day) || { current: 0, previous: 0 };
@@ -503,6 +610,21 @@ export class SalesService {
       const day = s.createdAt.getUTCDate();
       const curr = trendMap.get(day) || { current: 0, previous: 0 };
       curr.previous += Number(s.total);
+      trendMap.set(day, curr);
+    });
+
+    // Subtract Returns
+    mtdReturns.forEach((r) => {
+      const day = r.createdAt.getUTCDate();
+      const curr = trendMap.get(day) || { current: 0, previous: 0 };
+      curr.current -= Number(r.total);
+      trendMap.set(day, curr);
+    });
+
+    prevMonthReturns.forEach((r) => {
+      const day = r.createdAt.getUTCDate();
+      const curr = trendMap.get(day) || { current: 0, previous: 0 };
+      curr.previous -= Number(r.total);
       trendMap.set(day, curr);
     });
 
@@ -522,6 +644,10 @@ export class SalesService {
       if (i > todayDay) {
         currentVal = null;
       }
+
+      // Prevent negative (logic artifact?) or keep it if returns > sales on a day?
+      // Net Revenue CAN be negative on a heavy refund day.
+      // Keeping it raw is truthful.
 
       trendChartData.push({
         day: i,
@@ -543,6 +669,7 @@ export class SalesService {
         customer: { select: { name: true, code: true } },
         items: { include: { product: true } },
         payments: true,
+        returns: { include: { items: true } },
       },
     });
     return {
@@ -588,20 +715,36 @@ export class SalesService {
 
     // Fetch all sales items for the period (Efficient enough for local-first/SMB)
     // We query SaleItems directly joined with Sale to filter by Tenant/Date
-    const items = await prisma.saleItem.findMany({
+    // Fetch all sales items - JS Filtering
+    const itemsRaw = await prisma.saleItem.findMany({
       where: {
         sale: {
           tenantId,
           storeId: storeId || undefined,
-          status: "COMPLETED",
           createdAt: { gte: start, lte: end },
         },
       },
+      include: { sale: { select: { status: true } } }
     });
+    const items = itemsRaw.filter(i => !["CANCELED", "CANCELLED", "PENDING", "VOID"].includes((i.sale?.status || '').toUpperCase()));
+
+    // 2a. Fetch Returns (Items) - JS Filtering
+    const returnedItemsRaw = await prisma.salesReturnItem.findMany({
+      where: {
+        return: {
+          tenantId,
+          storeId: storeId || undefined,
+          createdAt: { gte: start, lte: end },
+        },
+      },
+      include: { return: { include: { sale: { select: { status: true } } } } }
+    });
+    const returnedItems = returnedItemsRaw.filter(ri => !["CANCELED", "CANCELLED", "PENDING", "VOID"].includes((ri.return?.sale?.status || '').toUpperCase()));
 
     // Aggregate in memory
     const productStats = new Map<string, { quantity: number; value: number }>();
 
+    // Add Sales
     items.forEach((item) => {
       const stats = productStats.get(item.productId) || {
         quantity: 0,
@@ -610,6 +753,19 @@ export class SalesService {
       stats.quantity += item.quantity;
       stats.value += Number(item.priceAtSale) * item.quantity;
       productStats.set(item.productId, stats);
+    });
+
+    // Subtract Returns
+    returnedItems.forEach((ri) => {
+      const stats = productStats.get(ri.productId);
+      if (stats) {
+        stats.quantity -= ri.quantity;
+        stats.value -= Number(ri.refundAmount) || 0;
+        // Prevent negative? Theoretically possible if return date < sale date range, but we filter by return createdAt.
+        // So if I return today something bought last month, "Best Sellers Today" will show Negative for that item.
+        // This is arguably correct: "Net Sales Today".
+        productStats.set(ri.productId, stats);
+      }
     });
 
     // Convert to array
@@ -764,7 +920,7 @@ export class SalesService {
         sale: {
           tenantId,
           storeId: storeId || undefined,
-          status: "COMPLETED",
+          status: { notIn: ["CANCELED", "CANCELLED", "PENDING"] }, // Include REFUNDED/COMPLETED
           createdAt: { gte: startDate, lte: endDate },
         },
       },
