@@ -27,7 +27,10 @@ export function Sidebar() {
     const pathname = usePathname();
     const router = useRouter();
     const { logout, user, hasPermission, selectedStoreId } = useAuth();
+    const [mounted, setMounted] = useState(false);
     const [isPinned, setIsPinned] = useState(false);
+
+    useEffect(() => setMounted(true), []);
 
     useEffect(() => {
         const stored = localStorage.getItem('sidebar-pinned');
@@ -60,8 +63,10 @@ export function Sidebar() {
     ];
 
     const menuItems = allMenuItems.filter(item =>
-        !item.permission || hasPermission(item.permission)
+        !item.permission || (mounted && hasPermission(item.permission))
     );
+
+    const displayUser = mounted ? user : null;
 
     return (
         <div className={`
@@ -107,12 +112,12 @@ export function Sidebar() {
                         </span>
 
                         <div className="flex items-center gap-2">
-                            {user?.tenantLogo && (
-                                <img src={user.tenantLogo.startsWith('http') ? user.tenantLogo : `${API_URL}${user.tenantLogo}`} alt="Biz" className="w-6 h-6 object-contain rounded-sm" />
+                            {displayUser?.tenantLogo && (
+                                <img src={displayUser.tenantLogo.startsWith('http') ? displayUser.tenantLogo : `${API_URL}${displayUser.tenantLogo}`} alt="Biz" className="w-6 h-6 object-contain rounded-sm" />
                             )}
                             <h3 className="font-bold text-sm leading-tight truncate"
-                                style={{ color: user?.tenantBrandColor || '#1f2937' }}>
-                                {user?.tenantName || 'My Business'}
+                                style={{ color: displayUser?.tenantBrandColor || '#1f2937' }}>
+                                {displayUser?.tenantName || 'My Business'}
                             </h3>
                         </div>
                     </div>
@@ -200,7 +205,7 @@ export function Sidebar() {
             <div className="mt-auto px-3 w-full mb-2">
                 <div className="flex items-center px-1 py-2 rounded-xl border border-transparent hover:bg-indigo-50/50 transition-colors overflow-hidden">
                     <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold shrink-0 border-2 border-white shadow-sm">
-                        {user?.name?.[0]?.toUpperCase() || 'U'}
+                        {displayUser?.name?.[0]?.toUpperCase() || 'U'}
                     </div>
                     <div className={`
                         ml-3 overflow-hidden transition-opacity duration-300 flex flex-col justify-center
@@ -209,8 +214,8 @@ export function Sidebar() {
                             : 'opacity-0 group-hover:opacity-100'
                         }
                     `}>
-                        <p className="text-sm font-bold text-gray-900 truncate leading-none">{user?.name || 'User'}</p>
-                        <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mt-0.5">{user?.role || 'Staff'}</p>
+                        <p className="text-sm font-bold text-gray-900 truncate leading-none">{displayUser?.name || 'User'}</p>
+                        <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mt-0.5">{displayUser?.role || 'Staff'}</p>
                     </div>
                 </div>
             </div>

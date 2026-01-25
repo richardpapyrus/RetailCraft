@@ -10,9 +10,17 @@ export function StoreSelector() {
     const [stores, setStores] = useState<any[]>([]);
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const [mounted, setMounted] = useState(false);
 
-    // Only show selection for admins
-    const isAdmin = hasPermission('*') || user?.role === 'Administrator' || user?.role === 'ADMIN';
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    // Only show selection for admins (and only after hydration to match server)
+    const isAdmin = mounted && (hasPermission('*') || user?.role === 'Administrator' || user?.role === 'ADMIN');
+
+    // Use displayUser for rendering to match server output (null) until mounted
+    const displayUser = mounted ? user : null;
 
     // Fetch stores
     useEffect(() => {
@@ -42,7 +50,7 @@ export function StoreSelector() {
                 <div className="overflow-hidden">
                     <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider mb-0.5">Current Location</p>
                     <p className="text-sm font-semibold text-indigo-900 truncate">
-                        {user?.store?.name || 'Assigned Store'}
+                        {displayUser?.store?.name || 'Assigned Store'}
                     </p>
                 </div>
             </div>
