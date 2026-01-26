@@ -58,6 +58,11 @@ export default function SalesHistoryPage() {
     const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10));
     const [endDate, setEndDate] = useState(new Date().toISOString().slice(0, 10));
 
+    // Export Modal State
+    const [showExportModal, setShowExportModal] = useState(false);
+    const [exportFrom, setExportFrom] = useState(new Date().toISOString().slice(0, 10));
+    const [exportTo, setExportTo] = useState(new Date().toISOString().slice(0, 10));
+
     useEffect(() => {
         if (!isHydrated) return;
         if (!token) {
@@ -110,18 +115,26 @@ export default function SalesHistoryPage() {
         }
     };
 
-    const handleExport = async () => {
+    const openExportModal = () => {
+        // Default to current month or today? Let's default to Today for simplicity, or last 30 days.
+        // User pattern suggests they likely want "Today" or "This Month".
+        // Let's stick to Today (default state) but allow change.
+        setShowExportModal(true);
+    };
+
+    const performExport = async () => {
         setExporting(true);
         try {
-            const blob = await api.sales.export(undefined, undefined, selectedStoreId || undefined);
+            const blob = await api.sales.export(exportFrom, exportTo, selectedStoreId || undefined);
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `sales_export_${new Date().toISOString().slice(0, 10)}.csv`;
+            a.download = `sales_export_${exportFrom}_to_${exportTo}.csv`;
             document.body.appendChild(a);
             a.click();
             a.remove();
             window.URL.revokeObjectURL(url);
+            setShowExportModal(false);
         } catch (e) {
             console.error('Export failed', e);
             toast.error('Export failed');
@@ -175,7 +188,7 @@ export default function SalesHistoryPage() {
                                     onChange={e => setSearchTerm(e.target.value)}
                                 />
                                 <button
-                                    onClick={handleExport}
+                                    onClick={openExportModal}
                                     disabled={exporting}
                                     className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2"
                                 >
@@ -392,6 +405,47 @@ export default function SalesHistoryPage() {
                             setSelectedSale(null);
                         }}
                     />
+                )}
+                {/* EXPORT MODAL */}
+                {showExportModal && (
+                    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+                        <div className="relative mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                            <div className="mt-3 text-center">
+                                <h3 className="text-lg leading-6 font-medium text-gray-900">Export Sales Data</h3>
+                                <div className="mt-4 px-2 py-3 text-left">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">From Date</label>
+                                    <input
+                                        type="date"
+                                        value={exportFrom}
+                                        onChange={(e) => setExportFrom(e.target.value)}
+                                        className="w-full px-3 py-2 border rounded-md mb-4"
+                                    />
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">To Date</label>
+                                    <input
+                                        type="date"
+                                        value={exportTo}
+                                        onChange={(e) => setExportTo(e.target.value)}
+                                        className="w-full px-3 py-2 border rounded-md"
+                                    />
+                                </div>
+                                <div className="flex gap-4 mt-6 justify-end">
+                                    <button
+                                        onClick={() => setShowExportModal(false)}
+                                        className="px-4 py-2 bg-gray-200 text-gray-800 text-base font-medium rounded-md shadow-sm hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={performExport}
+                                        disabled={exporting}
+                                        className="px-4 py-2 bg-green-600 text-white text-base font-medium rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
+                                    >
+                                        {exporting ? 'Exporting...' : 'Export CSV'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 )}
             </div>
         </div>

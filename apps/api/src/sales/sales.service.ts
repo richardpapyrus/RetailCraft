@@ -814,18 +814,8 @@ export class SalesService {
     to?: string,
     storeId?: string,
   ) {
-    // const { filtered } = await this.getStats(tenantId, from, to, storeId); // Unused
-
-    // filtered is an Aggregate? No, getStats logic is a bit weird.
-    // wait, getStats calls `getAggregates` which returns { revenue, cost, count, profit }.
-    // But getStats ALSO returns `recentSales` (take: 10).
-    // I need ALL sales for the period.
-
-    // Re-implement simplified fetch for export
     const now = new Date();
 
-    // Default to *All Time* if no dates provided for export? Or reuse consistent defaults.
-    // Let's reuse logic: If no dates, default to This Month.
     const startDt = from
       ? new Date(from)
       : new Date(now.getFullYear(), now.getMonth(), 1);
@@ -838,6 +828,7 @@ export class SalesService {
       endDt = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
     }
 
+    // 1. Fetch Sales
     const sales = await prisma.sale.findMany({
       where: {
         tenantId,
@@ -850,13 +841,33 @@ export class SalesService {
         user: true,
         customer: true,
       },
-      orderBy: { createdAt: "desc" },
     });
 
-    // Generate CSV Header
+    // 2. Fetch Returns
+    const returns = await prisma.salesReturn.findMany({
+      where: {
+        tenantId,
+        storeId: storeId || undefined,
+        createdAt: { gte: startDt, lte: endDt },
+      },
+      include: {
+        items: { include: { product: true } },
+        user: true,
+        sale: { include: { customer: true } }, // Get customer from original sale
+      },
+    });
+
+    // 3. Combine and Sort
+    const combined = [
+      ...sales.map(s => ({ ...s, type: "SALE", dateObj: s.createdAt })),
+      ...returns.map(r => ({ ...r, type: "REFUND", dateObj: r.createdAt }))
+    ].sort((a, b) => b.dateObj.getTime() - a.dateObj.getTime());
+
+    // 4. Generate CSV Header
     const header = [
       "Date",
-      "Sale ID",
+      "Type",
+      "Transaction ID",
       "Cashier",
       "Customer",
       "Payment Method",
@@ -867,29 +878,47 @@ export class SalesService {
       "Total",
     ].join(",");
 
-    // Generate Rows
-    const rows = sales.map((sale) => {
-      const date = sale.createdAt.toISOString();
-      const cashier = sale.user?.name || sale.userId;
-      const customer = sale.customer?.name || "Walk-In";
-      const items = sale.items
-        .map((i) => `${i.product?.name || "Unknown"} x${i.quantity}`)
+    // 5. Generate Rows
+    const rows = combined.map((row: any) => {
+      const date = row.createdAt.toISOString();
+      const type = row.type;
+      const id = row.id;
+      const cashier = row.user?.name || row.userId || "Unknown";
+
+      // Customer: For Return, try to get from Original Sale
+      const customer = row.customer?.name || row.sale?.customer?.name || "Walk-In";
+
+      // Payment Method: For Return, use "REFUND" or original method? 
+      // Using "REFUND" is clearer for accounting, or user might want "CASH (Refund)"
+      const paymentMethod = row.paymentMethod || "REFUND";
+
+      // Items
+      const items = row.items
+        .map((i: any) => `${i.product?.name || "Unknown"} x${i.quantity}`)
         .join(" | ");
 
+      // Values (Negate if Refund)
+      const multiplier = type === "REFUND" ? -1 : 1;
+      const sub = (Number(row.subtotal) || Number(row.total)) * multiplier; // Returns might not have subtotal field, use total as proxy if missing
+      const discount = (Number(row.discountTotal) || 0) * multiplier;
+      const tax = (Number(row.taxTotal) || 0) * multiplier;
+      const total = Number(row.total) * multiplier;
+
       // Escape fields that might contain commas
-      const escape = (str: string) => `"${str.replace(/"/g, '""')}"`;
+      const escape = (str: string) => `"${(str || "").replace(/"/g, '""')}"`;
 
       return [
         date,
-        sale.id,
-        escape(cashier || ""),
+        type,
+        id,
+        escape(cashier),
         escape(customer),
-        sale.paymentMethod,
+        paymentMethod,
         escape(items),
-        sale.subtotal,
-        sale.discountTotal,
-        sale.taxTotal,
-        sale.total,
+        sub.toFixed(2),
+        discount.toFixed(2),
+        tax.toFixed(2),
+        total.toFixed(2),
       ].join(",");
     });
 
