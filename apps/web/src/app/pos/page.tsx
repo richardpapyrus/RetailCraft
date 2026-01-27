@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { useAuth, formatCurrency } from '@/lib/useAuth';
@@ -86,6 +86,18 @@ export default function POSPage() {
     // Loyalty State
     const [pointsToRedeem, setPointsToRedeem] = useState<number>(0);
     const [usePoints, setUsePoints] = useState(false);
+
+    // Auto-Scroll State
+    const cartEndRef = useRef<HTMLDivElement>(null);
+    const prevCartLength = useRef(0);
+
+    // Effect: Auto-scroll to bottom only when NEW items are added
+    useEffect(() => {
+        if (cart.length > prevCartLength.current) {
+            cartEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        }
+        prevCartLength.current = cart.length;
+    }, [cart.length]);
 
     useBarcodeScanner((barcode) => {
 
@@ -561,6 +573,7 @@ export default function POSPage() {
                                 )}
                             </tbody>
                         </table>
+                        <div ref={cartEndRef} />
                     </div>
 
                     {/* Footer Payment */}
