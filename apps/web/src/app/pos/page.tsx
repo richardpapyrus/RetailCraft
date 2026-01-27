@@ -578,12 +578,12 @@ export default function POSPage() {
 
                     {/* Footer Payment */}
                     <div className="p-4 bg-gray-50 border-t-2 border-dashed border-gray-200">
-                        <div className="space-y-1 mb-3">
-                            <div className="flex justify-between text-xs font-medium text-gray-500">
+                        <div className="space-y-1 mb-3 text-right">
+                            <div className="flex justify-end gap-12 text-xs font-medium text-gray-500">
                                 <span>Subtotal</span>
-                                <span className="text-gray-900 font-bold">{formatCurrency(subtotal, user?.currency, user?.locale)}</span>
+                                <span className="text-gray-900 font-bold w-24">{formatCurrency(subtotal, user?.currency, user?.locale)}</span>
                             </div>
-                            <div className="flex justify-between text-xs font-medium text-gray-500 items-center">
+                            <div className="flex justify-end gap-12 text-xs font-medium text-gray-500 items-center">
                                 <div className="flex items-center gap-2">
                                     <span>Discount</span>
                                     {appliedDiscount && <span className="text-[10px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded font-bold uppercase">{appliedDiscount.name}</span>}
@@ -591,15 +591,15 @@ export default function POSPage() {
                                         {appliedDiscount ? 'Edit' : 'Add'}
                                     </button>
                                 </div>
-                                <span className={discountAmount > 0 ? "text-green-600 font-bold" : "text-gray-900 font-bold"}>-{formatCurrency(discountAmount, user?.currency, user?.locale)}</span>
+                                <span className={`${discountAmount > 0 ? "text-green-600 font-bold" : "text-gray-900 font-bold"} w-24`}>-{formatCurrency(discountAmount, user?.currency, user?.locale)}</span>
                             </div>
-                            <div className="flex justify-between text-xs font-medium text-gray-500">
+                            <div className="flex justify-end gap-12 text-xs font-medium text-gray-500">
                                 <span>Tax ({(totalTaxRate * 100).toFixed(0)}%)</span>
-                                <span className="text-gray-900 font-bold">{formatCurrency(taxAmount, user?.currency, user?.locale)}</span>
+                                <span className="text-gray-900 font-bold w-24">{formatCurrency(taxAmount, user?.currency, user?.locale)}</span>
                             </div>
                             <div className="pt-2 mt-2 border-t border-gray-200">
-                                <div className="flex justify-between items-end">
-                                    <div>
+                                <div className="flex justify-end items-end gap-12">
+                                    <div className="text-right">
                                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-0.5">Total Due</span>
                                         <div className="text-3xl font-black text-gray-900 leading-none">{formatCurrency(cartTotal, user?.currency, user?.locale)}</div>
                                         <div className="text-[10px] text-gray-400 mt-1 font-medium">{cart.reduce((a, b) => a + b.cartQty, 0)} Items</div>
