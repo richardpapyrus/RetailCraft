@@ -413,9 +413,19 @@ export class SalesService {
       );
     }
 
+    const isToday = now.toDateString() === startOfPeriod.toDateString() && now.toDateString() === endOfPeriod.toDateString();
+
     const duration = endOfPeriod.getTime() - startOfPeriod.getTime();
-    const startOfPrev = new Date(startOfPeriod.getTime() - duration);
-    const endOfPrev = new Date(startOfPeriod.getTime());
+    const startOfPrev = new Date(startOfPeriod.getTime() - duration - 1); // -1ms to avoid overlap if back-to-back? Actually duration is fine. Standard is - duration.
+    // Fixed: startOfPeriod - duration (24h) = Yesterday 00:00.
+
+    let endOfPrev = new Date(startOfPeriod.getTime());
+
+    // ADJUSTMENT: If analyzing "Today", cap the previous period to "Now" relative time
+    if (isToday) {
+      const elapsedToday = now.getTime() - startOfPeriod.getTime();
+      endOfPrev = new Date(startOfPrev.getTime() + elapsedToday);
+    }
 
     const getAggregates = async (start: Date, end: Date) => {
       // 1. Fetch Sales (GROSS) - FETCH ALL, FILTER IN JS
