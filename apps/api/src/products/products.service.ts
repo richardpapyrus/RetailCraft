@@ -357,7 +357,7 @@ export class ProductsService {
                     p.barcode ILIKE ${searchTerm}
                 )
                 GROUP BY p.id
-                HAVING COALESCE(SUM(i.quantity), 0) <= COALESCE(p."minStockLevel", 0)
+                HAVING COALESCE(SUM(i.quantity), 0) <= COALESCE(p."minStockLevel", 0) OR COALESCE(SUM(i.quantity), 0) = 0
                 OFFSET ${skip}
                 LIMIT ${take}
             `;
@@ -378,7 +378,8 @@ export class ProductsService {
                     p.barcode ILIKE '%${searchTerm}%'
                  )
                  GROUP BY p.id
-                 HAVING COALESCE(SUM(i.quantity), 0) <= COALESCE(p."minStockLevel", 0)
+                 GROUP BY p.id
+                 HAVING COALESCE(SUM(i.quantity), 0) <= COALESCE(p."minStockLevel", 0) OR COALESCE(SUM(i.quantity), 0) = 0
             `);
       const total = totalResult.length;
 
@@ -486,7 +487,7 @@ export class ProductsService {
       totalValue += cost * totalQty;
 
       const minStock = p.minStockLevel || 0; // Null Safety
-      if (totalQty <= minStock) {
+      if (totalQty <= minStock || totalQty === 0) {
         lowStockCount++;
       }
     }
