@@ -356,6 +356,7 @@ export class ProductsService {
                     p.sku ILIKE ${searchTerm} OR 
                     p.barcode ILIKE ${searchTerm}
                 )
+                AND (${storeId ? Prisma.sql`(p."storeId" = ${storeId} OR p."storeId" IS NULL OR i."storeId" = ${storeId})` : Prisma.sql`1=1`})
                 GROUP BY p.id
                 HAVING COALESCE(SUM(i.quantity), 0) <= COALESCE(p."minStockLevel", 0) OR COALESCE(SUM(i.quantity), 0) = 0
                 OFFSET ${skip}
