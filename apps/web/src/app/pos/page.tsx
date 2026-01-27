@@ -523,10 +523,10 @@ export default function POSPage() {
                         <table className="w-full text-left">
                             <thead className="bg-white sticky top-0 z-10">
                                 <tr className="text-gray-400 text-[10px] font-bold uppercase tracking-widest border-b border-gray-100">
-                                    <th className="py-4 pl-8 w-[40%]">Item Details</th>
-                                    <th className="py-4 text-center w-[20%]">Qty</th>
-                                    <th className="py-4 text-right w-[20%]">Price</th>
-                                    <th className="py-4 text-right pr-8 w-[20%]">Total</th>
+                                    <th className="py-2 pl-8 w-[40%]">Item Details</th>
+                                    <th className="py-2 text-center w-[20%]">Qty</th>
+                                    <th className="py-2 text-right w-[20%]">Price</th>
+                                    <th className="py-2 text-right pr-8 w-[20%]">Total</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50">
@@ -544,27 +544,27 @@ export default function POSPage() {
 
                                         return (
                                             <tr key={item.id} className="group hover:bg-gray-50/50 transition-colors">
-                                                <td className="py-6 pl-8">
-                                                    <div className="font-bold text-gray-900 text-base">{item.name}</div>
-                                                    <div className="text-xs font-bold text-gray-400 mt-1 uppercase tracking-wider">{item.sku}</div>
+                                                <td className="py-4 pl-8">
+                                                    <div className="font-bold text-gray-900 text-sm">{item.name}</div>
+                                                    <div className="text-[10px] font-bold text-gray-400 mt-0.5 uppercase tracking-wider">{item.sku}</div>
                                                 </td>
-                                                <td className="py-6 text-center">
-                                                    <div className="inline-flex items-center border border-gray-200 rounded-lg p-1 bg-white shadow-sm">
-                                                        <button onClick={() => updateQty(item.id, -1)} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded font-bold transition-colors">-</button>
+                                                <td className="py-4 text-center">
+                                                    <div className="inline-flex items-center border border-gray-200 rounded-lg p-0.5 bg-white shadow-sm">
+                                                        <button onClick={() => updateQty(item.id, -1)} className="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded font-bold transition-colors">-</button>
                                                         <span className="w-8 text-center font-bold text-gray-900 text-sm">{item.cartQty}</span>
                                                         <button
                                                             onClick={() => updateQty(item.id, 1)}
                                                             disabled={isMaxed}
-                                                            className={`w-7 h-7 flex items-center justify-center rounded font-bold transition-colors ${isMaxed ? 'text-gray-200 cursor-not-allowed' : 'text-gray-400 hover:text-indigo-600 hover:bg-indigo-50'}`}
+                                                            className={`w-6 h-6 flex items-center justify-center rounded font-bold transition-colors ${isMaxed ? 'text-gray-200 cursor-not-allowed' : 'text-gray-400 hover:text-indigo-600 hover:bg-indigo-50'}`}
                                                         >
                                                             +
                                                         </button>
                                                     </div>
                                                     {isMaxed && <div className="text-[9px] text-red-500 font-bold mt-1 uppercase tracking-wide">Max Reached</div>}
                                                 </td>
-                                                <td className="py-6 text-right text-gray-500 font-medium">{formatCurrency(item.price, user?.currency, user?.locale)}</td>
-                                                <td className="py-6 pr-8 text-right">
-                                                    <div className="font-bold text-gray-900">{formatCurrency(Number(item.price) * item.cartQty, user?.currency, user?.locale)}</div>
+                                                <td className="py-4 text-right text-gray-500 font-medium text-sm">{formatCurrency(item.price, user?.currency, user?.locale)}</td>
+                                                <td className="py-4 pr-8 text-right">
+                                                    <div className="font-bold text-gray-900 text-sm">{formatCurrency(Number(item.price) * item.cartQty, user?.currency, user?.locale)}</div>
                                                     <button onClick={() => removeFromCart(item.id)} className="text-[10px] font-bold text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity mt-1 uppercase tracking-wider">Remove</button>
                                                 </td>
                                             </tr>
