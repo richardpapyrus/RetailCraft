@@ -377,7 +377,7 @@ export class ProductsService {
                     p.sku ILIKE '%${searchTerm}%' OR 
                     p.barcode ILIKE '%${searchTerm}%'
                  )
-                 GROUP BY p.id
+
                  GROUP BY p.id
                  HAVING COALESCE(SUM(i.quantity), 0) <= COALESCE(p."minStockLevel", 0) OR COALESCE(SUM(i.quantity), 0) = 0
             `);
