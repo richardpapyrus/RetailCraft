@@ -577,13 +577,13 @@ export default function POSPage() {
                     </div>
 
                     {/* Footer Payment */}
-                    <div className="p-8 bg-gray-50 border-t-2 border-dashed border-gray-200">
-                        <div className="space-y-3 mb-8">
-                            <div className="flex justify-between text-sm font-medium text-gray-500">
+                    <div className="p-4 bg-gray-50 border-t-2 border-dashed border-gray-200">
+                        <div className="space-y-1 mb-3">
+                            <div className="flex justify-between text-xs font-medium text-gray-500">
                                 <span>Subtotal</span>
                                 <span className="text-gray-900 font-bold">{formatCurrency(subtotal, user?.currency, user?.locale)}</span>
                             </div>
-                            <div className="flex justify-between text-sm font-medium text-gray-500 items-center">
+                            <div className="flex justify-between text-xs font-medium text-gray-500 items-center">
                                 <div className="flex items-center gap-2">
                                     <span>Discount</span>
                                     {appliedDiscount && <span className="text-[10px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded font-bold uppercase">{appliedDiscount.name}</span>}
@@ -593,16 +593,16 @@ export default function POSPage() {
                                 </div>
                                 <span className={discountAmount > 0 ? "text-green-600 font-bold" : "text-gray-900 font-bold"}>-{formatCurrency(discountAmount, user?.currency, user?.locale)}</span>
                             </div>
-                            <div className="flex justify-between text-sm font-medium text-gray-500">
+                            <div className="flex justify-between text-xs font-medium text-gray-500">
                                 <span>Tax ({(totalTaxRate * 100).toFixed(0)}%)</span>
                                 <span className="text-gray-900 font-bold">{formatCurrency(taxAmount, user?.currency, user?.locale)}</span>
                             </div>
-                            <div className="pt-4 mt-4 border-t border-gray-200">
+                            <div className="pt-2 mt-2 border-t border-gray-200">
                                 <div className="flex justify-between items-end">
                                     <div>
-                                        <span className="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-1">Total Due</span>
-                                        <div className="text-4xl font-black text-gray-900">{formatCurrency(cartTotal, user?.currency, user?.locale)}</div>
-                                        <div className="text-xs text-gray-400 mt-1 font-medium">{cart.reduce((a, b) => a + b.cartQty, 0)} Items</div>
+                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-0.5">Total Due</span>
+                                        <div className="text-3xl font-black text-gray-900 leading-none">{formatCurrency(cartTotal, user?.currency, user?.locale)}</div>
+                                        <div className="text-[10px] text-gray-400 mt-1 font-medium">{cart.reduce((a, b) => a + b.cartQty, 0)} Items</div>
                                     </div>
                                 </div>
                             </div>
@@ -614,7 +614,7 @@ export default function POSPage() {
                                 setSelectedPaymentMethod('CASH');
                             }}
                             disabled={cart.length === 0}
-                            className="group w-full bg-black hover:bg-gray-900 text-white py-5 rounded-xl font-bold text-lg shadow-xl shadow-gray-200 disabled:opacity-50 disabled:shadow-none transition-all flex items-center justify-center gap-3"
+                            className="group w-full bg-black hover:bg-gray-900 text-white py-3 rounded-xl font-bold text-base shadow-xl shadow-gray-200 disabled:opacity-50 disabled:shadow-none transition-all flex items-center justify-center gap-3"
                         >
                             <span>Proceed to Payment</span>
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 transform group-hover:translate-x-1 transition-transform" viewBox="0 0 20 20" fill="currentColor">

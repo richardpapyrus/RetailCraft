@@ -6,6 +6,7 @@ const prisma = new PrismaClient();
 @Injectable()
 export class SalesService {
   async processSale(data: {
+    id?: string;
     items: { productId: string; quantity: number }[];
     paymentMethod?: string; // Legacy/Fallback
     payments?: { method: string; amount: number; reference?: string }[]; // New Multi-Tender
@@ -23,6 +24,7 @@ export class SalesService {
     redeemPoints?: number;
   }) {
     const {
+      id,
       items,
       paymentMethod,
       payments,
@@ -61,6 +63,18 @@ export class SalesService {
           throw new BadRequestException(
             `Till Session belongs to a different store (${session.till.name}). Please switch stores or close the remote session.`,
           );
+        }
+      }
+
+      // 0.6 Idempotency Check
+      if (id) {
+        const existing = await tx.sale.findUnique({
+          where: { id },
+          include: { items: true, payments: true }
+        });
+        if (existing) {
+          console.log(`[SalesService] Idempotency Hit: Returning existing sale ${id}`);
+          return existing;
         }
       }
 
@@ -255,6 +269,7 @@ export class SalesService {
       // 6. Create Sale
       const sale = await tx.sale.create({
         data: {
+          id: id, // Optional: if provided, DB enforces uniqueness
           total: finalTotal,
           subtotal: subtotal,
           discountTotal: discountAmount,
@@ -279,7 +294,8 @@ export class SalesService {
         },
       });
 
-      // 7. Create SaleItems and Update Inventory
+      // 7. Create SaleItems and Update Inventory (Only if new sale created)
+      // If we returned existing above, this code is skipped.
       for (const item of itemSnapshots) {
         await tx.saleItem.create({
           data: {

@@ -170,6 +170,7 @@ export class SalesController {
     @Request() req,
     @Body()
     body: {
+      id?: string;
       items: any[];
       paymentMethod: string;
       payments?: any[]; // Multi-Tender Support
@@ -203,6 +204,7 @@ export class SalesController {
     }
 
     return this.salesService.processSale({
+      id: body.id,
       items: body.items,
       paymentMethod: body.paymentMethod,
       payments: body.payments, // Multi-Tender Support
