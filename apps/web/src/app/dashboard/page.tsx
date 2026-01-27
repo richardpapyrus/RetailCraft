@@ -15,6 +15,7 @@ import {
     Legend
 } from 'recharts';
 import BestSellersWidget from '@/components/BestSellersWidget';
+import { FitText } from '@/components/FitText';
 import Link from 'next/link';
 import {
     DollarSign,
@@ -345,14 +346,16 @@ export default function DashboardPage() {
 
 function StatsCard({ title, value, icon, bgColor, subtext }: { title: string, value: string | number, icon: React.ReactNode, bgColor: string, subtext?: string }) {
     return (
-        <div className="bg-white rounded-3xl p-6 shadow-[0_2px_15px_rgba(0,0,0,0.03)] border border-gray-100 flex items-center gap-6 hover:-translate-y-1 transition-transform duration-300">
-            <div className={`w-16 h-16 rounded-2xl ${bgColor} flex items-center justify-center shrink-0`}>
+        <div className="bg-white rounded-3xl p-5 shadow-[0_2px_15px_rgba(0,0,0,0.03)] border border-gray-100 flex items-center gap-4 hover:-translate-y-1 transition-transform duration-300">
+            <div className={`w-12 h-12 rounded-2xl ${bgColor} flex items-center justify-center shrink-0`}>
                 {icon}
             </div>
-            <div>
-                <p className="text-sm font-bold text-gray-400 mb-1 uppercase tracking-wide">{title}</p>
-                <p className="text-3xl font-extrabold text-[#111827] mb-1">{value}</p>
-                {subtext && <p className="text-xs font-medium text-gray-400">{subtext}</p>}
+            <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-gray-400 mb-0.5 uppercase tracking-wide truncate">{title}</p>
+                <div className="text-lg xl:text-xl 2xl:text-2xl font-extrabold text-[#111827] mb-0.5">
+                    <FitText>{value}</FitText>
+                </div>
+                {subtext && <p className="text-[10px] xl:text-xs font-medium text-gray-400 truncate">{subtext}</p>}
             </div>
         </div>
     );

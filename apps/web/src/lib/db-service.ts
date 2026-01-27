@@ -59,6 +59,11 @@ export const DataService = {
     },
 
     async saveSale(payload: any): Promise<{ success: boolean; offline: boolean; data?: any }> {
+        // 0. Ensure Idempotency Key (Client-Side ID)
+        if (!payload.id) {
+            payload.id = crypto.randomUUID();
+        }
+
         // 1. Try Network
         if (typeof navigator !== 'undefined' && navigator.onLine) {
             try {
@@ -83,7 +88,7 @@ export const DataService = {
             success: true,
             offline: true,
             data: {
-                id: `OFFLINE - ${Date.now()} `,
+                id: payload.id, // Use the generated ID
                 total: payload.total,
                 paymentMethod: payload.paymentMethod || 'CASH',
                 createdAt: new Date(),
