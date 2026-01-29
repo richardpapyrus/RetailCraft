@@ -8,14 +8,17 @@ import Link from 'next/link';
 
 
 export default function TopProductsPage() {
-    const { user, token, isHydrated } = useAuth();
+    const { user, token, isHydrated, selectedStoreId } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();
-    const storeId = searchParams.get('storeId');
+    const urlStoreId = searchParams.get('storeId');
+
+    // Priority: Global Selector > URL Param
+    const activeStoreId = selectedStoreId || urlStoreId;
 
     // Filters
     const [dateRange, setDateRange] = useState({
-        from: new Date().toISOString().split('T')[0].substring(0, 8) + '01', // Start of month
+        from: new Date().toISOString().split('T')[0], // Today
         to: new Date().toISOString().split('T')[0]
     });
     const [sortBy, setSortBy] = useState<'value' | 'count'>('value');
@@ -34,7 +37,7 @@ export default function TopProductsPage() {
             return;
         }
         loadData();
-    }, [token, isHydrated, router, dateRange, sortBy, page, storeId]);
+    }, [token, isHydrated, router, dateRange, sortBy, page, activeStoreId]);
 
     const loadData = async () => {
         setLoading(true);
@@ -46,7 +49,7 @@ export default function TopProductsPage() {
                 sortBy,
                 limit: LIMIT,
                 skip,
-                storeId: storeId || undefined
+                storeId: activeStoreId || undefined
             });
             setProducts(res.data || []);
             setTotal(res.total || 0);
@@ -72,7 +75,6 @@ export default function TopProductsPage() {
                 <div className="flex flex-col md:flex-row justify-between items-end gap-4">
                     <h1 className="text-2xl font-bold text-gray-900">
                         Best Selling Products
-                        {storeId && <span className="ml-2 text-sm font-normal text-gray-500 font-mono">Filter: {storeId.substring(0, 8)}...</span>}
                     </h1>
 
                     <div className="flex flex-wrap gap-4 items-center">
