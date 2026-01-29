@@ -726,6 +726,8 @@ export class SalesService {
       storeId,
     } = options;
 
+    console.log(`[getTopProducts] StoreID Filter: "${storeId}" (Type: ${typeof storeId})`);
+
     const now = new Date();
     const start = from
       ? new Date(from)

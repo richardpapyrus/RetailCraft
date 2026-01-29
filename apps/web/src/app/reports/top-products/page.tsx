@@ -70,7 +70,10 @@ export default function TopProductsPage() {
                     <span className="text-sm font-medium text-gray-900">Reports</span>
                 </div>
                 <div className="flex flex-col md:flex-row justify-between items-end gap-4">
-                    <h1 className="text-2xl font-bold text-gray-900">Best Selling Products</h1>
+                    <h1 className="text-2xl font-bold text-gray-900">
+                        Best Selling Products
+                        {storeId && <span className="ml-2 text-sm font-normal text-gray-500 font-mono">Filter: {storeId.substring(0, 8)}...</span>}
+                    </h1>
 
                     <div className="flex flex-wrap gap-4 items-center">
                         {/* Sort Toggle */}
