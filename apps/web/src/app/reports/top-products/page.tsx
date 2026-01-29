@@ -3,13 +3,15 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth, formatCurrency } from '@/lib/useAuth';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 
 export default function TopProductsPage() {
     const { user, token, isHydrated } = useAuth();
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const storeId = searchParams.get('storeId');
 
     // Filters
     const [dateRange, setDateRange] = useState({
@@ -32,7 +34,7 @@ export default function TopProductsPage() {
             return;
         }
         loadData();
-    }, [token, isHydrated, router, dateRange, sortBy, page]);
+    }, [token, isHydrated, router, dateRange, sortBy, page, storeId]);
 
     const loadData = async () => {
         setLoading(true);
@@ -43,7 +45,8 @@ export default function TopProductsPage() {
                 to: dateRange.to,
                 sortBy,
                 limit: LIMIT,
-                skip
+                skip,
+                storeId: storeId || undefined
             });
             setProducts(res.data || []);
             setTotal(res.total || 0);

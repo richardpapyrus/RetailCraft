@@ -86,7 +86,10 @@ export default function BestSellersWidget({ from, to, storeId }: { from?: string
             </div>
 
             <div className="mt-8 pt-6 border-t border-gray-50 text-center">
-                <Link href="/reports/top-products" className="text-sm font-bold text-indigo-600 hover:text-indigo-800 transition-colors">
+                <Link
+                    href={`/reports/top-products${storeId ? `?storeId=${storeId}` : ''}`}
+                    className="text-sm font-bold text-indigo-600 hover:text-indigo-800 transition-colors"
+                >
                     View Full Report
                 </Link>
             </div>
