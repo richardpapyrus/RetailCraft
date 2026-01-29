@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { ReturnModal } from '@/components/sales/ReturnModal';
 import { SaleDetailModal } from '@/components/sales/SaleDetailModal';
 import { toast } from 'react-hot-toast';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface SaleItem {
     id: string;
@@ -31,6 +32,7 @@ interface Sale {
     };
     user?: {
         email: string;
+        name?: string;
     };
     items: SaleItem[];
 }
@@ -48,7 +50,7 @@ export default function SalesHistoryPage() {
     const [totalSales, setTotalSales] = useState(0);
     const [page, setPage] = useState(1);
     const [searchTerm, setSearchTerm] = useState('');
-    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const debouncedSearch = useDebounce(searchTerm, 500);
     const limit = 50;
 
     // Daily Summary State
