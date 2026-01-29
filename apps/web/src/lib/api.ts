@@ -5,7 +5,7 @@ if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
     const protocol = window.location.protocol;
 
-    // Fallback logic ONLY if Env Var is missing
+    // Fallback logic ONLY if Env Var is missing.
     if (hostname.includes('retailcraft.com.ng')) {
         // Production/Staging use path-based routing (Nginx /api proxy)
         // This avoids CORS issues by keeping requests Same-Origin

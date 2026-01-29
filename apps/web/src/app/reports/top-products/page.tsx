@@ -3,17 +3,22 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth, formatCurrency } from '@/lib/useAuth';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 
 export default function TopProductsPage() {
-    const { user, token, isHydrated } = useAuth();
+    const { user, token, isHydrated, selectedStoreId } = useAuth();
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const urlStoreId = searchParams.get('storeId');
+
+    // Priority: Global Selector > URL Param
+    const activeStoreId = selectedStoreId || urlStoreId;
 
     // Filters
     const [dateRange, setDateRange] = useState({
-        from: new Date().toISOString().split('T')[0].substring(0, 8) + '01', // Start of month
+        from: new Date().toISOString().split('T')[0], // Today
         to: new Date().toISOString().split('T')[0]
     });
     const [sortBy, setSortBy] = useState<'value' | 'count'>('value');
@@ -32,7 +37,7 @@ export default function TopProductsPage() {
             return;
         }
         loadData();
-    }, [token, isHydrated, router, dateRange, sortBy, page]);
+    }, [token, isHydrated, router, dateRange, sortBy, page, activeStoreId]);
 
     const loadData = async () => {
         setLoading(true);
@@ -43,7 +48,8 @@ export default function TopProductsPage() {
                 to: dateRange.to,
                 sortBy,
                 limit: LIMIT,
-                skip
+                skip,
+                storeId: activeStoreId || undefined
             });
             setProducts(res.data || []);
             setTotal(res.total || 0);
@@ -67,7 +73,9 @@ export default function TopProductsPage() {
                     <span className="text-sm font-medium text-gray-900">Reports</span>
                 </div>
                 <div className="flex flex-col md:flex-row justify-between items-end gap-4">
-                    <h1 className="text-2xl font-bold text-gray-900">Best Selling Products</h1>
+                    <h1 className="text-2xl font-bold text-gray-900">
+                        Best Selling Products
+                    </h1>
 
                     <div className="flex flex-wrap gap-4 items-center">
                         {/* Sort Toggle */}
