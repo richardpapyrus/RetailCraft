@@ -7,7 +7,7 @@ module.exports = {
             args: "dist/src/main.js",
             env_staging: {
                 NODE_ENV: "production",
-                PORT: 4000,
+                PORT: 4001,
                 DATABASE_URL: "postgresql://doadmin:AVNS_iNZVQYj-RX036W3B0oS@retail-craft-db-postgres-do-user-24373738-0.k.db.ondigitalocean.com:25060/pos_db_staging?sslmode=require"
             },
             env_development: {
@@ -23,7 +23,7 @@ module.exports = {
             args: "run start",
             env_staging: {
                 NODE_ENV: "production",
-                PORT: 3000,
+                PORT: 3001,
                 NEXT_PUBLIC_API_URL: "https://staging.retailcraft.com.ng/api"
             },
             env_development: {

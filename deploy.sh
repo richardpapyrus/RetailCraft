@@ -21,6 +21,7 @@ cd apps/api
 
 echo "   Running Database Migrations..."
 # CRITICAL: This fixes the 500 Error by aligning the DB schema
+npx prisma generate
 npx prisma migrate deploy
 
 echo "   🌱 Seeding Database (Ensuring Admin User exists)..."
