@@ -48,7 +48,7 @@ export class AuthService {
     const fullUser = await this.prisma.user.findUnique({
       where: { id: user.id },
       include: {
-        tenant: { select: { name: true, currency: true, locale: true, logoUrl: true, brandColor: true } },
+        tenant: { select: { id: true, name: true, currency: true, locale: true, logoUrl: true, brandColor: true, loyaltyEarnRate: true, loyaltyRedeemRate: true, loyaltyExpiryDays: true } },
         store: true,
         roleDef: true, // Include the Role entity
       },
@@ -81,6 +81,7 @@ export class AuthService {
         store: fullUser?.store,
         tenantLogo: fullUser?.tenant?.logoUrl,
         tenantBrandColor: fullUser?.tenant?.brandColor,
+        tenant: fullUser?.tenant,
       },
     };
   }
@@ -89,7 +90,7 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({
       where: { email },
       include: {
-        tenant: { select: { name: true, currency: true, locale: true, logoUrl: true, brandColor: true } },
+        tenant: { select: { id: true, name: true, currency: true, locale: true, logoUrl: true, brandColor: true, loyaltyEarnRate: true, loyaltyRedeemRate: true, loyaltyExpiryDays: true } },
         store: true,
         roleDef: true,
       },
@@ -112,6 +113,7 @@ export class AuthService {
       store: user.store,
       tenantLogo: user.tenant?.logoUrl,
       tenantBrandColor: user.tenant?.brandColor,
+      tenant: user.tenant,
     };
   }
 

@@ -14,7 +14,7 @@ export class TillReportsService {
         };
 
         // 1. Session Overview
-        const sessions = await this.prisma.tillSession.findMany({
+        const sessions = await (this.prisma as any).tillSession.findMany({
             where,
             include: {
                 user: { select: { name: true } },
@@ -27,7 +27,7 @@ export class TillReportsService {
         // We need to look at SALES tied to these sessions
         const sessionIds = sessions.map(s => s.id);
 
-        const salesAgg = await this.prisma.sale.aggregate({
+        const salesAgg = await (this.prisma as any).sale.aggregate({
             where: { tillSessionId: { in: sessionIds }, status: 'COMPLETED' },
             _sum: {
                 total: true,
@@ -39,7 +39,7 @@ export class TillReportsService {
             _count: { _all: true }
         });
 
-        const refundAgg = await this.prisma.sale.aggregate({
+        const refundAgg = await (this.prisma as any).sale.aggregate({
             where: { tillSessionId: { in: sessionIds }, status: 'REFUNDED' }, // Or partial? Logic usually separate table or status
             _sum: { total: true },
             _count: { _all: true }
@@ -84,7 +84,7 @@ export class TillReportsService {
         };
 
         // Find sessions first to scope the payments
-        const sessions = await this.prisma.tillSession.findMany({ where: whereSession, select: { id: true } });
+        const sessions = await (this.prisma as any).tillSession.findMany({ where: whereSession, select: { id: true } });
         const sessionIds = sessions.map(s => s.id);
 
         // Group by Payment Method on Sale
@@ -96,7 +96,7 @@ export class TillReportsService {
         // I will use `Sale` aggregation for now, but if `Payment` exists I'll swap.
 
         // TODO: strictly we should check schema. Assuming Sale.paymentMethod for now.
-        const byMethod = await this.prisma.sale.groupBy({
+        const byMethod = await (this.prisma as any).sale.groupBy({
             by: ['paymentMethod'],
             where: { tillSessionId: { in: sessionIds }, status: 'COMPLETED' },
             _sum: { total: true },
@@ -120,21 +120,21 @@ export class TillReportsService {
         const sessionIds = sessions.map(s => s.id);
 
         // 1. Refunds
-        const refunds = await this.prisma.sale.findMany({
+        const refunds = await (this.prisma as any).sale.findMany({
             where: { tillSessionId: { in: sessionIds }, status: 'REFUNDED' },
             include: { user: { select: { name: true } } },
             orderBy: { createdAt: 'desc' }
         });
 
         // 2. Voided (If we track voids as sales with status VOIDED)
-        const voids = await this.prisma.sale.findMany({
+        const voids = await (this.prisma as any).sale.findMany({
             where: { tillSessionId: { in: sessionIds }, status: 'VOIDED' },
             include: { user: { select: { name: true } } },
             orderBy: { createdAt: 'desc' }
         });
 
         // 3. Cash Transactions (No Sale / Pay Out)
-        const cashTx = await this.prisma.cashTransaction.findMany({
+        const cashTx = await (this.prisma as any).cashTransaction.findMany({
             where: { tillSessionId: { in: sessionIds } }, // Filter type if needed
             orderBy: { createdAt: 'desc' }
         });
@@ -155,7 +155,7 @@ export class TillReportsService {
         const sessionIds = sessions.map(s => s.id);
 
         // Aggregate Sales Items
-        const items = await this.prisma.saleItem.groupBy({
+        const items = await (this.prisma as any).saleItem.groupBy({
             by: ['productId'],
             where: {
                 sale: {
@@ -168,12 +168,12 @@ export class TillReportsService {
 
         // Enrich with Product Info
         const productIds = items.map(i => i.productId);
-        const products = await this.prisma.product.findMany({
+        const products = await (this.prisma as any).product.findMany({
             where: { id: { in: productIds } },
             select: { id: true, name: true, sku: true }
         });
 
-        const productsMap = new Map(products.map(p => [p.id, p]));
+        const productsMap = new Map<string, any>(products.map(p => [p.id, p]));
 
         return items.map(i => ({
             productId: i.productId,

@@ -21,6 +21,7 @@ cd apps/api
 
 echo "   Running Database Migrations..."
 # CRITICAL: This fixes the 500 Error by aligning the DB schema
+npx prisma generate
 npx prisma migrate deploy
 
 echo "   🌱 Seeding Database (Ensuring Admin User exists)..."
@@ -56,18 +57,12 @@ cd ../..
 echo "🔄 Restarting Services..."
 
 # Delete existing to clear cache/state issues
-pm2 delete pos-api || true
-pm2 delete pos-web || true
+pm2 delete pos-api-prod || true
+pm2 delete pos-web-prod || true
 
-# Start API
-echo "   Starting API..."
-cd apps/api
-pm2 start npm --name "pos-api" -- run start:prod
-
-# Start Web (Production Mode)
-echo "   Starting Web..."
-cd ../../apps/web
-pm2 start npm --name "pos-web" -- start
+# Start Services using Ecosystem
+echo "   Starting Services..."
+pm2 start ecosystem.config.js --only pos-api-prod,pos-web-prod
 
 # Save PM2 List
 pm2 save

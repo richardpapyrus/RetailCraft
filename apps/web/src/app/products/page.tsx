@@ -70,9 +70,6 @@ export default function ProductsPage() {
             router.push('/login');
             return;
         }
-        loadProducts(true);
-        loadSuppliers();
-        loadStats();
         loadProducts(1);
         loadSuppliers();
         loadStats();
@@ -155,7 +152,7 @@ export default function ProductsPage() {
             }
             setShowCreate(false);
             setEditingId(null);
-            loadProducts(true);
+            loadProducts(1);
             setNewProduct({ name: '', sku: '', barcode: '', categoryId: '', price: '', costPrice: '', minStockLevel: 0, supplierId: '' });
         } catch (err: any) {
             console.error(err);
@@ -201,7 +198,7 @@ export default function ProductsPage() {
             await api.inventory.adjust(selectedProduct.id, parseInt(adjustQty), "Manual Adjustment", selectedStoreId || undefined);
             setAdjustModalOpen(false);
             setSelectedProduct(null);
-            loadProducts(true);
+            loadProducts(1);
         } catch (err) {
             toast.error('Failed to update stock');
         }
@@ -222,8 +219,7 @@ export default function ProductsPage() {
             });
             setReceiveModalOpen(false);
             setSelectedProduct(null);
-            loadProducts(true);
-            loadProducts(true);
+            loadProducts(1);
             toast.success('Stock Received & Cost Averaged');
         } catch (err) {
             toast.error('Failed to receive stock');
@@ -246,7 +242,7 @@ export default function ProductsPage() {
             if (res.errors) toast.error(`Some errors occurred:\n${res.errors}`, { duration: 8000 });
             setIsImportModalOpen(false);
             setImportFile(null);
-            loadProducts(true);
+            loadProducts(1);
         } catch (err: any) {
             toast.error('Import Failed: ' + err.message);
             setLoading(false);

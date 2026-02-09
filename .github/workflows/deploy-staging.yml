@@ -6,11 +6,28 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Generate Prisma Client
+        run: cd apps/api && npx prisma generate
+
+      - name: Build app
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: "https://staging.retailcraft.com.ng/api"
 
       - name: Setup SSH
         run: |
@@ -19,13 +36,26 @@ jobs:
           chmod 600 ~/.ssh/retail-craft
           ssh-keyscan -H 165.227.26.131 >> ~/.ssh/known_hosts
 
-      - name: Install rsync
-        run: sudo apt-get update && sudo apt-get install -y rsync
-
-      - name: Transfer files
+      - name: Transfer files via rsync
         run: |
-          rsync -avz --exclude '.git/' --exclude 'node_modules/' -e "ssh -i ~/.ssh/retail-craft" ./ root@165.227.26.131:/root/retail-craft-staging/
+          rsync -avz --delete \
+            --exclude '.git/' \
+            --exclude 'node_modules/' \
+            --exclude '.next/cache/' \
+            --exclude 'apps/api/uploads/' \
+            --exclude 'uploads_staging/' \
+            -e "ssh -i ~/.ssh/retail-craft" \
+            ./ root@165.227.26.131:/root/retail-craft-staging/
 
       - name: Deploy on server
         run: |
-          ssh -i ~/.ssh/retail-craft root@165.227.26.131 "cd /root/retail-craft-staging/ && docker compose -f docker-compose.staging.yml down && docker system prune -af && docker compose -f docker-compose.staging.yml up --build -d --remove-orphans && docker compose -f docker-compose.staging.yml run --rm staging_api npx prisma migrate deploy && docker compose -f docker-compose.staging.yml run --rm staging_api npx prisma db seed && echo '🧪 Running Verification...' && docker compose -f docker-compose.staging.yml run --rm staging_api node scripts/verify_deployment.js"
+          ssh -i ~/.ssh/retail-craft root@165.227.26.131 "
+            cd /root/retail-craft-staging/ && \
+            npm install --production && \
+            cd apps/api && \
+            npx prisma generate && \
+            npx prisma migrate deploy && \
+            cd ../.. && \
+            pm2 startOrReload ecosystem.config.js --only pos-api-staging,pos-web-staging --update-env && \
+            pm2 save
+          "

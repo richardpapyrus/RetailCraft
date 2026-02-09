@@ -17,6 +17,7 @@ export interface Customer {
     email?: string;
     phone?: string;
     loyaltyPoints: number;
+    isLoyaltyMember?: boolean;
     tenantId: string;
 }
 

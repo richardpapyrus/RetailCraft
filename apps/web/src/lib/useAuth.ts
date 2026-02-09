@@ -17,6 +17,17 @@ interface User {
     permissions?: string[];
     tenantLogo?: string;
     tenantBrandColor?: string;
+    tenant?: {
+        id: string;
+        name: string;
+        currency: string;
+        locale: string;
+        logoUrl?: string;
+        brandColor?: string;
+        loyaltyEarnRate: number;
+        loyaltyRedeemRate: number;
+        loyaltyExpiryDays: number;
+    };
 }
 
 import { formatCurrency } from './format';
