@@ -345,18 +345,18 @@ export class ProductsService {
       const searchTerm = filters.search ? `%${filters.search}%` : "%";
 
       // Raw query to fetch products with low stock (inventory <= minStockLevel)
-      const lowStockProducts: any[] = await prisma.$queryRaw`
+      const lowStockProducts: any[] = await (prisma as any).$queryRaw`
                 SELECT p.id 
                 FROM "Product" p
-                LEFT JOIN "Inventory" i ON p.id = i."productId" AND (${storeId ? Prisma.sql`i."storeId" = ${storeId}` : Prisma.sql`1=1`})
+                LEFT JOIN "Inventory" i ON p.id = i."productId" AND (${storeId ? (Prisma as any).sql`i."storeId" = ${storeId}` : (Prisma as any).sql`1=1`})
                 WHERE p."tenantId" = ${tenantId}
-                AND (${filters.category ? Prisma.sql`p."categoryId" = ${filters.category}` : Prisma.sql`1=1`})
+                AND (${filters.category ? (Prisma as any).sql`p."categoryId" = ${filters.category}` : (Prisma as any).sql`1=1`})
                 AND (
                     p.name ILIKE ${searchTerm} OR 
                     p.sku ILIKE ${searchTerm} OR 
                     p.barcode ILIKE ${searchTerm}
                 )
-                AND (${storeId ? Prisma.sql`(p."storeId" = ${storeId} OR p."storeId" IS NULL OR i."storeId" = ${storeId})` : Prisma.sql`1=1`})
+                AND (${storeId ? (Prisma as any).sql`(p."storeId" = ${storeId} OR p."storeId" IS NULL OR i."storeId" = ${storeId})` : (Prisma as any).sql`1=1`})
                 GROUP BY p.id
                 HAVING COALESCE(SUM(i.quantity), 0) <= COALESCE(p."minStockLevel", 0) OR COALESCE(SUM(i.quantity), 0) = 0
                 OFFSET ${skip}

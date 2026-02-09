@@ -45,7 +45,7 @@ export default function LoyaltyPage() {
             // Load Stats
             const customers = await api.customers.list();
 
-            const withPoints = customers.filter((c: any) => c.loyaltyPoints > 0);
+            const withPoints = customers.data.filter((c: any) => c.loyaltyPoints > 0);
             const totalPoints = withPoints.reduce((sum: number, c: any) => sum + c.loyaltyPoints, 0);
             const top = [...withPoints].sort((a: any, b: any) => b.loyaltyPoints - a.loyaltyPoints).slice(0, 5);
 

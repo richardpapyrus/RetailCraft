@@ -42,7 +42,21 @@ export default function POSPage() {
 
     const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
     const [tendered, setTendered] = useState<string>('');
-    const [lastSale, setLastSale] = useState<{ items: CartItem[], total: number, tendered: number, change: number, date: Date, id?: string, customerName?: string } | null>(null);
+    const [lastSale, setLastSale] = useState<{
+        items: CartItem[],
+        total: number,
+        subtotal?: number,
+        discountTotal?: number,
+        discount?: number,
+        taxTotal?: number,
+        tax?: number,
+        tendered: number,
+        change: number,
+        date: Date,
+        id?: string,
+        customerName?: string,
+        payments?: { method: string, amount: number }[]
+    } | null>(null);
     const [receiptModalOpen, setReceiptModalOpen] = useState(false);
 
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'CASH' | 'CARD' | 'BANK_TRANSFER'>('CASH');
@@ -272,7 +286,7 @@ export default function POSPage() {
                     if (appliedDiscount.targetType === 'PRODUCT') {
                         if (appliedDiscount.targetValues?.includes(item.id)) isEligible = true;
                     } else if (appliedDiscount.targetType === 'CATEGORY') {
-                        if (item.category && appliedDiscount.targetValues?.includes(item.category)) isEligible = true;
+                        if (item.category && appliedDiscount.targetValues?.includes(item.category.id)) isEligible = true;
                     }
 
                     if (isEligible) eligibleSubtotal += Number(item.price) * item.cartQty;
@@ -385,10 +399,10 @@ export default function POSPage() {
                 const receipt = PrinterService.createReceipt(
                     businessName,
                     lastSale?.items || [],
-                    formatCurrency(lastSale?.total, user?.currency, user?.locale),
-                    formatCurrency(lastSale?.subtotal, user?.currency, user?.locale),
-                    (lastSale?.discountTotal > 0 || lastSale?.discount > 0) ? formatCurrency(lastSale?.discountTotal || lastSale?.discount, user?.currency, user?.locale) : undefined,
-                    (lastSale?.taxTotal > 0 || lastSale?.tax > 0) ? formatCurrency(lastSale?.taxTotal || lastSale?.tax, user?.currency, user?.locale) : undefined
+                    formatCurrency(lastSale?.total ?? 0, user?.currency, user?.locale),
+                    formatCurrency(lastSale?.subtotal ?? 0, user?.currency, user?.locale),
+                    ((lastSale?.discountTotal ?? 0) > 0 || (lastSale?.discount ?? 0) > 0) ? formatCurrency((lastSale?.discountTotal ?? lastSale?.discount ?? 0), user?.currency, user?.locale) : undefined,
+                    ((lastSale?.taxTotal ?? 0) > 0 || (lastSale?.tax ?? 0) > 0) ? formatCurrency((lastSale?.taxTotal ?? lastSale?.tax ?? 0), user?.currency, user?.locale) : undefined
                 );
                 await printerService.print(receipt);
             } catch (e) {
@@ -1119,7 +1133,7 @@ export default function POSPage() {
                             {/* Header */}
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="text-xl font-bold">
-                                    {supervisorMode ? 'Manager Override' : (manualDiscountInput !== '' || manualDiscountInput === '0') ? 'Manual Discount' : 'Apply Discount'}
+                                    {supervisorMode ? 'Manager Override' : (manualDiscountInput !== '') ? 'Manual Discount' : 'Apply Discount'}
                                 </h3>
                                 <button onClick={() => {
                                     setDiscountModalOpen(false);
@@ -1343,7 +1357,7 @@ export default function POSPage() {
                                     </div>
                                     <div className="flex justify-between items-center text-sm">
                                         <span className="text-gray-500 font-bold uppercase tracking-wider">Change</span>
-                                        <span className="text-xl font-bold text-green-600">{formatCurrency(lastSale.changeGiven, user?.currency, user?.locale)}</span>
+                                        <span className="text-xl font-bold text-green-600">{formatCurrency(lastSale.change, user?.currency, user?.locale)}</span>
                                     </div>
                                 </div>
 
