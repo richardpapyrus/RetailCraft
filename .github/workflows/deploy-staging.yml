@@ -56,6 +56,6 @@ jobs:
             npx prisma generate && \
             npx prisma migrate deploy && \
             cd ../.. && \
-            pm2 startOrReload ecosystem.config.js --env staging --update-env && \
+            pm2 startOrReload ecosystem.config.js --only pos-api-staging,pos-web-staging --update-env && \
             pm2 save
           "
