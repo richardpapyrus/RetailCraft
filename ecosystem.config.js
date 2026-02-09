@@ -1,25 +1,36 @@
 module.exports = {
     apps: [
         {
-            name: "pos-api",
+            name: "pos-api-staging",
             cwd: "./apps/api",
-            script: "npm",
-            args: "run start:dev",
-            env: {
-                DATABASE_URL: "postgresql://admin:password@localhost:5432/pos_db?schema=public",
-                PORT: 4000
+            script: "node",
+            args: "dist/src/main.js",
+            env_staging: {
+                NODE_ENV: "production",
+                PORT: 4000,
+                DATABASE_URL: "postgresql://doadmin:AVNS_iNZVQYj-RX036W3B0oS@retail-craft-db-postgres-do-user-24373738-0.k.db.ondigitalocean.com:25060/pos_db_staging?sslmode=require"
             },
-            restart_delay: 3000
+            env_development: {
+                NODE_ENV: "development",
+                PORT: 4000,
+                DATABASE_URL: "postgresql://admin:password@localhost:5432/pos_db?schema=public"
+            }
         },
         {
-            name: "pos-web",
+            name: "pos-web-staging",
             cwd: "./apps/web",
             script: "npm",
-            args: "run dev",
-            env: {
-                NEXT_PUBLIC_API_URL: "http://localhost:4000"
+            args: "run start",
+            env_staging: {
+                NODE_ENV: "production",
+                PORT: 3000,
+                NEXT_PUBLIC_API_URL: "https://staging.retailcraft.com.ng/api"
             },
-            restart_delay: 3000
+            env_development: {
+                NODE_ENV: "development",
+                PORT: 3000,
+                NEXT_PUBLIC_API_URL: "http://localhost:4000"
+            }
         }
     ]
 };
