@@ -1,28 +1,39 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { api, Product, API_URL } from '@/lib/api';
 import { DataService } from '@/lib/db-service';
 import { useAuth, formatCurrency } from '@/lib/useAuth';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import CategoryManager from '@/components/products/CategoryManager';
 
 export default function ProductsPage() {
     const { user, token, isHydrated, hasPermission, selectedStoreId } = useAuth();
     const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
+
     const [products, setProducts] = useState<Product[]>([]);
     const [suppliers, setSuppliers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [totalProducts, setTotalProducts] = useState(0);
-    const [page, setPage] = useState(1);
+
+    // Initial State from URL
+    const initialPage = Number(searchParams.get('page')) || 1;
+    const initialSearch = searchParams.get('search') || '';
+    const initialCategory = searchParams.get('category') || '';
+    const initialLowStock = searchParams.get('lowStock') === 'true';
+    const initialArchived = searchParams.get('showArchived') === 'true';
+
+    const [page, setPage] = useState(initialPage);
     const limit = 50;
 
-    // Filters
-    const [search, setSearch] = useState('');
-    const [category, setCategory] = useState('');
-    const [showLowStock, setShowLowStock] = useState(false);
-    const [showArchived, setShowArchived] = useState(false);
+    // Filters - Local State (initialized from URL)
+    const [search, setSearch] = useState(initialSearch);
+    const [category, setCategory] = useState(initialCategory);
+    const [showLowStock, setShowLowStock] = useState(initialLowStock);
+    const [showArchived, setShowArchived] = useState(initialArchived);
 
     // Categories
     const [categories, setCategories] = useState<any[]>([]);
@@ -55,13 +66,68 @@ export default function ProductsPage() {
     const [importFile, setImportFile] = useState<File | null>(null);
 
     // Debounce Search
+    // Sync State -> URL
     useEffect(() => {
         const timeout = setTimeout(() => {
-            setPage(1);
-            loadProducts(1);
-        }, 800);
+            const params = new URLSearchParams(searchParams.toString());
+
+            if (search) params.set('search', search); else params.delete('search');
+            if (category) params.set('category', category); else params.delete('category');
+            if (showLowStock) params.set('lowStock', 'true'); else params.delete('lowStock');
+            if (showArchived) params.set('showArchived', 'true'); else params.delete('showArchived');
+
+            // Check if filters changed to reset page
+            const currentSearch = searchParams.get('search') || '';
+            const currentCategory = searchParams.get('category') || '';
+            const currentLowStock = searchParams.get('lowStock') === 'true';
+            const currentArchived = searchParams.get('showArchived') === 'true';
+
+            const filtersChanged = search !== currentSearch || category !== currentCategory || showLowStock !== currentLowStock || showArchived !== currentArchived;
+
+            if (filtersChanged) {
+                params.set('page', '1');
+                setPage(1); // Keep local state in sync
+            } else {
+                params.set('page', page.toString());
+            }
+
+            if (params.toString() !== searchParams.toString()) {
+                router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+            }
+        }, 500); // Reduced debounce slightly
         return () => clearTimeout(timeout);
-    }, [search, category, showLowStock, showArchived]);
+    }, [search, category, showLowStock, showArchived, page]);
+
+    // Focus state to prevent external updates while typing
+    const [isSearchFocused, setIsSearchFocused] = useState(false);
+
+    const searchInputRef = useRef<HTMLInputElement>(null);
+
+    // Sync URL -> Local State & Fetch
+    useEffect(() => {
+        if (!isHydrated || !token) return;
+
+        const p = Number(searchParams.get('page')) || 1;
+        const s = searchParams.get('search') || '';
+        const c = searchParams.get('category') || '';
+        const ls = searchParams.get('lowStock') === 'true';
+        const sa = searchParams.get('showArchived') === 'true';
+
+        // Sync local state if different (e.g. Back button)
+        if (p !== page) setPage(p);
+
+        // Only sync search from URL if we are NOT focused on the input
+        // This prevents the "lock out" / overwriting issue while typing
+        if (s !== search && !isSearchFocused) {
+            setSearch(s);
+        }
+
+        if (c !== category) setCategory(c);
+        if (ls !== showLowStock) setShowLowStock(ls);
+        if (sa !== showArchived) setShowArchived(sa);
+
+        fetchProducts(p, s, c, ls, sa);
+    }, [searchParams, token, isHydrated, selectedStoreId, isSearchFocused]);
 
     useEffect(() => {
         if (!isHydrated) return;
@@ -70,7 +136,7 @@ export default function ProductsPage() {
             router.push('/login');
             return;
         }
-        loadProducts(1);
+        // Initial data loads
         loadSuppliers();
         loadStats();
         loadCategories();
@@ -103,17 +169,18 @@ export default function ProductsPage() {
         }
     };
 
-    const loadProducts = async (pageToLoad: number) => {
+    const fetchProducts = async (p: number, s: string, c: string, ls: boolean, sa: boolean) => {
         try {
-            setLoading(true);
-            const skip = (pageToLoad - 1) * limit;
-            const filters = { search, category, lowStock: showLowStock };
-            // Note: DataService needs update or bypass? Let's use direct api call if showArchived is true or just update DataService?
-            // Let's use api.products.list directly for now to support the new flag, bypassing cache if archived is involved.
-            // Or update Data/Service. Let's update api.products.list call here directly as DataService might not handle the new flag yet.
+            // Only show full loading state if we don't have products (initial load)
+            // If we are just filtering/searching, we want to keep the UI stable.
+            if (products.length === 0) {
+                setLoading(true);
+            }
 
-            // Actually, let's just stick to api.products.list to ensure we get the fresh data with the flag.
-            const { data, total } = await api.products.list(skip, limit, filters, selectedStoreId || undefined, showArchived);
+            const skip = (p - 1) * limit;
+            const filters = { search: s, category: c, lowStock: ls };
+
+            const { data, total } = await api.products.list(skip, limit, filters, selectedStoreId || undefined, sa);
 
             setProducts(data);
             setTotalProducts(total);
@@ -127,6 +194,9 @@ export default function ProductsPage() {
             setLoading(false);
         }
     };
+
+    // Helper to reload using current state
+    const reloadCurrentPage = () => fetchProducts(page, search, category, showLowStock, showArchived);
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -152,7 +222,7 @@ export default function ProductsPage() {
             }
             setShowCreate(false);
             setEditingId(null);
-            loadProducts(1);
+            reloadCurrentPage();
             setNewProduct({ name: '', sku: '', barcode: '', categoryId: '', price: '', costPrice: '', minStockLevel: 0, supplierId: '' });
         } catch (err: any) {
             console.error(err);
@@ -198,7 +268,7 @@ export default function ProductsPage() {
             await api.inventory.adjust(selectedProduct.id, parseInt(adjustQty), "Manual Adjustment", selectedStoreId || undefined);
             setAdjustModalOpen(false);
             setSelectedProduct(null);
-            loadProducts(1);
+            reloadCurrentPage();
         } catch (err) {
             toast.error('Failed to update stock');
         }
@@ -219,7 +289,7 @@ export default function ProductsPage() {
             });
             setReceiveModalOpen(false);
             setSelectedProduct(null);
-            loadProducts(1);
+            reloadCurrentPage();
             toast.success('Stock Received & Cost Averaged');
         } catch (err) {
             toast.error('Failed to receive stock');
@@ -242,7 +312,7 @@ export default function ProductsPage() {
             if (res.errors) toast.error(`Some errors occurred:\n${res.errors}`, { duration: 8000 });
             setIsImportModalOpen(false);
             setImportFile(null);
-            loadProducts(1);
+            reloadCurrentPage();
         } catch (err: any) {
             toast.error('Import Failed: ' + err.message);
             setLoading(false);
@@ -262,7 +332,7 @@ export default function ProductsPage() {
                 await api.products.archive(product.id);
                 toast.success('Product Archived');
             }
-            loadProducts(page);
+            reloadCurrentPage();
         } catch (err: any) {
             toast.error('Operation failed');
         }
@@ -368,7 +438,10 @@ export default function ProductsPage() {
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 flex flex-wrap gap-4 items-center">
                     <div className="flex-1 min-w-[200px]">
                         <input
+                            ref={searchInputRef}
                             type="text"
+                            onFocus={() => setIsSearchFocused(true)}
+                            onBlur={() => setIsSearchFocused(false)}
                             placeholder="Search products (Name, SKU, Barcode)..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
@@ -689,18 +762,18 @@ export default function ProductsPage() {
                 )}
 
                 {/* Table */}
-                <div className="bg-white shadow-sm rounded-xl overflow-hidden border border-gray-100 overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
+                <div className="bg-white shadow-sm rounded-xl overflow-hidden border border-gray-100">
+                    <table className="w-full divide-y divide-gray-200 table-fixed">
                         <thead className="bg-gray-50">
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU / Barcode</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price (Sell)</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cost (Buy)</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Supplier</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Stock</th>
-                                {selectedStoreId && <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>}
+                                <th className="w-[20%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                <th className="w-[15%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU / Barcode</th>
+                                <th className="w-[10%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price (Sell)</th>
+                                <th className="w-[12%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                                <th className="w-[10%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cost (Buy)</th>
+                                <th className="w-[13%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Supplier</th>
+                                <th className="w-[10%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Stock</th>
+                                {selectedStoreId && <th className="w-[10%] px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>}
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
@@ -716,34 +789,34 @@ export default function ProductsPage() {
                                     const isLowStock = stock <= (p.minStockLevel || 0);
                                     return (
                                         <tr key={p.id} className={`hover:bg-gray-50 cursor-pointer ${isLowStock ? 'bg-red-50' : ''} ${p.isArchived ? 'opacity-60 bg-gray-100' : ''}`} onClick={() => router.push(`/products/${p.id}`)}>
-                                            <td className="px-6 py-4">
-                                                <div className="text-sm font-medium text-gray-900 max-w-[200px] truncate" title={p.name}>
+                                            <td className="px-3 py-4 truncate" title={p.name}>
+                                                <div className="text-sm font-medium text-gray-900 truncate">
                                                     {p.name} {p.isArchived && <span className="ml-2 text-xs bg-gray-500 text-white px-2 py-0.5 rounded">Archived</span>}
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4">
-                                                <div className="text-sm text-gray-500 max-w-[150px] truncate" title={p.sku}>{p.sku}</div>
-                                                <div className="text-xs text-gray-400 max-w-[150px] truncate" title={p.barcode || ''}>{p.barcode}</div>
+                                            <td className="px-3 py-4 truncate">
+                                                <div className="text-sm text-gray-500 truncate" title={p.sku}>{p.sku}</div>
+                                                <div className="text-xs text-gray-400 truncate" title={p.barcode || ''}>{p.barcode}</div>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <td className="px-3 py-4 text-sm text-gray-500 truncate">
                                                 {formatCurrency(p.price, user?.currency)}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <td className="px-3 py-4 text-sm text-gray-500 truncate" title={p.category?.name || (p as any).category}>
                                                 {p.category?.name || (p as any).category || '-'}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <td className="px-3 py-4 text-sm text-gray-500 truncate">
                                                 {p.costPrice ? formatCurrency(p.costPrice, user?.currency) : '-'}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <td className="px-3 py-4 text-sm text-gray-500 truncate" title={p.supplier?.name}>
                                                 {p.supplier ? (
-                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 truncate max-w-full">
                                                         {p.supplier.name}
                                                     </span>
                                                 ) : (
                                                     <span className="text-gray-400 italic">None</span>
                                                 )}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <td className="px-3 py-4 text-sm text-gray-500 truncate">
                                                 <span className={`font-bold ${stock > 0 ? 'text-green-600' : 'text-red-600'}`}>
                                                     {stock}
                                                 </span>
@@ -754,41 +827,56 @@ export default function ProductsPage() {
                                                 )}
                                             </td>
                                             {selectedStoreId && (
-                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                    {hasPermission('MANAGE_INVENTORY') && (
-                                                        <>
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); openAdjustModal(p); }}
-                                                                className="text-indigo-600 hover:text-indigo-900"
-                                                            >
-                                                                Adjust
-                                                            </button>
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); openReceiveModal(p); }}
-                                                                className="text-green-600 hover:text-green-900 ml-4 font-bold"
-                                                            >
-                                                                Receive
-                                                            </button>
-                                                        </>
-                                                    )}
-                                                    {hasPermission('MANAGE_PRODUCTS') && (
-                                                        <>
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); startEdit(p); }}
-                                                                className="text-blue-600 hover:text-blue-900 ml-4 font-medium"
-                                                            >
-                                                                Edit
-                                                            </button>
-                                                            {(hasPermission('MANAGE_PRODUCTS') || hasPermission('admin')) && (
+                                                <td className="px-3 py-4 text-right text-sm font-medium w-[10%]">
+                                                    <div className="flex justify-end gap-2">
+                                                        {hasPermission('MANAGE_INVENTORY') && (
+                                                            <>
                                                                 <button
-                                                                    onClick={(e) => handleArchiveToggle(p, e)}
-                                                                    className={`ml-4 font-medium ${p.isArchived ? 'text-green-600 hover:text-green-900' : 'text-red-500 hover:text-red-800'}`}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        openAdjustModal(p);
+                                                                    }}
+                                                                    className="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded transition"
+                                                                    title="Adjust Stock"
                                                                 >
-                                                                    {p.isArchived ? 'Restore' : 'Archive'}
+                                                                    ±
                                                                 </button>
-                                                            )}
-                                                        </>
-                                                    )}
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        openReceiveModal(p);
+                                                                    }}
+                                                                    className="text-green-600 hover:text-green-900 bg-green-50 hover:bg-green-100 px-2 py-1 rounded transition"
+                                                                    title="Receive Stock"
+                                                                >
+                                                                    ↓
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                        {hasPermission('MANAGE_PRODUCTS') && (
+                                                            <>
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        startEdit(p);
+                                                                    }}
+                                                                    className="text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded transition"
+                                                                    title="Edit Product"
+                                                                >
+                                                                    ✎
+                                                                </button>
+                                                                {(hasPermission('MANAGE_PRODUCTS') || hasPermission('admin')) && (
+                                                                    <button
+                                                                        onClick={(e) => handleArchiveToggle(p, e)}
+                                                                        className={`${p.isArchived ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'} hover:bg-opacity-80 px-2 py-1 rounded transition`}
+                                                                        title={p.isArchived ? "Restore" : "Archive"}
+                                                                    >
+                                                                        {p.isArchived ? '⟲' : '✕'}
+                                                                    </button>
+                                                                )}
+                                                            </>
+                                                        )}
+                                                    </div>
                                                 </td>
                                             )}
                                         </tr>
@@ -808,7 +896,6 @@ export default function ProductsPage() {
                             onClick={() => {
                                 const newPage = Math.max(1, page - 1);
                                 setPage(newPage);
-                                loadProducts(newPage);
                             }}
                             disabled={page === 1 || loading}
                             className="px-4 py-2 border rounded-md bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -819,7 +906,6 @@ export default function ProductsPage() {
                             onClick={() => {
                                 const newPage = page + 1;
                                 setPage(newPage);
-                                loadProducts(newPage);
                             }}
                             disabled={page >= Math.ceil(totalProducts / limit) || loading}
                             className="px-4 py-2 border rounded-md bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
