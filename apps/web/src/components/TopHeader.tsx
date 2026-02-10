@@ -8,6 +8,7 @@ export function TopHeader() {
     const { user, selectedStoreId, setSelectedStoreId } = useAuth();
     const [stores, setStores] = useState<any[]>([]);
     const [error, setError] = useState<string | null>(null);
+    const [imgError, setImgError] = useState(false);
 
     useEffect(() => {
         loadStores();
@@ -56,12 +57,13 @@ export function TopHeader() {
             {/* Left: Business Branding & Store Selector */}
             <div className="flex items-center gap-6">
                 <div className="flex items-center gap-3">
-                    {user?.tenantLogo ? (
+                    {user?.tenantLogo && !imgError ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                             src={user.tenantLogo.startsWith('http') ? user.tenantLogo : `${API_URL}${user.tenantLogo}`}
                             alt={user.tenantName}
                             className="h-10 object-contain rounded-md"
+                            onError={() => setImgError(true)}
                         />
                     ) : (
                         <div className="h-10 w-10 bg-gray-100 rounded-md flex items-center justify-center text-gray-400 font-bold text-xl uppercase">
