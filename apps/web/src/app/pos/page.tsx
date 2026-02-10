@@ -191,7 +191,10 @@ export default function POSPage() {
 
     const loadTaxesAndDiscounts = async () => {
         try {
-            const [t, d] = await Promise.all([api.taxes.list(), api.discounts.list()]);
+            const [t, d] = await Promise.all([
+                api.taxes.list(),
+                api.discounts.list(selectedStoreId || undefined)
+            ]);
             setTaxes(t || []);
             setDiscounts(d || []);
         } catch (e) { console.error('Failed active taxes/discounts', e); }
@@ -286,7 +289,9 @@ export default function POSPage() {
                     if (appliedDiscount.targetType === 'PRODUCT') {
                         if (appliedDiscount.targetValues?.includes(item.id)) isEligible = true;
                     } else if (appliedDiscount.targetType === 'CATEGORY') {
-                        if (item.category && appliedDiscount.targetValues?.includes(item.category.id)) isEligible = true;
+                        // Settings page saves category NAMES, not IDs.
+                        // Check if item.category.name is in targetValues
+                        if (item.category && appliedDiscount.targetValues?.some(v => v === (item.category as any).name || v === (item.category as any).id)) isEligible = true;
                     }
 
                     if (isEligible) eligibleSubtotal += Number(item.price) * item.cartQty;
@@ -328,7 +333,12 @@ export default function POSPage() {
         }
     }, [splitModalOpen, splitPayments, cartTotal]);
 
+    const [isProcessingCheckout, setIsProcessingCheckout] = useState(false);
+
+    // ... (rest of component)
+
     const handleCheckout = async () => {
+        if (isProcessingCheckout) return;
         if (!activeSession) {
             toast.error('Please open a till session first.');
             setIsTillModalOpen(true);
@@ -336,6 +346,7 @@ export default function POSPage() {
         }
         if (cart.length === 0) return;
 
+        setIsProcessingCheckout(true);
         const tenderedVal = parseFloat(tendered) || 0;
         const change = tenderedVal - cartTotal;
 
@@ -388,8 +399,14 @@ export default function POSPage() {
         } catch (e) {
             console.error(e);
             toast.error('Checkout Failed');
+        } finally {
+            setIsProcessingCheckout(false);
         }
     };
+
+    // ...
+
+
 
     const handlePrint = async () => {
         if (printerService.isConnected()) {
@@ -958,11 +975,19 @@ export default function POSPage() {
 
                                         <button
                                             onClick={() => handleCheckout()}
-                                            disabled={change < 0 && tendVal > 0}
-                                            className={`w-full py-4 rounded-xl font-bold text-white shadow-lg transition-all transform active:scale-[0.98] ${change < 0 && tendVal > 0 ? 'bg-gray-300 cursor-not-allowed shadow-none' : 'bg-green-600 hover:bg-green-500 shadow-green-600/30'
+                                            disabled={(change < 0 && tendVal > 0) || isProcessingCheckout}
+                                            className={`w-full py-4 rounded-xl font-bold text-white shadow-lg transition-all transform active:scale-[0.98] ${(change < 0 && tendVal > 0) || isProcessingCheckout ? 'bg-gray-300 cursor-not-allowed shadow-none' : 'bg-green-600 hover:bg-green-500 shadow-green-600/30'
                                                 }`}
                                         >
-                                            Verify Cash Payment
+                                            {isProcessingCheckout ? (
+                                                <span className="flex items-center justify-center gap-2">
+                                                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                    </svg>
+                                                    Verifying...
+                                                </span>
+                                            ) : 'Verify Cash Payment'}
                                         </button>
                                     </div>
                                 );
