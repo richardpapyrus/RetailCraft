@@ -301,8 +301,8 @@ export const api = {
         delete: (id: string) => fetchClient(`/taxes/${id}`, { method: 'DELETE' }),
     },
     discounts: {
-        list: () => fetchClient('/discounts').then(res => res as any[]),
-        create: (data: { name: string; type: string; value: number; targetType?: string; targetValues?: string[]; startDate?: string; endDate?: string }) => fetchClient('/discounts', { method: 'POST', body: JSON.stringify(data) }),
+        list: (storeId?: string) => fetchClient(`/discounts${storeId ? `?storeId=${storeId}` : ''}`).then(res => res as any[]),
+        create: (data: { name: string; type: string; value: number; targetType?: string; targetValues?: string[]; startDate?: string; endDate?: string; storeId?: string }) => fetchClient('/discounts', { method: 'POST', body: JSON.stringify(data) }),
         update: (id: string, data: any) => fetchClient(`/discounts/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
         delete: (id: string) => fetchClient(`/discounts/${id}`, { method: 'DELETE' }),
     },

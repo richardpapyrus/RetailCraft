@@ -63,6 +63,7 @@ model Store {
   purchaseOrders PurchaseOrder[]
   grns          GoodsReceivedNote[]
   supplierReturns SupplierReturn[]
+  discounts     Discount[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -250,6 +251,8 @@ model Discount {
   endDate      DateTime? // Optional End Date
   tenantId     String
   tenant       Tenant   @relation(fields: [tenantId], references: [id])
+  storeId      String?
+  store        Store?   @relation(fields: [storeId], references: [id])
   active       Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

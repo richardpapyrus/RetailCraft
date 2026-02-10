@@ -5,7 +5,10 @@ import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 
+import { useAuth } from '@/lib/useAuth';
+
 export default function TaxesDiscountsSettings() {
+    const { selectedStoreId } = useAuth();
     const [taxes, setTaxes] = useState<any[]>([]);
     const [discounts, setDiscounts] = useState<any[]>([]);
     const [activeSection, setActiveSection] = useState<'taxes' | 'discounts'>('taxes');
@@ -29,7 +32,7 @@ export default function TaxesDiscountsSettings() {
         try {
             const [t, d, p, c] = await Promise.all([
                 api.taxes.list(),
-                api.discounts.list(),
+                api.discounts.list(selectedStoreId || undefined), // Pass storeId
                 api.products.list(0, 1000).then(res => res.data), // Fetch all products for dropdown
                 api.categories.list()
             ]);
@@ -44,7 +47,7 @@ export default function TaxesDiscountsSettings() {
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [selectedStoreId]); // Refetch when store changes
 
     const handleCreateTax = async () => {
         if (!taxName || !taxRate) return;
@@ -58,6 +61,12 @@ export default function TaxesDiscountsSettings() {
 
     const handleCreateDiscount = async () => {
         if (!discName || !discValue) return;
+        if (!selectedStoreId) {
+            // Optional: Block creation if no store selected, or allow global?
+            // User wants "Each store should be able to set their own...".
+            // If I allow null, it's global. I'll allow it for Admin convenience but maybe warn?
+            // For now, simple implementation: just pass what we have.
+        }
         try {
             await api.discounts.create({
                 name: discName,
@@ -66,7 +75,8 @@ export default function TaxesDiscountsSettings() {
                 targetType,
                 targetValues,
                 startDate: startDate || undefined,
-                endDate: endDate || undefined
+                endDate: endDate || undefined,
+                storeId: selectedStoreId || undefined
             });
             setDiscName('');
             setDiscValue('');

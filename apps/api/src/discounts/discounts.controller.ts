@@ -8,6 +8,7 @@ import {
   Param,
   UseGuards,
   Request,
+  Query,
 } from "@nestjs/common";
 import { DiscountsService } from "./discounts.service";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
@@ -18,8 +19,8 @@ export class DiscountsController {
   constructor(private readonly discountsService: DiscountsService) { }
 
   @Get()
-  async findAll(@Request() req) {
-    return this.discountsService.findAll(req.user.tenantId);
+  async findAll(@Request() req, @Query("storeId") storeId: string) {
+    return this.discountsService.findAll(req.user.tenantId, storeId);
   }
 
   @Post()
