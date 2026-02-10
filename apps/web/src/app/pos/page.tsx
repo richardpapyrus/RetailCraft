@@ -286,7 +286,9 @@ export default function POSPage() {
                     if (appliedDiscount.targetType === 'PRODUCT') {
                         if (appliedDiscount.targetValues?.includes(item.id)) isEligible = true;
                     } else if (appliedDiscount.targetType === 'CATEGORY') {
-                        if (item.category && appliedDiscount.targetValues?.includes(item.category.id)) isEligible = true;
+                        // Settings page saves category NAMES, not IDs.
+                        // Check if item.category.name is in targetValues
+                        if (item.category && appliedDiscount.targetValues?.some(v => v === (item.category as any).name || v === (item.category as any).id)) isEligible = true;
                     }
 
                     if (isEligible) eligibleSubtotal += Number(item.price) * item.cartQty;
