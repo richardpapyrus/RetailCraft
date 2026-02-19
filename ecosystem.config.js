@@ -44,5 +44,26 @@ module.exports = {
                 NEXT_PUBLIC_API_URL: "https://staging.retailcraft.com.ng/api"
             }
         }
+        },
+{
+    name: "pos-docs-prod",
+    cwd: "./apps/docs",
+    script: "npm",
+    args: "run start",
+    env: {
+        NODE_ENV: "production",
+        PORT: 4002
+    }
+},
+{
+    name: "pos-docs-staging",
+    cwd: "./apps/docs",
+    script: "npm",
+    args: "run start:staging",
+    env: {
+        NODE_ENV: "production",
+        PORT: 3002
+    }
+}
     ]
 };

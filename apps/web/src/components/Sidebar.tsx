@@ -17,7 +17,8 @@ import {
     Shield,
     Pin,
     PinOff,
-    Award
+    Award,
+    HelpCircle
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { StoreSelector } from './StoreSelector';
@@ -60,6 +61,7 @@ export function Sidebar() {
         { name: 'Tills', href: '/tills', icon: Calculator, permission: 'MANAGE_TILLS' },
         { name: 'Team', href: '/users', icon: Shield, permission: 'MANAGE_USERS' },
         { name: 'Settings', href: '/settings', icon: Settings, permission: 'MANAGE_SETTINGS' },
+        { name: 'Help Center', href: '/help', icon: HelpCircle, permission: '' },
     ];
 
     const menuItems = allMenuItems.filter(item =>
