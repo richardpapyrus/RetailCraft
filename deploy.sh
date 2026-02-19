@@ -53,16 +53,23 @@ npm run build
 
 cd ../..
 
-# 5. Restart Services
+# 5. Docs Deployment
+echo "🛠️  Deploying Docs (Help Center)..."
+cd apps/docs
+npm run build
+cd ../..
+
+# 6. Restart Services
 echo "🔄 Restarting Services..."
 
 # Delete existing to clear cache/state issues
 pm2 delete pos-api-prod || true
 pm2 delete pos-web-prod || true
+pm2 delete pos-docs-prod || true
 
 # Start Services using Ecosystem
 echo "   Starting Services..."
-pm2 start ecosystem.config.js --only pos-api-prod,pos-web-prod
+pm2 start ecosystem.config.js --only pos-api-prod,pos-web-prod,pos-docs-prod
 
 # Save PM2 List
 pm2 save

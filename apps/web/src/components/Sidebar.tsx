@@ -17,7 +17,8 @@ import {
     Shield,
     Pin,
     PinOff,
-    Award
+    Award,
+    HelpCircle
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { StoreSelector } from './StoreSelector';
@@ -60,6 +61,7 @@ export function Sidebar() {
         { name: 'Tills', href: '/tills', icon: Calculator, permission: 'MANAGE_TILLS' },
         { name: 'Team', href: '/users', icon: Shield, permission: 'MANAGE_USERS' },
         { name: 'Settings', href: '/settings', icon: Settings, permission: 'MANAGE_SETTINGS' },
+        { name: 'Help Center', href: '/help', icon: HelpCircle, permission: '' },
     ];
 
     const menuItems = allMenuItems.filter(item =>
@@ -167,6 +169,34 @@ export function Sidebar() {
                                     {item.name}
                                 </span>
                             </div>
+                        );
+                    }
+
+                    if (item.href === '/help') {
+                        return (
+                            <a
+                                key={item.name}
+                                href={item.href}
+                                className={`
+                                    flex items-center px-3 py-3 rounded-xl transition-all duration-200
+                                    text-gray-400 hover:bg-indigo-50 hover:text-indigo-600
+                                    group/item relative overflow-hidden
+                                `}
+                            >
+                                <span className="w-6 h-6 flex items-center justify-center shrink-0">
+                                    <Icon size={20} strokeWidth={2} />
+                                </span>
+
+                                <span className={`
+                                    ml-3 font-medium whitespace-nowrap overflow-hidden transition-all duration-300
+                                    ${isPinned
+                                        ? 'opacity-100 relative left-0'
+                                        : 'opacity-0 absolute left-12 group-hover:opacity-100 group-hover:relative group-hover:left-0'
+                                    }
+                                `}>
+                                    {item.name}
+                                </span>
+                            </a>
                         );
                     }
 

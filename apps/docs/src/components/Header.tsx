@@ -1,4 +1,4 @@
-import { Search, Bell } from 'lucide-react';
+import { Search, Bell, ArrowLeft } from 'lucide-react';
 
 export function Header() {
     return (
@@ -15,6 +15,11 @@ export function Header() {
             </div>
 
             <div className="flex items-center gap-4">
+                <a href="/dashboard" className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md hover:bg-gray-50 transition-colors">
+                    <ArrowLeft className="w-4 h-4" />
+                    Back to App
+                </a>
+                <div className="h-6 w-px bg-gray-200"></div>
                 <button className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100">
                     <Bell className="w-5 h-5" />
                 </button>
