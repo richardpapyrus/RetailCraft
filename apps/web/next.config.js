@@ -5,11 +5,11 @@ const nextConfig = {
         return [
             {
                 source: '/help',
-                destination: `${process.env.HELP_DESK_URL || 'http://localhost:3002'}/help`,
+                destination: `${process.env.HELP_DESK_URL || 'http://127.0.0.1:3002'}/help`,
             },
             {
                 source: '/help/:path*',
-                destination: `${process.env.HELP_DESK_URL || 'http://localhost:3002'}/help/:path*`,
+                destination: `${process.env.HELP_DESK_URL || 'http://127.0.0.1:3002'}/help/:path*`,
             },
         ]
     },
