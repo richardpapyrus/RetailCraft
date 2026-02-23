@@ -63,10 +63,8 @@ export class TillReportsService {
                 }))
             },
             sales: {
-                grossSales: Number(salesAgg._sum.subtotal || 0), // Pre-tax Pre-discount usually? Or Total? 
-                // Better def: Gross = Total collected. Net = Subtotal. 
-                // Let's stick to: Total (Final), Tax, Discount.
-                totalCollected: Number(salesAgg._sum.total || 0),
+                grossSales: Number(salesAgg._sum.subtotal || 0),
+                totalCollected: Number(salesAgg._sum.total || 0) - Number(refundAgg._sum.total || 0),
                 totalTax: Number(salesAgg._sum.taxTotal || 0),
                 totalDiscount: Number(salesAgg._sum.discountTotal || 0),
                 totalChangeGiven: Number(salesAgg._sum.changeGiven || 0),

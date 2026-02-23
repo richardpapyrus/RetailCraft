@@ -201,10 +201,25 @@ export class TillsService {
       orderBy: { createdAt: 'desc' }
     });
 
+    const returns = await prisma.salesReturn.findMany({
+      where: { sale: { tillSessionId: sessionId } },
+      include: {
+        items: { include: { product: true } },
+        sale: { select: { id: true } },
+        user: { select: { name: true, email: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
     // Calculations
     let totalSalesValue = 0;
+    let totalReturnsValue = 0;
     let totalChangeGiven = 0;
     const paymentsByMethod: Record<string, number> = {};
+
+    returns.forEach(r => {
+      totalReturnsValue += Number(r.total);
+    });
 
     sales.forEach(sale => {
       totalSalesValue += Number(sale.total);
@@ -238,12 +253,35 @@ export class TillsService {
     const netCashChange = cashCollectedFromSales - totalChangeGiven + cashIn - cashOut;
     const closingBalance = Number(session.openingFloat) + netCashChange;
 
+    const netSalesValue = totalSalesValue - totalReturnsValue;
+
+    const transactions = [
+      ...sales.map(s => ({
+        id: s.id,
+        createdAt: s.createdAt,
+        type: 'SALE',
+        items: s.items,
+        total: Number(s.total),
+        payments: s.payments
+      })),
+      ...returns.map(r => ({
+        id: r.id,
+        createdAt: r.createdAt,
+        type: 'RETURN',
+        items: r.items,
+        total: -Number(r.total),
+        payments: [{ method: 'REFUND', amount: Number(r.total) }]
+      }))
+    ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
     return {
       session,
-      sales,
+      transactions,
       cashTransactions,
       summary: {
         totalSalesValue,
+        totalReturnsValue,
+        netSalesValue,
         totalChangeGiven,
         paymentsByMethod,
         cashIn,
