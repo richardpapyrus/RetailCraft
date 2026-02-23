@@ -95,15 +95,33 @@ export class GrnService {
                     }
                 });
 
-                // B2. Update Product Pricing (New Feature)
-                if (receivedItem.costPrice !== undefined && receivedItem.sellingPrice !== undefined) {
-                    console.log(`[GRN] Updating Product ${receivedItem.productId} -> Cost: ${receivedItem.costPrice}, Price: ${receivedItem.sellingPrice}`);
+                // B2. Update Product Pricing (Weighted Average Cost)
+                if (receivedItem.costPrice !== undefined) {
+                    const productModel = await tx.product.findUnique({ where: { id: receivedItem.productId } });
+
+                    const aggStock = await tx.inventory.aggregate({
+                        where: { productId: receivedItem.productId },
+                        _sum: { quantity: true }
+                    });
+
+                    const newTotalQty = aggStock._sum.quantity || receivedItem.quantityReceived;
+                    const previousTotalQty = Math.max(0, newTotalQty - receivedItem.quantityReceived);
+
+                    const previousTotalValue = previousTotalQty * Number(productModel?.costPrice || 0);
+                    const receivedValue = receivedItem.quantityReceived * receivedItem.costPrice;
+
+                    const newAverageCost = newTotalQty > 0 ? (previousTotalValue + receivedValue) / newTotalQty : receivedItem.costPrice;
+
+                    console.log(`[GRN] Updating Product ${receivedItem.productId} -> Avg Cost: ${newAverageCost.toFixed(2)}, Price: ${receivedItem.sellingPrice ?? 'Unchanged'}`);
+
+                    const updateData: any = { costPrice: newAverageCost };
+                    if (receivedItem.sellingPrice !== undefined) {
+                        updateData.price = receivedItem.sellingPrice;
+                    }
+
                     await tx.product.update({
                         where: { id: receivedItem.productId },
-                        data: {
-                            costPrice: receivedItem.costPrice,
-                            price: receivedItem.sellingPrice
-                        }
+                        data: updateData
                     });
                 }
 

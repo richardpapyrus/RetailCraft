@@ -119,37 +119,55 @@ export class TillsService {
     });
     if (!session) throw new NotFoundException("Session not found");
 
-    // Aggregate Sales (Cash)
-    const sales = await prisma.sale.aggregate({
-      where: {
-        tillSessionId: sessionId,
-        paymentMethod: { equals: "CASH", mode: "insensitive" }
-      },
-      _sum: { total: true },
+    // Fetch Sales with payments to perfectly ascertain cash value
+    const sales = await prisma.sale.findMany({
+      where: { tillSessionId: sessionId },
+      include: { payments: true }
     });
 
+    let cashFromSales = 0;
+    let changeGiven = 0;
+
+    sales.forEach(sale => {
+      let salePaid = 0;
+      let cashPaid = 0;
+
+      sale.payments.forEach(p => {
+        const amount = Number(p.amount);
+        salePaid += amount;
+        if (p.method === "CASH") cashPaid += amount;
+      });
+
+      // If change was given, we confidently deduct it from the cash portion
+      if (salePaid > Number(sale.total)) {
+        changeGiven += (salePaid - Number(sale.total));
+      }
+      cashFromSales += cashPaid;
+    });
+
+    const netCashFromSales = cashFromSales - changeGiven;
+
     // Aggregate Cash Transactions
-    const cashIn = await prisma.cashTransaction.aggregate({
+    const cashInAgg = await prisma.cashTransaction.aggregate({
       where: { tillSessionId: sessionId, type: "CASH_IN" },
       _sum: { amount: true },
     });
 
-    const cashOut = await prisma.cashTransaction.aggregate({
+    const cashOutAgg = await prisma.cashTransaction.aggregate({
       where: { tillSessionId: sessionId, type: "CASH_OUT" },
       _sum: { amount: true },
     });
 
-    const totalSales = Number(sales._sum.total || 0);
-    const totalCashIn = Number(cashIn._sum.amount || 0);
-    const totalCashOut = Number(cashOut._sum.amount || 0);
+    const totalCashIn = Number(cashInAgg._sum.amount || 0);
+    const totalCashOut = Number(cashOutAgg._sum.amount || 0);
     const openingFloat = Number(session.openingFloat);
 
-    const expectedCash = openingFloat + totalSales + totalCashIn - totalCashOut;
+    const expectedCash = openingFloat + netCashFromSales + totalCashIn - totalCashOut;
 
     return {
       ...session,
       totals: {
-        sales: totalSales,
+        sales: netCashFromSales, // Note: This represents net cash strictly added from sales
         cashIn: totalCashIn,
         cashOut: totalCashOut,
         expectedCash,

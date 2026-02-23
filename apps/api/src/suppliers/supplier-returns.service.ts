@@ -47,10 +47,14 @@ export class SupplierReturnsService {
             if (!rts || rts.status !== 'PENDING') throw new Error("Invalid RTS");
 
             for (const item of rts.items) {
-                await tx.inventory.update({
+                const updatedInv = await tx.inventory.update({
                     where: { storeId_productId: { storeId: rts.storeId, productId: item.productId } },
                     data: { quantity: { decrement: item.quantity } }
                 });
+
+                if (updatedInv.quantity < 0) {
+                    throw new BadRequestException(`Insufficient stock to return. Product ${item.productId} would drop to ${updatedInv.quantity}.`);
+                }
 
                 await tx.inventoryEvent.create({
                     data: {
