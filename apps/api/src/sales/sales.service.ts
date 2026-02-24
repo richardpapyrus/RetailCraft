@@ -307,7 +307,7 @@ export class SalesService {
           },
         });
 
-        await tx.inventory.upsert({
+        const updatedInv = await tx.inventory.upsert({
           where: { storeId_productId: { storeId, productId: item.productId } },
           update: { quantity: { decrement: item.quantity } },
           create: {
@@ -316,6 +316,12 @@ export class SalesService {
             quantity: -item.quantity,
           },
         });
+
+        if (updatedInv.quantity < 0) {
+          throw new BadRequestException(
+            `Insufficient stock for Product ID: ${item.productId}. Transaction would result in negative inventory.`,
+          );
+        }
 
         await tx.inventoryEvent.create({
           data: {

@@ -1,4 +1,4 @@
-name: Restart Staging (Docker)
+name: Restart Staging (PM2)
 
 on:
   workflow_dispatch:
@@ -14,6 +14,6 @@ jobs:
           chmod 600 ~/.ssh/retail-craft
           ssh-keyscan -H 165.227.26.131 >> ~/.ssh/known_hosts
 
-      - name: Restart Containers
+      - name: Restart Application
         run: |
-          ssh -i ~/.ssh/retail-craft root@165.227.26.131 "cd /root/retail-craft-staging/ && docker compose -f docker-compose.staging.yml restart"
+          ssh -i ~/.ssh/retail-craft root@165.227.26.131 "cd /root/retail-craft-staging/ && pm2 restart all"

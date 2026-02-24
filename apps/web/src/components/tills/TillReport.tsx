@@ -13,7 +13,9 @@ interface TillReportProps {
 export function TillReport({ data, onClose }: TillReportProps) {
     const componentRef = useRef<HTMLDivElement>(null);
     const { user } = useAuth();
-    const { session, summary, sales } = data;
+    const { session, summary, transactions } = data;
+    // Fallback if backend hasn't updated yet or old data format
+    const displayTransactions = transactions || data.sales || [];
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
@@ -209,9 +211,19 @@ export function TillReport({ data, onClose }: TillReportProps) {
 
                         <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
                             <h4 className="text-xs font-bold uppercase text-gray-400 mb-2">Sales Summary</h4>
-                            <div className="flex justify-between text-sm mb-1 font-bold">
+                            <div className="flex justify-between text-sm mb-1">
                                 <span>Gross Sales Total</span>
                                 <span className="font-mono">{formatCurrency(summary.totalSalesValue, user?.currency, user?.locale)}</span>
+                            </div>
+                            {summary.totalReturnsValue > 0 && (
+                                <div className="flex justify-between text-sm mb-1 text-red-600">
+                                    <span>- Returns</span>
+                                    <span className="font-mono">{formatCurrency(summary.totalReturnsValue, user?.currency, user?.locale)}</span>
+                                </div>
+                            )}
+                            <div className="border-t border-gray-200 mt-2 pt-2 flex justify-between font-bold">
+                                <span>Net Sales Total</span>
+                                <span className="font-mono">{formatCurrency(summary.netSalesValue ?? summary.totalSalesValue, user?.currency, user?.locale)}</span>
                             </div>
 
                             <div className="mt-4">
@@ -239,14 +251,19 @@ export function TillReport({ data, onClose }: TillReportProps) {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                            {sales.map((sale: any) => (
-                                <tr key={sale.id}>
-                                    <td className="py-2 text-gray-600">{new Date(sale.createdAt).toLocaleTimeString()}</td>
-                                    <td className="py-2 font-mono text-xs">#{sale.id.slice(0, 8)}</td>
-                                    <td className="py-2 text-right">{sale.items.length}</td>
-                                    <td className="py-2 text-right font-medium">{formatCurrency(sale.total, user?.currency, user?.locale)}</td>
+                            {displayTransactions.map((tx: any) => (
+                                <tr key={tx.id} className={tx.type === 'RETURN' ? 'bg-red-50/50' : ''}>
+                                    <td className="py-2 text-gray-600">{new Date(tx.createdAt).toLocaleTimeString()}</td>
+                                    <td className="py-2 font-mono text-xs">
+                                        #{tx.id.slice(0, 8)}
+                                        {tx.type === 'RETURN' && <span className="ml-2 text-[10px] bg-red-100 text-red-700 px-1 py-0.5 rounded">REFUND</span>}
+                                    </td>
+                                    <td className="py-2 text-right">{tx.items?.length || 0}</td>
+                                    <td className={`py-2 text-right font-medium ${tx.type === 'RETURN' ? 'text-red-600' : ''}`}>
+                                        {formatCurrency(tx.total, user?.currency, user?.locale)}
+                                    </td>
                                     <td className="py-2 text-right text-gray-500">
-                                        {sale.payments.map((p: any) => p.method).join(', ')}
+                                        {tx.payments?.map((p: any) => p.method).join(', ') || ''}
                                     </td>
                                 </tr>
                             ))}

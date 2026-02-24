@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, BadRequestException } from "@nestjs/common";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -34,8 +34,7 @@ export class InventoryService {
       });
 
       if (inventory.quantity < 0) {
-        // Optional: Prevent negative stock? For now, allow it but maybe warn.
-        // throw new BadRequestException('Insufficient stock');
+        throw new BadRequestException(`Insufficient stock. Cannot process adjustment resulting in negative inventory (Current Result: ${inventory.quantity}).`);
       }
 
       // 2. Create Inventory Event

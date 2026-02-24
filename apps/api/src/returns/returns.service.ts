@@ -124,18 +124,44 @@ export class ReturnsService {
     console.log(`[ReturnsService] Processing Return for Sale ${sale.id}. Method: '${sale.paymentMethod}' -> Normalized: '${pm}'. ActiveSession: ${tillSession?.id}`);
 
     if (tillSession && isCashCalc) {
-      transactionUpdates.push(
-        prisma.cashTransaction.create({
-          data: {
-            tillSessionId: tillSession.id,
-            type: 'CASH_OUT',
-            amount: totalRefund,
-            reason: `Refund for Sale #${sale.id.slice(0, 8)}`,
-            description: `Items returned: ${items.map(i => i.productId).join(', ')}`
+      // Fetch Sale Payments to calculate exact cash ratio
+      const salePayments = await prisma.salePayment.findMany({ where: { saleId: sale.id } });
+      let cashRatio = 1; // Default 100% cash if legacy or no records
+
+      if (salePayments && salePayments.length > 0) {
+        const totalPaid = salePayments.reduce((sum, p) => sum + Number(p.amount), 0);
+        if (totalPaid > 0) {
+          const cashPaid = salePayments.filter(p => p.method.toUpperCase() === 'CASH').reduce((sum, p) => sum + Number(p.amount), 0);
+
+          // Deduct Change Given from Cash Paid to get Net Cash Paid
+          const changeGiven = Number(sale.changeGiven || 0);
+          const netCashPaid = Math.max(0, cashPaid - changeGiven);
+
+          const netTotalPaid = Math.max(0, totalPaid - changeGiven);
+          if (netTotalPaid > 0) {
+            cashRatio = netCashPaid / netTotalPaid;
+          } else {
+            cashRatio = 0;
           }
-        })
-      );
-      console.log(`[ReturnsService] Linked Refund to Till Session ${tillSession.id} as CASH_OUT`);
+        }
+      }
+
+      const exactCashRefund = totalRefund * cashRatio;
+
+      if (exactCashRefund > 0) {
+        transactionUpdates.push(
+          prisma.cashTransaction.create({
+            data: {
+              tillSessionId: tillSession.id,
+              type: 'CASH_OUT',
+              amount: exactCashRefund,
+              reason: `Refund for Sale #${sale.id.slice(0, 8)}`,
+              description: `Items returned: ${items.map(i => i.productId).join(', ')} (Cash Portion)`
+            }
+          })
+        );
+        console.log(`[ReturnsService] Linked Refund to Till Session ${tillSession.id} as CASH_OUT for $${exactCashRefund.toFixed(2)} (Ratio: ${(cashRatio * 100).toFixed(1)}%)`);
+      }
     } else {
       // Critical Debugging: If this was supposed to be a Cash Refund, but we didn't find a session, THROW ERROR.
       // Do not fail silently.

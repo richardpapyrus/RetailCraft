@@ -119,37 +119,55 @@ export class TillsService {
     });
     if (!session) throw new NotFoundException("Session not found");
 
-    // Aggregate Sales (Cash)
-    const sales = await prisma.sale.aggregate({
-      where: {
-        tillSessionId: sessionId,
-        paymentMethod: { equals: "CASH", mode: "insensitive" }
-      },
-      _sum: { total: true },
+    // Fetch Sales with payments to perfectly ascertain cash value
+    const sales = await prisma.sale.findMany({
+      where: { tillSessionId: sessionId },
+      include: { payments: true }
     });
 
+    let cashFromSales = 0;
+    let changeGiven = 0;
+
+    sales.forEach(sale => {
+      let salePaid = 0;
+      let cashPaid = 0;
+
+      sale.payments.forEach(p => {
+        const amount = Number(p.amount);
+        salePaid += amount;
+        if (p.method === "CASH") cashPaid += amount;
+      });
+
+      // If change was given, we confidently deduct it from the cash portion
+      if (salePaid > Number(sale.total)) {
+        changeGiven += (salePaid - Number(sale.total));
+      }
+      cashFromSales += cashPaid;
+    });
+
+    const netCashFromSales = cashFromSales - changeGiven;
+
     // Aggregate Cash Transactions
-    const cashIn = await prisma.cashTransaction.aggregate({
+    const cashInAgg = await prisma.cashTransaction.aggregate({
       where: { tillSessionId: sessionId, type: "CASH_IN" },
       _sum: { amount: true },
     });
 
-    const cashOut = await prisma.cashTransaction.aggregate({
+    const cashOutAgg = await prisma.cashTransaction.aggregate({
       where: { tillSessionId: sessionId, type: "CASH_OUT" },
       _sum: { amount: true },
     });
 
-    const totalSales = Number(sales._sum.total || 0);
-    const totalCashIn = Number(cashIn._sum.amount || 0);
-    const totalCashOut = Number(cashOut._sum.amount || 0);
+    const totalCashIn = Number(cashInAgg._sum.amount || 0);
+    const totalCashOut = Number(cashOutAgg._sum.amount || 0);
     const openingFloat = Number(session.openingFloat);
 
-    const expectedCash = openingFloat + totalSales + totalCashIn - totalCashOut;
+    const expectedCash = openingFloat + netCashFromSales + totalCashIn - totalCashOut;
 
     return {
       ...session,
       totals: {
-        sales: totalSales,
+        sales: netCashFromSales, // Note: This represents net cash strictly added from sales
         cashIn: totalCashIn,
         cashOut: totalCashOut,
         expectedCash,
@@ -183,10 +201,25 @@ export class TillsService {
       orderBy: { createdAt: 'desc' }
     });
 
+    const returns = await prisma.salesReturn.findMany({
+      where: { sale: { tillSessionId: sessionId } },
+      include: {
+        items: { include: { product: true } },
+        sale: { select: { id: true } },
+        user: { select: { name: true, email: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
     // Calculations
     let totalSalesValue = 0;
+    let totalReturnsValue = 0;
     let totalChangeGiven = 0;
     const paymentsByMethod: Record<string, number> = {};
+
+    returns.forEach(r => {
+      totalReturnsValue += Number(r.total);
+    });
 
     sales.forEach(sale => {
       totalSalesValue += Number(sale.total);
@@ -220,12 +253,35 @@ export class TillsService {
     const netCashChange = cashCollectedFromSales - totalChangeGiven + cashIn - cashOut;
     const closingBalance = Number(session.openingFloat) + netCashChange;
 
+    const netSalesValue = totalSalesValue - totalReturnsValue;
+
+    const transactions = [
+      ...sales.map(s => ({
+        id: s.id,
+        createdAt: s.createdAt,
+        type: 'SALE',
+        items: s.items,
+        total: Number(s.total),
+        payments: s.payments
+      })),
+      ...returns.map(r => ({
+        id: r.id,
+        createdAt: r.createdAt,
+        type: 'RETURN',
+        items: r.items,
+        total: -Number(r.total),
+        payments: [{ method: 'REFUND', amount: Number(r.total) }]
+      }))
+    ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
     return {
       session,
-      sales,
+      transactions,
       cashTransactions,
       summary: {
         totalSalesValue,
+        totalReturnsValue,
+        netSalesValue,
         totalChangeGiven,
         paymentsByMethod,
         cashIn,

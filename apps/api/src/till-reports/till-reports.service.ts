@@ -39,8 +39,9 @@ export class TillReportsService {
             _count: { _all: true }
         });
 
-        const refundAgg = await (this.prisma as any).sale.aggregate({
-            where: { tillSessionId: { in: sessionIds }, status: 'REFUNDED' }, // Or partial? Logic usually separate table or status
+        // Use proper SalesReturn model instead of 'REFUNDED' status on Sale
+        const refundAgg = await (this.prisma as any).salesReturn.aggregate({
+            where: { sale: { tillSessionId: { in: sessionIds } } },
             _sum: { total: true },
             _count: { _all: true }
         });
@@ -62,10 +63,8 @@ export class TillReportsService {
                 }))
             },
             sales: {
-                grossSales: Number(salesAgg._sum.subtotal || 0), // Pre-tax Pre-discount usually? Or Total? 
-                // Better def: Gross = Total collected. Net = Subtotal. 
-                // Let's stick to: Total (Final), Tax, Discount.
-                totalCollected: Number(salesAgg._sum.total || 0),
+                grossSales: Number(salesAgg._sum.subtotal || 0),
+                totalCollected: Number(salesAgg._sum.total || 0) - Number(refundAgg._sum.total || 0),
                 totalTax: Number(salesAgg._sum.taxTotal || 0),
                 totalDiscount: Number(salesAgg._sum.discountTotal || 0),
                 totalChangeGiven: Number(salesAgg._sum.changeGiven || 0),
@@ -119,10 +118,10 @@ export class TillReportsService {
         const sessions = await this.prisma.tillSession.findMany({ where: whereSession, select: { id: true } });
         const sessionIds = sessions.map(s => s.id);
 
-        // 1. Refunds
-        const refunds = await (this.prisma as any).sale.findMany({
-            where: { tillSessionId: { in: sessionIds }, status: 'REFUNDED' },
-            include: { user: { select: { name: true } } },
+        // 1. Refunds (Querying actual SalesReturn records)
+        const refunds = await (this.prisma as any).salesReturn.findMany({
+            where: { sale: { tillSessionId: { in: sessionIds } } },
+            include: { user: { select: { name: true } }, sale: { select: { id: true, total: true } } },
             orderBy: { createdAt: 'desc' }
         });
 
