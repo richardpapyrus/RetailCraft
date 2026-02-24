@@ -52,7 +52,7 @@ export default function BestSellersWidget({ from, to, storeId }: { from?: string
                 </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="flex-1 flex flex-col justify-evenly min-h-[250px] gap-2">
                 {loading ? (
                     <div className="text-center py-6 text-gray-400">Loading...</div>
                 ) : (

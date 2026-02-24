@@ -210,7 +210,7 @@ export default function DashboardPage() {
                         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
 
                             {/* Left Column: Chart & Best Sellers */}
-                            <div className="xl:col-span-2 space-y-8">
+                            <div className="xl:col-span-2 flex flex-col gap-8">
                                 {/* Chart Section */}
                                 <div className="bg-white p-8 rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.04)]">
                                     <div className="mb-8">
@@ -294,7 +294,7 @@ export default function DashboardPage() {
                                 </div>
 
                                 {/* Best Sellers */}
-                                <div className="bg-white p-6 rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] h-full flex flex-col">
+                                <div className="bg-white p-6 rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] flex-1 flex flex-col">
                                     <h2 className="text-xl font-bold text-gray-900 mb-2">Best Sellers</h2>
                                     <div className="flex-1">
                                         <BestSellersWidget from={dateRange.from} to={dateRange.to} storeId={selectedStoreId || undefined} />
