@@ -340,7 +340,6 @@ export class SalesService {
   }
 
   async findAll(tenantId: string, storeId?: string, skip?: number, take?: number, search?: string, filter?: string) {
-    // console.log(`[SalesService] findAll: search="${search}", storeId="${storeId}"`);
     const where: Prisma.SaleWhereInput = { tenantId };
     if (storeId) where.storeId = storeId;
 
@@ -454,12 +453,10 @@ export class SalesService {
         take: 5000 // Safety limit for memory
       });
 
-      // Explicit JS Filtering
       const sales = salesRaw.filter(s => {
         const status = (s.status || '').toUpperCase();
         const isExcluded = ["CANCELED", "CANCELLED", "PENDING", "VOID"].includes(status);
         if (isExcluded) {
-          // console.log(`[getStats] Excluding Sale ${s.id} (Status: ${status})`);
           return false;
         }
         return true;

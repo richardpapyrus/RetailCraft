@@ -22,8 +22,6 @@ import {
     TrendingUp,
     FileText,
     Calendar,
-    ChevronDown,
-    MapPin,
     Percent,
     Tag,
     RotateCcw

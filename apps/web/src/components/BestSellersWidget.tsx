@@ -30,12 +30,7 @@ export default function BestSellersWidget({ from, to, storeId }: { from?: string
     return (
         <div className="flex flex-col h-full">
             <div className="flex justify-end items-center mb-3">
-                {/* Title handles by parent, or we can add it here if needed, but per previous file parent has title. 
-                     Actually, parent has title 'Best Sellers', this widget has toggle.
-                     Let's alignment: Parent has title. Widget just provides content? 
-                     BUT widget has the toggle state. 
-                     Let's put the toggle aligned to the right.
-                 */}
+
                 <div className="bg-gray-100 p-1 rounded-lg flex text-xs font-bold">
                     <button
                         onClick={() => setSortBy('value')}
