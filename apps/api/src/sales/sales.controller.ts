@@ -35,7 +35,8 @@ export class SalesController {
     @Query("storeId") queryStoreId?: string,
     @Query("skip") skip?: number,
     @Query("take") take?: number,
-    @Query("search") search?: string
+    @Query("search") search?: string,
+    @Query("filter") filter?: string
   ) {
     let storeId = queryStoreId;
     const isSystemAdmin = req.user.role === 'Administrator' || req.user.permissions?.includes('*');
@@ -48,7 +49,8 @@ export class SalesController {
       storeId,
       skip ? Number(skip) : undefined,
       take ? Number(take) : undefined,
-      search
+      search,
+      filter
     );
   }
 

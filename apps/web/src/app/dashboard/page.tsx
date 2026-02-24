@@ -24,7 +24,9 @@ import {
     Calendar,
     ChevronDown,
     MapPin,
-    Percent
+    Percent,
+    Tag,
+    RotateCcw
 } from 'lucide-react';
 import { EODReport } from '@/components/reporting/EODReport';
 import { SaleDetailModal } from '@/components/sales/SaleDetailModal';
@@ -269,9 +271,31 @@ export default function DashboardPage() {
                                     </div>
                                 </div>
 
+                                {/* Discounts & Refunds Row */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <Link href="/sales?filter=discount" className="block cursor-pointer">
+                                        <StatsCard
+                                            title="Discounts Given"
+                                            value={formatCurrency(stats?.filtered?.totalDiscount || 0, user?.currency, user?.locale)}
+                                            icon={<Tag size={24} className="text-purple-600" />}
+                                            bgColor="bg-purple-50"
+                                            subtext="Click to view history"
+                                        />
+                                    </Link>
+                                    <Link href="/sales?filter=refund" className="block cursor-pointer">
+                                        <StatsCard
+                                            title="Refunds Processed"
+                                            value={formatCurrency(stats?.filtered?.totalRefund || 0, user?.currency, user?.locale)}
+                                            icon={<RotateCcw size={24} className="text-red-600" />}
+                                            bgColor="bg-red-50"
+                                            subtext="Click to view history"
+                                        />
+                                    </Link>
+                                </div>
+
                                 {/* Best Sellers */}
-                                <div className="bg-white p-8 rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.04)]">
-                                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Best Sellers</h2>
+                                <div className="bg-white p-6 rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.04)]">
+                                    <h2 className="text-xl font-bold text-gray-900 mb-4">Best Sellers</h2>
                                     <BestSellersWidget from={dateRange.from} to={dateRange.to} storeId={selectedStoreId || undefined} />
                                 </div>
                             </div>

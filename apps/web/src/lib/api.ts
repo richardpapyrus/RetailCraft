@@ -206,7 +206,7 @@ export const api = {
             }),
     },
     sales: {
-        list: (skip: number = 0, take: number = 50, storeId?: string, search?: string) => {
+        list: (skip: number = 0, take: number = 50, storeId?: string, search?: string, filter?: string) => {
             // Currently backend /sales doesn't support pagination/filtering in the controller list method?
             // Let's assume it does or I will need to update backend too.
             // Actually currently getting ALL sales might be heavy.
@@ -215,6 +215,7 @@ export const api = {
             params.append('skip', skip.toString());
             params.append('take', take.toString());
             if (search) params.append('search', search);
+            if (filter) params.append('filter', filter);
             return fetchClient(`/sales?${params.toString()}`);
         },
         create: (data: { items: { productId: string; quantity: number }[]; paymentMethod?: string; payments?: { method: string; amount: number; reference?: string }[]; customerId?: string; discount?: any; tillSessionId?: string; redeemPoints?: number; loyaltyDiscountAmount?: number; storeId?: string }) =>

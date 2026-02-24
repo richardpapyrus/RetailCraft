@@ -52,27 +52,27 @@ export default function BestSellersWidget({ from, to, storeId }: { from?: string
                 </div>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-4">
                 {loading ? (
-                    <div className="text-center py-12 text-gray-400">Loading...</div>
+                    <div className="text-center py-6 text-gray-400">Loading...</div>
                 ) : (
                     <>
                         {products.map((p, idx) => (
                             <div key={p.productId} className="flex items-center justify-between group">
-                                <div className="flex items-center gap-5">
-                                    <span className={`w-10 h-10 flex items-center justify-center text-sm font-bold rounded-full shrink-0 ${idx < 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-50 text-gray-500'}`}>
+                                <div className="flex items-center gap-3">
+                                    <span className={`w-8 h-8 flex items-center justify-center text-xs font-bold rounded-full shrink-0 ${idx < 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-50 text-gray-500'}`}>
                                         {idx + 1}
                                     </span>
                                     <div>
-                                        <div className="font-bold text-gray-900 text-base mb-0.5">{p.name}</div>
-                                        <div className="text-xs font-bold text-gray-400 uppercase tracking-wide">{p.sku}</div>
+                                        <div className="font-bold text-gray-900 text-sm mb-0.5">{p.name}</div>
+                                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">{p.sku}</div>
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <div className="font-bold text-gray-900 text-lg">
+                                    <div className="font-bold text-gray-900 text-base">
                                         {sortBy === 'value' ? formatCurrency(p.value, user?.currency) : p.quantity}
                                     </div>
-                                    <div className="text-xs font-medium text-gray-400">
+                                    <div className="text-[10px] font-medium text-gray-400">
                                         {sortBy === 'value' ? `${p.quantity} sold` : formatCurrency(p.value, user?.currency)}
                                     </div>
                                 </div>
