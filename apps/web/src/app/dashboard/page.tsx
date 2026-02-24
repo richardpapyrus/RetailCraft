@@ -23,7 +23,8 @@ import {
     FileText,
     Calendar,
     ChevronDown,
-    MapPin
+    MapPin,
+    Percent
 } from 'lucide-react';
 import { EODReport } from '@/components/reporting/EODReport';
 import { SaleDetailModal } from '@/components/sales/SaleDetailModal';
@@ -156,36 +157,52 @@ export default function DashboardPage() {
                     </div>
                 ) : (
                     <>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-                            <StatsCard
-                                title="Revenue"
-                                value={formatCurrency(stats?.filtered?.revenue, user?.currency, user?.locale)}
-                                icon={<DollarSign size={24} className="text-yellow-600" />}
-                                bgColor="bg-yellow-50"
-                                subtext="Selected Period"
-                            />
-                            <StatsCard
-                                title="Profit"
-                                value={formatCurrency(stats?.filtered?.profit, user?.currency, user?.locale)}
-                                icon={<TrendingUp size={24} className="text-rose-500" />}
-                                bgColor="bg-rose-50"
-                                subtext="Selected Period"
-                            />
-                            <StatsCard
-                                title="Transactions"
-                                value={stats?.filtered?.count || 0}
-                                icon={<FileText size={24} className="text-blue-500" />}
-                                bgColor="bg-blue-50"
-                                subtext="Selected Period"
-                            />
-                            <StatsCard
-                                title="Comparison"
-                                value={formatCurrency(stats?.comparison?.revenue, user?.currency, user?.locale)}
-                                icon={<Calendar size={24} className="text-orange-500" />}
-                                bgColor="bg-orange-50"
-                                subtext="Previous Period"
-                            />
-                        </div>
+                        {(() => {
+                            const revenue = stats?.filtered?.revenue || 0;
+                            const profit = stats?.filtered?.profit || 0;
+                            const margin = revenue > 0 ? (profit / revenue) * 100 : 0;
+
+                            return (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
+                                    <StatsCard
+                                        title="Revenue"
+                                        value={formatCurrency(revenue, user?.currency, user?.locale)}
+                                        icon={<DollarSign size={24} className="text-yellow-600" />}
+                                        bgColor="bg-yellow-50"
+                                        subtext="Selected Period"
+                                    />
+                                    <StatsCard
+                                        title="Profit"
+                                        value={formatCurrency(profit, user?.currency, user?.locale)}
+                                        icon={<TrendingUp size={24} className="text-rose-500" />}
+                                        bgColor="bg-rose-50"
+                                        subtext="Selected Period"
+                                    />
+                                    <StatsCard
+                                        title="Margin"
+                                        value={`${margin.toFixed(1)}%`}
+                                        icon={<Percent size={24} className="text-emerald-500" />}
+                                        bgColor="bg-emerald-50"
+                                        subtext="Selected Period"
+                                    />
+                                    <StatsCard
+                                        title="Transactions"
+                                        value={stats?.filtered?.count || 0}
+                                        icon={<FileText size={24} className="text-blue-500" />}
+                                        bgColor="bg-blue-50"
+                                        subtext="Selected Period"
+                                    />
+                                    <StatsCard
+                                        title="Comparison"
+                                        value={formatCurrency(stats?.comparison?.revenue, user?.currency, user?.locale)}
+                                        icon={<Calendar size={24} className="text-orange-500" />}
+                                        bgColor="bg-orange-50"
+                                        subtext="Previous Period"
+                                    />
+                                </div>
+                            );
+                        })()}
+                        {/* End of Stats Grid */}
 
                         {/* Main Content Grid */}
                         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
@@ -327,20 +344,22 @@ export default function DashboardPage() {
                     </>
                 )}
             </div>
-            {stats && !selectedSale && (
-                <EODReport
-                    stats={stats}
-                    user={user}
-                    dateRange={dateRange}
-                    storeName={selectedStoreId
-                        ? stores.find(s => s.id === selectedStoreId)?.name
-                        : (!isAdmin && user?.store?.name)
-                            ? user.store.name
-                            : undefined // Falls back to Tenant Name/All Locations in component
-                    }
-                />
-            )}
-        </div>
+            {
+                stats && !selectedSale && (
+                    <EODReport
+                        stats={stats}
+                        user={user}
+                        dateRange={dateRange}
+                        storeName={selectedStoreId
+                            ? stores.find(s => s.id === selectedStoreId)?.name
+                            : (!isAdmin && user?.store?.name)
+                                ? user.store.name
+                                : undefined // Falls back to Tenant Name/All Locations in component
+                        }
+                    />
+                )
+            }
+        </div >
     );
 }
 
