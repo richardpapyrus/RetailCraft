@@ -339,10 +339,16 @@ export class SalesService {
     });
   }
 
-  async findAll(tenantId: string, storeId?: string, skip?: number, take?: number, search?: string) {
-    // console.log(`[SalesService] findAll: search="${search}", storeId="${storeId}"`);
+  async findAll(tenantId: string, storeId?: string, skip?: number, take?: number, search?: string, filter?: string) {
     const where: Prisma.SaleWhereInput = { tenantId };
     if (storeId) where.storeId = storeId;
+
+    if (filter === 'discount') {
+      where.discountTotal = { gt: 0 };
+    } else if (filter === 'refund') {
+      // Must use Returns relation to find sales with returns
+      where.returns = { some: {} };
+    }
 
     if (search) {
       if (
@@ -447,12 +453,10 @@ export class SalesService {
         take: 5000 // Safety limit for memory
       });
 
-      // Explicit JS Filtering
       const sales = salesRaw.filter(s => {
         const status = (s.status || '').toUpperCase();
         const isExcluded = ["CANCELED", "CANCELLED", "PENDING", "VOID"].includes(status);
         if (isExcluded) {
-          // console.log(`[getStats] Excluding Sale ${s.id} (Status: ${status})`);
           return false;
         }
         return true;
@@ -489,6 +493,8 @@ export class SalesService {
       let revenue = 0;
       let cost = 0;
       let tax = 0;
+      let totalDiscount = 0;
+      let totalRefund = 0;
       const paymentBreakdown: Record<string, number> = {};
 
       // A. Process Sales (Add)
@@ -496,6 +502,7 @@ export class SalesService {
         const total = Number(sale.total);
         revenue += total;
         tax += Number(sale.taxTotal || 0);
+        totalDiscount += Number(sale.discountTotal || 0);
 
         if (sale.payments && sale.payments.length > 0) {
           sale.payments.forEach(p => {
@@ -520,6 +527,7 @@ export class SalesService {
 
         const refundAmount = Number(ret.total);
         revenue -= refundAmount;
+        totalRefund += refundAmount;
 
         const saleTotal = Number(ret.sale.total);
         const saleTax = Number(ret.sale.taxTotal);
@@ -559,6 +567,8 @@ export class SalesService {
         revenue,
         cost,
         tax,
+        totalDiscount,
+        totalRefund,
         count: sales.length,
         profit: revenue - cost,
         paymentBreakdown,

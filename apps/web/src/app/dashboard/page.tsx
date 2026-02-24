@@ -22,8 +22,9 @@ import {
     TrendingUp,
     FileText,
     Calendar,
-    ChevronDown,
-    MapPin
+    Percent,
+    Tag,
+    RotateCcw
 } from 'lucide-react';
 import { EODReport } from '@/components/reporting/EODReport';
 import { SaleDetailModal } from '@/components/sales/SaleDetailModal';
@@ -156,42 +157,58 @@ export default function DashboardPage() {
                     </div>
                 ) : (
                     <>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-                            <StatsCard
-                                title="Revenue"
-                                value={formatCurrency(stats?.filtered?.revenue, user?.currency, user?.locale)}
-                                icon={<DollarSign size={24} className="text-yellow-600" />}
-                                bgColor="bg-yellow-50"
-                                subtext="Selected Period"
-                            />
-                            <StatsCard
-                                title="Profit"
-                                value={formatCurrency(stats?.filtered?.profit, user?.currency, user?.locale)}
-                                icon={<TrendingUp size={24} className="text-rose-500" />}
-                                bgColor="bg-rose-50"
-                                subtext="Selected Period"
-                            />
-                            <StatsCard
-                                title="Transactions"
-                                value={stats?.filtered?.count || 0}
-                                icon={<FileText size={24} className="text-blue-500" />}
-                                bgColor="bg-blue-50"
-                                subtext="Selected Period"
-                            />
-                            <StatsCard
-                                title="Comparison"
-                                value={formatCurrency(stats?.comparison?.revenue, user?.currency, user?.locale)}
-                                icon={<Calendar size={24} className="text-orange-500" />}
-                                bgColor="bg-orange-50"
-                                subtext="Previous Period"
-                            />
-                        </div>
+                        {(() => {
+                            const revenue = stats?.filtered?.revenue || 0;
+                            const profit = stats?.filtered?.profit || 0;
+                            const margin = revenue > 0 ? (profit / revenue) * 100 : 0;
+
+                            return (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
+                                    <StatsCard
+                                        title="Revenue"
+                                        value={formatCurrency(revenue, user?.currency, user?.locale)}
+                                        icon={<DollarSign size={24} className="text-yellow-600" />}
+                                        bgColor="bg-yellow-50"
+                                        subtext="Selected Period"
+                                    />
+                                    <StatsCard
+                                        title="Profit"
+                                        value={formatCurrency(profit, user?.currency, user?.locale)}
+                                        icon={<TrendingUp size={24} className="text-rose-500" />}
+                                        bgColor="bg-rose-50"
+                                        subtext="Selected Period"
+                                    />
+                                    <StatsCard
+                                        title="Margin"
+                                        value={`${margin.toFixed(1)}%`}
+                                        icon={<Percent size={24} className="text-emerald-500" />}
+                                        bgColor="bg-emerald-50"
+                                        subtext="Selected Period"
+                                    />
+                                    <StatsCard
+                                        title="Transactions"
+                                        value={stats?.filtered?.count || 0}
+                                        icon={<FileText size={24} className="text-blue-500" />}
+                                        bgColor="bg-blue-50"
+                                        subtext="Selected Period"
+                                    />
+                                    <StatsCard
+                                        title="Comparison"
+                                        value={formatCurrency(stats?.comparison?.revenue, user?.currency, user?.locale)}
+                                        icon={<Calendar size={24} className="text-orange-500" />}
+                                        bgColor="bg-orange-50"
+                                        subtext="Previous Period"
+                                    />
+                                </div>
+                            );
+                        })()}
+                        {/* End of Stats Grid */}
 
                         {/* Main Content Grid */}
                         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
 
                             {/* Left Column: Chart & Best Sellers */}
-                            <div className="xl:col-span-2 space-y-8">
+                            <div className="xl:col-span-2 flex flex-col gap-8">
                                 {/* Chart Section */}
                                 <div className="bg-white p-8 rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.04)]">
                                     <div className="mb-8">
@@ -252,10 +269,34 @@ export default function DashboardPage() {
                                     </div>
                                 </div>
 
+                                {/* Discounts & Refunds Row */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <Link href="/sales?filter=discount" className="block cursor-pointer">
+                                        <StatsCard
+                                            title="Discounts Given"
+                                            value={formatCurrency(stats?.filtered?.totalDiscount || 0, user?.currency, user?.locale)}
+                                            icon={<Tag size={24} className="text-purple-600" />}
+                                            bgColor="bg-purple-50"
+                                            subtext="Click to view history"
+                                        />
+                                    </Link>
+                                    <Link href="/sales?filter=refund" className="block cursor-pointer">
+                                        <StatsCard
+                                            title="Refunds Processed"
+                                            value={formatCurrency(stats?.filtered?.totalRefund || 0, user?.currency, user?.locale)}
+                                            icon={<RotateCcw size={24} className="text-red-600" />}
+                                            bgColor="bg-red-50"
+                                            subtext="Click to view history"
+                                        />
+                                    </Link>
+                                </div>
+
                                 {/* Best Sellers */}
-                                <div className="bg-white p-8 rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.04)]">
-                                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Best Sellers</h2>
-                                    <BestSellersWidget from={dateRange.from} to={dateRange.to} storeId={selectedStoreId || undefined} />
+                                <div className="bg-white p-6 rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] flex-1 flex flex-col">
+                                    <h2 className="text-xl font-bold text-gray-900 mb-2">Best Sellers</h2>
+                                    <div className="flex-1">
+                                        <BestSellersWidget from={dateRange.from} to={dateRange.to} storeId={selectedStoreId || undefined} />
+                                    </div>
                                 </div>
                             </div>
 
@@ -281,7 +322,16 @@ export default function DashboardPage() {
                                                     <div>
                                                         <div className="font-bold text-gray-900 text-sm">{sale.customer?.name || 'Walk-In Customer'}</div>
                                                         <div className="text-xs font-medium text-gray-400 flex items-center gap-2">
-                                                            <span>{new Date(sale.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                            <span>
+                                                                {(() => {
+                                                                    const date = new Date(sale.createdAt);
+                                                                    const today = new Date();
+                                                                    const isToday = date.getDate() === today.getDate() && date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
+                                                                    return isToday
+                                                                        ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                                                                        : `${date.toLocaleDateString([], { month: 'short', day: 'numeric' })} • ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+                                                                })()}
+                                                            </span>
                                                             <span className="w-1 h-1 rounded-full bg-gray-300"></span>
                                                             <span>{sale.user?.name?.split(' ')[0] || 'Staff'}</span>
                                                         </div>
@@ -327,20 +377,22 @@ export default function DashboardPage() {
                     </>
                 )}
             </div>
-            {stats && !selectedSale && (
-                <EODReport
-                    stats={stats}
-                    user={user}
-                    dateRange={dateRange}
-                    storeName={selectedStoreId
-                        ? stores.find(s => s.id === selectedStoreId)?.name
-                        : (!isAdmin && user?.store?.name)
-                            ? user.store.name
-                            : undefined // Falls back to Tenant Name/All Locations in component
-                    }
-                />
-            )}
-        </div>
+            {
+                stats && !selectedSale && (
+                    <EODReport
+                        stats={stats}
+                        user={user}
+                        dateRange={dateRange}
+                        storeName={selectedStoreId
+                            ? stores.find(s => s.id === selectedStoreId)?.name
+                            : (!isAdmin && user?.store?.name)
+                                ? user.store.name
+                                : undefined // Falls back to Tenant Name/All Locations in component
+                        }
+                    />
+                )
+            }
+        </div >
     );
 }
 

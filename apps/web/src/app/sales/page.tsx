@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth, formatCurrency } from '@/lib/useAuth';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ReturnModal } from '@/components/sales/ReturnModal';
 import { SaleDetailModal } from '@/components/sales/SaleDetailModal';
 import { toast } from 'react-hot-toast';
@@ -40,6 +40,8 @@ interface Sale {
 export default function SalesHistoryPage() {
     const { user, token, isHydrated, selectedStoreId } = useAuth();
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const filter = searchParams.get('filter') || undefined;
     const [sales, setSales] = useState<Sale[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
@@ -76,7 +78,7 @@ export default function SalesHistoryPage() {
         } else {
             loadSummary();
         }
-    }, [token, router, isHydrated, selectedStoreId, page, debouncedSearch, activeTab, startDate, endDate]);
+    }, [token, router, isHydrated, selectedStoreId, page, debouncedSearch, activeTab, startDate, endDate, filter]);
 
     const loadSummary = async () => {
         setLoadingSummary(true);
@@ -95,7 +97,7 @@ export default function SalesHistoryPage() {
         setLoading(true);
         try {
             const skip = (page - 1) * limit;
-            const res: any = await api.sales.list(skip, limit, selectedStoreId || undefined, debouncedSearch);
+            const res: any = await api.sales.list(skip, limit, selectedStoreId || undefined, debouncedSearch, filter);
 
             // Handle new response structure { data, total } or fallback
             if (res && res.data && Array.isArray(res.data)) {
@@ -158,7 +160,17 @@ export default function SalesHistoryPage() {
             <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center mb-6">
                     <div>
-                        <h1 className="text-2xl font-bold">Sales History</h1>
+                        <h1 className="text-2xl font-bold flex items-center gap-4">
+                            {filter === 'discount' ? 'Discounted Sales History' : filter === 'refund' ? 'Refunded Sales History' : 'Sales History'}
+                            {filter && (
+                                <button
+                                    onClick={() => router.push('/sales')}
+                                    className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded-full font-medium"
+                                >
+                                    Clear Filter
+                                </button>
+                            )}
+                        </h1>
                         {activeTab === 'receipts' && <p className="text-sm text-gray-500">Showing {sales.length} of {totalSales} records</p>}
                         {activeTab === 'summary' && <p className="text-sm text-gray-500">Sales Summary for Period</p>}
                     </div>
