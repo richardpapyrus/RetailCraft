@@ -18,7 +18,7 @@ export default function BestSellersWidget({ from, to, storeId }: { from?: string
     const loadData = async () => {
         setLoading(true);
         try {
-            const res: any = await api.sales.topProducts({ from, to, sortBy, limit: 10, storeId: storeId || undefined });
+            const res: any = await api.sales.topProducts({ from, to, sortBy, limit: 5, storeId: storeId || undefined });
             setProducts(res.data || []);
         } catch (e) {
             console.error(e);
@@ -29,7 +29,7 @@ export default function BestSellersWidget({ from, to, storeId }: { from?: string
 
     return (
         <div className="flex flex-col h-full">
-            <div className="flex justify-end items-center mb-6">
+            <div className="flex justify-end items-center mb-3">
                 {/* Title handles by parent, or we can add it here if needed, but per previous file parent has title. 
                      Actually, parent has title 'Best Sellers', this widget has toggle.
                      Let's alignment: Parent has title. Widget just provides content? 
@@ -52,7 +52,7 @@ export default function BestSellersWidget({ from, to, storeId }: { from?: string
                 </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
                 {loading ? (
                     <div className="text-center py-6 text-gray-400">Loading...</div>
                 ) : (
@@ -85,7 +85,7 @@ export default function BestSellersWidget({ from, to, storeId }: { from?: string
                 )}
             </div>
 
-            <div className="mt-8 pt-6 border-t border-gray-50 text-center">
+            <div className="mt-4 pt-4 border-t border-gray-50 text-center">
                 <Link
                     href={`/reports/top-products${storeId ? `?storeId=${storeId}` : ''}`}
                     className="text-sm font-bold text-indigo-600 hover:text-indigo-800 transition-colors"

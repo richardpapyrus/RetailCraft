@@ -294,9 +294,11 @@ export default function DashboardPage() {
                                 </div>
 
                                 {/* Best Sellers */}
-                                <div className="bg-white p-6 rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.04)]">
-                                    <h2 className="text-xl font-bold text-gray-900 mb-4">Best Sellers</h2>
-                                    <BestSellersWidget from={dateRange.from} to={dateRange.to} storeId={selectedStoreId || undefined} />
+                                <div className="bg-white p-6 rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] h-full flex flex-col">
+                                    <h2 className="text-xl font-bold text-gray-900 mb-2">Best Sellers</h2>
+                                    <div className="flex-1">
+                                        <BestSellersWidget from={dateRange.from} to={dateRange.to} storeId={selectedStoreId || undefined} />
+                                    </div>
                                 </div>
                             </div>
 
@@ -322,7 +324,16 @@ export default function DashboardPage() {
                                                     <div>
                                                         <div className="font-bold text-gray-900 text-sm">{sale.customer?.name || 'Walk-In Customer'}</div>
                                                         <div className="text-xs font-medium text-gray-400 flex items-center gap-2">
-                                                            <span>{new Date(sale.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                            <span>
+                                                                {(() => {
+                                                                    const date = new Date(sale.createdAt);
+                                                                    const today = new Date();
+                                                                    const isToday = date.getDate() === today.getDate() && date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
+                                                                    return isToday
+                                                                        ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                                                                        : `${date.toLocaleDateString([], { month: 'short', day: 'numeric' })} • ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+                                                                })()}
+                                                            </span>
                                                             <span className="w-1 h-1 rounded-full bg-gray-300"></span>
                                                             <span>{sale.user?.name?.split(' ')[0] || 'Staff'}</span>
                                                         </div>
