@@ -22,16 +22,33 @@ export default function ReceiptTemplate({ sale, user, store: propStore }: Receip
             <style jsx global>{`
                 @media print {
                     @page { margin: 0; }
-                    body { visibility: hidden; }
-                    #receipt-print-area {
-                        visibility: visible;
-                        position: absolute;
-                        left: 0;
-                        top: 0;
-                        width: 100%;
+                    /* Ensure body allows its height to scale dynamically */
+                    html, body {
+                        height: auto !important;
+                        overflow: visible !important;
+                        background-color: white !important;
                     }
-                    #receipt-print-area * {
-                        visibility: visible;
+                    /* Turn off display for anything that isn't the receipt or an ancestor of the receipt */
+                    body *:not(:has(#receipt-print-area)):not(#receipt-print-area):not(#receipt-print-area *) {
+                        display: none !important;
+                    }
+                    /* Ensure ancestors don't restrict the height */
+                    body *:has(#receipt-print-area) {
+                        height: auto !important;
+                        max-height: none !important;
+                        overflow: visible !important;
+                        padding: 0 !important;
+                        margin: 0 !important;
+                        border: none !important;
+                    }
+                    /* Flow the receipt naturally to avoid 1-page cutoff and center it on A4 paper */
+                    #receipt-print-area {
+                        display: block !important;
+                        position: static !important;
+                        width: 100% !important;
+                        max-width: 80mm !important;
+                        margin: 0 auto !important;
+                        padding: 0 !important;
                     }
                 }
             `}</style>
@@ -114,7 +131,6 @@ export default function ReceiptTemplate({ sale, user, store: propStore }: Receip
                                 <tr key={idx}>
                                     <td className="py-1 pr-1 align-top">
                                         <span className="font-bold block">{name}</span>
-                                        {sku && <span className="text-[9px] text-gray-600 block">{sku}</span>}
                                         {price === 0 && <span className="text-[8px] text-red-500 block italic">Price Unknown</span>}
                                     </td>
                                     <td className="py-1 text-right align-top">
