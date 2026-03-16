@@ -41,12 +41,13 @@ export default function ReceiptTemplate({ sale, user, store: propStore }: Receip
                         margin: 0 !important;
                         border: none !important;
                     }
-                    /* Flow the receipt naturally to avoid 1-page cutoff */
+                    /* Flow the receipt naturally to avoid 1-page cutoff and center it on A4 paper */
                     #receipt-print-area {
                         display: block !important;
                         position: static !important;
                         width: 100% !important;
-                        margin: 0 !important;
+                        max-width: 80mm !important;
+                        margin: 0 auto !important;
                         padding: 0 !important;
                     }
                 }
