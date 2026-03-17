@@ -16,68 +16,32 @@ export default function ReceiptTemplate({ sale, user, store: propStore }: Receip
     // Use Business Name (Tenant) as the main header, fallback to Store Name.
     const siteName = user?.tenant?.name || user?.tenantName || store.name || 'My Store';
 
-    // Receipt width: max 80mm for standard thermal rolls.
+    // Receipt width adapts to exactly 100% of the printer's printable bounds (usually 72mm for an 80mm roll).
     return (
-        <div id="receipt-print-area" className="hidden print:block w-[80mm] max-w-full bg-white text-black font-mono text-[11px] leading-tight p-2">
+        <div id="receipt-print-area" className="hidden print:block w-full bg-white text-black font-mono text-[11px] leading-tight pt-2">
             <style jsx global>{`
                 @media print {
                     @page { margin: 0; }
-                    
-                    /* Hide everything else so it takes zero space */
-                    body *:not(:has(#receipt-print-area)):not(#receipt-print-area):not(#receipt-print-area *) {
-                        display: none !important;
+                    body { visibility: hidden; }
+                    #receipt-print-area {
+                        visibility: visible;
+                        position: absolute;
+                        left: 0;
+                        top: 0;
+                        width: 100%;
                     }
-
-                    /* Allow the body to stretch to accommodate the absolute positioned receipt */
-                    html, body {
-                        background-color: white !important;
-                        margin: 0 !important;
-                        padding: 0 !important;
-                        min-height: 100vh !important;
-                        height: auto !important;
-                    }
-                    
-                    /* Strip out structural padding/margins from wrappers to prevent shifting */
-                    body *:has(#receipt-print-area) {
-                        margin: 0 !important;
-                        padding: 0 !important;
-                        border: none !important;
-                        position: static !important;
-                        height: 0 !important; /* Collapse parents so they don't add extra blank pages */
-                        overflow: visible !important;
+                    #receipt-print-area * {
+                        visibility: visible;
                     }
 
                     /* 
-                       THE FIX:
-                       1. position: absolute + left: 0 forces it strictly to the left edge, destroying ALL wrapper centering/padding. 
-                       2. To prevent the vertical 1-page cutoff caused by absolute positioning escaping normal flow, 
-                          we let it dictate the document height via its content.
+                       Fix for vertical 1-page cutoff:
+                       Allow the body to expand to the full height of the absolute receipt
                     */
-                    #receipt-print-area {
-                        display: block !important;
-                        position: absolute !important;
-                        left: 0 !important;
-                        top: 0 !important;
-                        width: 80mm !important;
-                        max-width: 100% !important;
-                        margin: 0 !important;
-                        visibility: visible !important;
-                        height: max-content !important; 
-                        box-sizing: border-box !important;
-                    }
-
-                    /* Clamp the item table strictly so long product names wrap inside 80mm */
-                    #receipt-print-area table {
-                        width: 100% !important;
-                        max-width: 100% !important;
-                        table-layout: fixed !important;
-                        border-collapse: collapse !important;
-                    }
-                    
-                    #receipt-print-area th, #receipt-print-area td {
-                        word-break: break-word !important;
-                        overflow-wrap: break-word !important;
-                        white-space: normal !important;
+                    html, body {
+                        min-height: 100vh !important;
+                        height: max-content !important;
+                        overflow: visible !important;
                     }
                 }
             `}</style>
