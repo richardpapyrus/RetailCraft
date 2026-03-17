@@ -22,33 +22,71 @@ export default function ReceiptTemplate({ sale, user, store: propStore }: Receip
             <style jsx global>{`
                 @media print {
                     @page { margin: 0; }
-                    /* Ensure body allows its height to scale dynamically */
+                    /* Reset everything for print */
                     html, body {
                         height: auto !important;
+                        max-height: none !important;
                         overflow: visible !important;
                         background-color: white !important;
+                        padding: 0 !important;
+                        margin: 0 !important;
+                        width: 100% !important;
                     }
-                    /* Turn off display for anything that isn't the receipt or an ancestor of the receipt */
+                    /* Hide everything not part of the receipt */
                     body *:not(:has(#receipt-print-area)):not(#receipt-print-area):not(#receipt-print-area *) {
                         display: none !important;
                     }
-                    /* Ensure ancestors don't restrict the height */
+                    /* For all ancestors of the receipt area, remove any layout constraints */
                     body *:has(#receipt-print-area) {
+                        display: block !important;
+                        position: static !important;
                         height: auto !important;
                         max-height: none !important;
                         overflow: visible !important;
                         padding: 0 !important;
                         margin: 0 !important;
                         border: none !important;
+                        width: 100% !important;
+                        transform: none !important;
                     }
-                    /* Flow the receipt naturally to avoid 1-page cutoff and center it on A4 paper */
+
+                    /* The actual receipt print area layout */
                     #receipt-print-area {
                         display: block !important;
                         position: static !important;
                         width: 100% !important;
-                        max-width: 80mm !important;
-                        margin: 0 auto !important;
+                        max-width: 80mm !important; /* Cap width for A4 printing */
+                        margin: 0 auto !important; /* Center on larger pages like A4 */
                         padding: 0 !important;
+                        box-sizing: border-box !important;
+                    }
+
+                    /* Force table to respect the container width */
+                    #receipt-print-area table {
+                        width: 100% !important;
+                        table-layout: fixed !important;
+                        border-collapse: collapse !important;
+                    }
+
+                    #receipt-print-area th, #receipt-print-area td {
+                        word-break: break-word !important;
+                        white-space: normal !important;
+                        overflow-wrap: break-word !important;
+                    }
+                    
+                    /* Adjust column widths strictly enforced */
+                    #receipt-print-area th:nth-child(1), #receipt-print-area td:nth-child(1) { width: 45% !important; text-align: left !important; }
+                    #receipt-print-area th:nth-child(2), #receipt-print-area td:nth-child(2) { width: 20% !important; text-align: right !important; }
+                    #receipt-print-area th:nth-child(3), #receipt-print-area td:nth-child(3) { width: 10% !important; text-align: center !important; }
+                    #receipt-print-area th:nth-child(4), #receipt-print-area td:nth-child(4) { width: 25% !important; text-align: right !important; }
+                }
+
+                /* If the paper size is small (thermal printers ~80mm or 58mm), 
+                   prevent centering which causes horizontal clipping on some printer drivers */
+                @media print and (max-width: 90mm) {
+                    #receipt-print-area {
+                        margin: 0 !important; /* Align left */
+                        max-width: 100% !important; /* Let text fill the exact width smoothly */
                     }
                 }
             `}</style>
