@@ -16,9 +16,9 @@ export default function ReceiptTemplate({ sale, user, store: propStore }: Receip
     // Use Business Name (Tenant) as the main header, fallback to Store Name.
     const siteName = user?.tenant?.name || user?.tenantName || store.name || 'My Store';
 
-    // Receipt width: 80mm is standard thermal paper width.
+    // Receipt width: max 80mm for standard thermal rolls, but responsive to smaller printable margins (e.g. 72mm).
     return (
-        <div id="receipt-print-area" className="hidden print:block bg-white text-black font-mono text-[11px] leading-tight">
+        <div id="receipt-print-area" className="hidden print:block w-full max-w-[80mm] bg-white text-black font-mono text-[11px] leading-tight mx-auto p-2">
             <style jsx global>{`
                 @media print {
                     @page { margin: 0; }
