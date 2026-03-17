@@ -22,68 +22,26 @@ export default function ReceiptTemplate({ sale, user, store: propStore }: Receip
             <style jsx global>{`
                 @media print {
                     @page { margin: 0; }
-                    
-                    /* Hide non-receipt elements */
-                    body *:not(:has(#receipt-print-area)):not(#receipt-print-area):not(#receipt-print-area *) {
-                        display: none !important;
-                    }
-
-                    /* 
-                       DESTROY ALL ANCESTOR LAYOUTS:
-                       To print infinitely vertically without left-clipping, the receipt MUST be in normal flow (static).
-                       However, normal flow inherits the dashboard's flex centering and h-screen limits.
-                       This violently resets every parent wrapper all the way to <html>.
-                    */
-                    html, body, body *:has(#receipt-print-area) {
-                        display: block !important;
-                        position: static !important;
-                        width: 100% !important;
-                        max-width: 100% !important;
-                        margin: 0 !important;
-                        padding: 0 !important;
-                        height: auto !important;
-                        min-height: 0 !important;
-                        max-height: none !important;
-                        overflow: visible !important;
-                        transform: none !important;
-                        background: white !important;
-                    }
-
-                    /* 
-                       RECEIPT CONTAINER:
-                       Width 100% snaps to printable bounds naturally. Height auto allows infinite pages.
-                    */
+                    body { visibility: hidden; }
                     #receipt-print-area {
-                        display: block !important;
-                        position: static !important;
-                        width: 100% !important;
-                        max-width: 100% !important;
-                        margin: 0 !important;
-                        padding: 0 !important;
-                        visibility: visible !important;
-                        height: auto !important; 
-                        box-sizing: border-box !important;
-                        page-break-inside: auto !important;
+                        visibility: visible;
+                        position: absolute;
+                        left: 0;
+                        top: 0;
+                        width: 100%;
+                    }
+                    #receipt-print-area * {
+                        visibility: visible;
                     }
 
-                    /* Prevent rows from splitting across virtual pages within the thermal roll */
-                    #receipt-print-area tr {
-                        page-break-inside: avoid !important;
-                        page-break-after: auto !important;
-                    }
-
-                    /* Allow the browser to size columns naturally inside 100% width */
-                    #receipt-print-area table {
-                        width: 100% !important;
-                        max-width: 100% !important;
-                        table-layout: auto !important;
-                        border-collapse: collapse !important;
-                    }
-                    
-                    #receipt-print-area th, #receipt-print-area td {
-                        word-break: break-word !important;
-                        overflow-wrap: break-word !important;
-                        white-space: normal !important;
+                    /* 
+                       Fix for vertical 1-page cutoff:
+                       Allow the body to expand to the full height of the absolute receipt
+                    */
+                    html, body {
+                        min-height: 100vh !important;
+                        height: max-content !important;
+                        overflow: visible !important;
                     }
                 }
             `}</style>
