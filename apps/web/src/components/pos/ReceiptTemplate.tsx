@@ -36,9 +36,11 @@ export default function ReceiptTemplate({ sale, user, store: propStore }: Receip
                     body *:not(:has(#receipt-print-area)):not(#receipt-print-area):not(#receipt-print-area *) {
                         display: none !important;
                     }
-                    /* For all ancestors of the receipt area, remove any layout constraints */
+                    /* For all ancestors of the receipt area, remove any layout constraints and allow centering */
                     body *:has(#receipt-print-area) {
-                        display: block !important;
+                        display: flex !important;
+                        flex-direction: column !important;
+                        align-items: center !important;
                         position: static !important;
                         height: auto !important;
                         max-height: none !important;
