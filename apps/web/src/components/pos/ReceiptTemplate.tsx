@@ -4,13 +4,14 @@ import { formatCurrency } from '@/lib/useAuth';
 interface ReceiptTemplateProps {
     sale: any;
     user: any;
+    store?: any;
 }
 
-export default function ReceiptTemplate({ sale, user }: ReceiptTemplateProps) {
+export default function ReceiptTemplate({ sale, user, store: propStore }: ReceiptTemplateProps) {
     if (!sale) return null;
 
 
-    const store = user?.store || {};
+    const store = propStore || user?.store || {};
     // Fallback to tenant name if store name is missing, but prefer store name.
     const siteName = store.name || user?.tenantName || user?.tenant?.name || 'My Store';
 
