@@ -28,13 +28,15 @@ export default function ReceiptTemplate({ sale, user, store: propStore }: Receip
                         display: none !important;
                     }
 
-                    /* Reset the page layout and remove constraints so it snaps natively to top-left */
+                    /* Reset the page layout and kill flex/grid layouts so it snaps natively to top-left natively */
                     html, body, body *:has(#receipt-print-area) {
+                        display: block !important;
                         background-color: white !important;
                         margin: 0 !important;
                         padding: 0 !important;
                         position: static !important;
                         width: 100% !important;
+                        max-width: 100% !important;
                         height: auto !important;
                         overflow: visible !important;
                     }
@@ -44,9 +46,25 @@ export default function ReceiptTemplate({ sale, user, store: propStore }: Receip
                         display: block !important;
                         position: static !important;
                         width: 100% !important;
+                        max-width: 100% !important;
                         margin: 0 !important;
                         padding: 0 !important;
                         visibility: visible !important;
+                        box-sizing: border-box !important;
+                    }
+
+                    /* Clamp the item table strictly so long product names wrap instead of pushing width off-paper */
+                    #receipt-print-area table {
+                        width: 100% !important;
+                        max-width: 100% !important;
+                        table-layout: fixed !important;
+                        border-collapse: collapse !important;
+                    }
+                    
+                    #receipt-print-area th, #receipt-print-area td {
+                        word-break: break-word !important;
+                        overflow-wrap: break-word !important;
+                        white-space: normal !important;
                     }
                 }
             `}</style>
