@@ -5,22 +5,26 @@ import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/useAuth';
 import { useRouter } from 'next/navigation';
-import { Plus, Eye, Truck } from 'lucide-react';
-import { toast } from 'react-hot-toast';
+import { Plus, Eye, Truck, ChevronLeft, ChevronRight } from 'lucide-react';
+
+const PAGE_SIZE = 20;
 
 export default function PurchaseOrdersPage() {
     const { token, isHydrated, selectedStoreId, hasPermission } = useAuth();
     const router = useRouter();
     const [orders, setOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
 
     useEffect(() => {
         if (!isHydrated || !token) return;
+        setCurrentPage(1); // Reset to first page when store changes
         loadOrders();
     }, [token, isHydrated, selectedStoreId]);
 
     const loadOrders = async () => {
         try {
+            setLoading(true);
             const data = await api.purchaseOrders.list(undefined, selectedStoreId || undefined);
             setOrders(data);
         } catch (e) {
@@ -40,6 +44,12 @@ export default function PurchaseOrdersPage() {
             default: return 'bg-gray-100 text-gray-800';
         }
     };
+
+    // Pagination calculations
+    const totalPages = Math.max(1, Math.ceil(orders.length / PAGE_SIZE));
+    const startIndex = (currentPage - 1) * PAGE_SIZE;
+    const endIndex = Math.min(startIndex + PAGE_SIZE, orders.length);
+    const paginatedOrders = orders.slice(startIndex, endIndex);
 
     if (loading) return <div className="p-8">Loading Orders...</div>;
 
@@ -74,14 +84,14 @@ export default function PurchaseOrdersPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y">
-                            {orders.length === 0 ? (
+                            {paginatedOrders.length === 0 ? (
                                 <tr>
                                     <td colSpan={6} className="p-8 text-center text-gray-500">
                                         No active purchase orders.
                                     </td>
                                 </tr>
                             ) : (
-                                orders.map(po => (
+                                paginatedOrders.map(po => (
                                     <tr key={po.id} className="hover:bg-gray-50">
                                         <td className="p-4 font-mono font-medium text-indigo-600">{po.poNumber}</td>
                                         <td className="p-4">{po.supplier?.name}</td>
@@ -117,6 +127,35 @@ export default function PurchaseOrdersPage() {
                             )}
                         </tbody>
                     </table>
+
+                    {/* Pagination Footer */}
+                    {orders.length > PAGE_SIZE && (
+                        <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-gray-50">
+                            <p className="text-sm text-gray-600">
+                                Showing <span className="font-semibold">{startIndex + 1}</span>–<span className="font-semibold">{endIndex}</span> of{' '}
+                                <span className="font-semibold">{orders.length}</span> orders
+                            </p>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                    disabled={currentPage === 1}
+                                    className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    <ChevronLeft className="w-4 h-4" /> Previous
+                                </button>
+                                <span className="text-sm text-gray-600 font-medium px-2">
+                                    Page {currentPage} of {totalPages}
+                                </span>
+                                <button
+                                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                    disabled={currentPage === totalPages}
+                                    className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    Next <ChevronRight className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
