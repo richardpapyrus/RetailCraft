@@ -6,7 +6,7 @@ import { TopHeader } from './TopHeader';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
-    const isPublicPage = ['/login', '/register', '/'].includes(pathname);
+    const isPublicPage = ['/login', '/register', '/', '/home'].includes(pathname);
 
     if (isPublicPage) {
         return <div className="min-h-screen bg-gray-50">{children}</div>;
