@@ -145,7 +145,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
                             <button
                                 onClick={syncData}
                                 disabled={isSyncing}
-                                className="flex-1 bg-gray-900 hover:bg-black text-white py-2 px-3 rounded-xl text-xs font-semibold transition-all active:scale-95 disabled:opacity-70 disabled:active:scale-100 flex items-center justify-center gap-2"
+                                className="flex-1 bg-brand-500 hover:bg-brand-600 text-white py-2 px-3 rounded-xl text-xs font-semibold transition-all active:scale-95 disabled:opacity-70 disabled:active:scale-100 flex items-center justify-center gap-2"
                             >
                                 {isSyncing ? (
                                     <>

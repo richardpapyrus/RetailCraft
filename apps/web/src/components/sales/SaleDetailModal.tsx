@@ -39,7 +39,7 @@ export function SaleDetailModal({ sale, onClose, onReturn }: SaleDetailModalProp
 
     return (
         <>
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4 print:hidden" onClick={onClose}>
+            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[60] p-4 print:hidden" onClick={onClose}>
                 <div className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
                     {/* Header */}
                     <div className="p-6 border-b border-gray-100 flex justify-between items-start shrink-0">

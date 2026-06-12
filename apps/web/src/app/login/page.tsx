@@ -39,19 +39,14 @@ export default function LoginPage() {
 
     return (
         <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
-            {/* Video Background */}
-            <div className="absolute inset-0 z-0 overflow-hidden">
-                <div className="absolute inset-0 bg-black/40 z-10" /> {/* Overlay for better text contrast */}
-                <video
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    className="absolute top-1/2 left-1/2 w-full h-full min-w-full min-h-full -translate-x-1/2 -translate-y-1/2 object-cover pointer-events-none"
-                >
-                    <source src="/login-background.mp4" type="video/mp4" />
-                    Your browser does not support the video tag.
-                </video>
+            {/* Calm brand gradient backdrop */}
+            <div className="absolute inset-0 z-0 overflow-hidden bg-[#13302D]">
+                <div className="absolute inset-0" style={{
+                    background:
+                        'radial-gradient(1200px 800px at 15% 10%, rgba(56, 195, 181, 0.35), transparent 60%),' +
+                        'radial-gradient(1000px 700px at 85% 90%, rgba(31, 138, 128, 0.3), transparent 60%),' +
+                        'radial-gradient(800px 600px at 70% 20%, rgba(26, 90, 85, 0.4), transparent 55%)'
+                }} />
             </div>
 
             {/* Glassmorphism Login Panel */}

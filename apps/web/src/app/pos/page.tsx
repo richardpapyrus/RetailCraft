@@ -491,7 +491,7 @@ export default function POSPage() {
                                     </svg>
                                 </div>
                                 <div>
-                                    <h1 className="text-2xl font-semibold text-gray-900 uppercase tracking-tight">
+                                    <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">
                                         {selectedCustomer ? selectedCustomer.name : 'Walk-In Customer'}
                                     </h1>
                                     <div className="flex items-center gap-2 text-sm font-medium text-gray-500">
@@ -563,9 +563,12 @@ export default function POSPage() {
                             <tbody className="divide-y divide-gray-50">
                                 {cart.length === 0 ? (
                                     <tr>
-                                        <td colSpan={4} className="text-center py-32 text-gray-300">
-                                            <div className="text-6xl mb-4 opacity-20">🧾</div>
-                                            <p className="font-medium text-gray-400">Your cart is empty</p>
+                                        <td colSpan={4} className="text-center py-28">
+                                            <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-surface-muted flex items-center justify-center text-mid-grey">
+                                                <Package className="w-8 h-8" strokeWidth={1.5} />
+                                            </div>
+                                            <p className="font-semibold text-charcoal mb-1">Your cart is empty</p>
+                                            <p className="text-sm text-gray-500">Scan a barcode or search products to add items</p>
                                         </td>
                                     </tr>
                                 ) : (
@@ -645,7 +648,7 @@ export default function POSPage() {
                                 setSelectedPaymentMethod('CASH');
                             }}
                             disabled={cart.length === 0}
-                            className="group w-full bg-brand-500 hover:bg-brand-600 text-white py-3.5 rounded-xl font-semibold text-base shadow-soft disabled:opacity-50 disabled:shadow-none transition-all flex items-center justify-center gap-3"
+                            className="group w-full bg-brand-500 hover:bg-brand-600 text-white py-3.5 rounded-xl font-semibold text-base shadow-soft disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3"
                         >
                             <span>Proceed to Payment</span>
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 transform group-hover:translate-x-1 transition-transform" viewBox="0 0 20 20" fill="currentColor">

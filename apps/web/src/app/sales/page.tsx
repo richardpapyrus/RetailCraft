@@ -8,6 +8,7 @@ import { ReturnModal } from '@/components/sales/ReturnModal';
 import { SaleDetailModal } from '@/components/sales/SaleDetailModal';
 import { toast } from 'react-hot-toast';
 import { useDebounce } from '@/hooks/useDebounce';
+import { ChevronRight } from 'lucide-react';
 
 interface SaleItem {
     id: string;
@@ -157,7 +158,7 @@ export default function SalesHistoryPage() {
 
     return (
         <div className="h-full bg-canvas overflow-y-auto">
-            <div className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-10">
+            <div className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-10 animate-fade-in-up">
                 <div className="flex flex-wrap justify-between items-center mb-8 gap-4">
                     <div>
                         <h1 className="text-3xl font-semibold text-gray-900 tracking-tight flex items-center gap-4">
@@ -276,8 +277,7 @@ export default function SalesHistoryPage() {
                                                 {sale.user?.name || sale.user?.email || '-'}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                <span className={`px-2 py-1 rounded text-xs font-semibold ${sale.paymentMethod === 'CASH' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
-                                                    }`}>
+                                                <span className="px-2 py-1 rounded-lg text-xs font-semibold bg-surface-muted text-charcoal">
                                                     {sale.paymentMethod}
                                                 </span>
                                             </td>
@@ -307,9 +307,10 @@ export default function SalesHistoryPage() {
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); setSelectedSale(sale); }}
-                                                    className="text-brand-600 hover:text-brand-900"
+                                                    className="p-2 rounded-lg text-gray-400 hover:text-brand-600 hover:bg-brand-50 transition-colors"
+                                                    title="View receipt"
                                                 >
-                                                    View
+                                                    <ChevronRight size={18} />
                                                 </button>
                                             </td>
                                         </tr>

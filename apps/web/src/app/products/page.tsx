@@ -7,6 +7,7 @@ import { useAuth, formatCurrency } from '@/lib/useAuth';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import CategoryManager from '@/components/products/CategoryManager';
+import { RefreshCw, ClipboardList, SlidersHorizontal, ArrowDownToLine, Pencil, Archive, ArchiveRestore, X } from 'lucide-react';
 
 export default function ProductsPage() {
     const { user, token, isHydrated, hasPermission, selectedStoreId } = useAuth();
@@ -348,7 +349,7 @@ export default function ProductsPage() {
 
     return (
         <div className="h-full bg-canvas overflow-y-auto relative">
-            <div className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-10">
+            <div className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-10 animate-fade-in-up">
                 {error && (
                     <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded shadow-sm">
                         <p className="font-semibold">Error loading data</p>
@@ -368,16 +369,16 @@ export default function ProductsPage() {
                                     DataService.clearCache().then(() => window.location.reload());
                                 }
                             }}
-                            className="bg-white border border-cool-grey text-charcoal text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-surface-muted transition"
+                            className="bg-white border border-cool-grey text-charcoal text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-surface-muted transition flex items-center gap-2"
                         >
-                            ↻ Refresh
+                            <RefreshCw size={15} /> Refresh
                         </button>
                         {(hasPermission('MANAGE_PRODUCTS') || hasPermission('RAISE_PURCHASE_ORDER')) && (
                             <button
                                 onClick={() => router.push('/inventory/purchase-orders')}
                                 className="bg-white border border-cool-grey text-charcoal text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-surface-muted transition flex items-center gap-2"
                             >
-                                <span className="text-lg leading-none">📋</span> Purchase Orders
+                                <ClipboardList size={15} /> Purchase Orders
                             </button>
                         )}
                         {hasPermission('MANAGE_PRODUCTS') && (
@@ -487,11 +488,11 @@ export default function ProductsPage() {
 
                 {/* Create Modal */}
                 {showCreate && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
                         <form onSubmit={handleCreate} className="bg-white p-6 rounded-xl shadow-xl max-w-lg w-full">
                             <div className="flex justify-between items-center mb-6">
                                 <h2 className="text-xl font-semibold">{editingId ? 'Edit Product' : 'New Product'}</h2>
-                                <button type="button" onClick={() => setShowCreate(false)} className="text-gray-500 hover:text-gray-700">✕</button>
+                                <button type="button" onClick={() => setShowCreate(false)} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors"><X size={18} /></button>
                             </div>
                             <div className="space-y-4 max-h-[80vh] overflow-y-auto">
                                 <input
@@ -590,7 +591,7 @@ export default function ProductsPage() {
 
                 {/* Adjust Modal */}
                 {adjustModalOpen && selectedProduct && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
                         <div className="bg-white rounded-xl p-6 max-w-sm w-full shadow-lifted">
                             <h3 className="text-lg font-semibold mb-4">Adjust Stock: {selectedProduct.name}</h3>
                             <form onSubmit={handleAdjustSubmit}>
@@ -629,7 +630,7 @@ export default function ProductsPage() {
 
                 {/* Receive Modal */}
                 {receiveModalOpen && selectedProduct && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
                         <div className="bg-white rounded-xl p-6 max-w-sm w-full shadow-lifted">
                             <h3 className="text-xl font-semibold mb-4">Receive Stock: {selectedProduct.name}</h3>
                             <form onSubmit={handleReceiveSubmit}>
@@ -702,7 +703,7 @@ export default function ProductsPage() {
 
                 {/* Import Modal */}
                 {isImportModalOpen && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
                         <div className="bg-white rounded-xl p-6 max-w-sm w-full shadow-lifted">
                             <h3 className="text-xl font-semibold mb-4">Import Products</h3>
                             <form onSubmit={handleImport}>
@@ -791,7 +792,7 @@ export default function ProductsPage() {
                                     const stock = p.inventory?.reduce((acc, curr) => acc + curr.quantity, 0) || 0;
                                     const isLowStock = stock <= (p.minStockLevel || 0);
                                     return (
-                                        <tr key={p.id} className={`hover:bg-gray-50 cursor-pointer ${isLowStock ? 'bg-red-50' : ''} ${p.isArchived ? 'opacity-60 bg-gray-100' : ''}`} onClick={() => router.push(`/products/${p.id}`)}>
+                                        <tr key={p.id} className={`hover:bg-gray-50 cursor-pointer ${p.isArchived ? 'opacity-60 bg-gray-100' : ''}`} onClick={() => router.push(`/products/${p.id}`)}>
                                             <td className="px-4 py-4 truncate" title={p.name}>
                                                 <div className="text-sm font-medium text-gray-900 truncate">
                                                     {p.name} {p.isArchived && <span className="ml-2 text-xs bg-gray-500 text-white px-2 py-0.5 rounded">Archived</span>}
@@ -812,7 +813,7 @@ export default function ProductsPage() {
                                             </td>
                                             <td className="px-4 py-4 text-sm text-gray-500 truncate" title={p.supplier?.name}>
                                                 {p.supplier ? (
-                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 truncate max-w-full">
+                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-surface-muted text-charcoal truncate max-w-full">
                                                         {p.supplier.name}
                                                     </span>
                                                 ) : (
@@ -839,20 +840,20 @@ export default function ProductsPage() {
                                                                         e.stopPropagation();
                                                                         openAdjustModal(p);
                                                                     }}
-                                                                    className="text-brand-600 hover:text-brand-900 bg-brand-50 hover:bg-brand-100 px-2 py-1 rounded transition"
+                                                                    className="text-brand-600 hover:text-brand-700 bg-brand-50 hover:bg-brand-100 p-2 rounded-lg transition"
                                                                     title="Adjust Stock"
                                                                 >
-                                                                    ±
+                                                                    <SlidersHorizontal size={14} />
                                                                 </button>
                                                                 <button
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
                                                                         openReceiveModal(p);
                                                                     }}
-                                                                    className="text-green-600 hover:text-green-900 bg-green-50 hover:bg-green-100 px-2 py-1 rounded transition"
+                                                                    className="text-green-600 hover:text-green-700 bg-green-50 hover:bg-green-100 p-2 rounded-lg transition"
                                                                     title="Receive Stock"
                                                                 >
-                                                                    ↓
+                                                                    <ArrowDownToLine size={14} />
                                                                 </button>
                                                             </>
                                                         )}
@@ -863,18 +864,18 @@ export default function ProductsPage() {
                                                                         e.stopPropagation();
                                                                         startEdit(p);
                                                                     }}
-                                                                    className="text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded transition"
+                                                                    className="text-charcoal hover:text-gray-900 bg-surface-muted hover:bg-cool-grey p-2 rounded-lg transition"
                                                                     title="Edit Product"
                                                                 >
-                                                                    ✎
+                                                                    <Pencil size={14} />
                                                                 </button>
                                                                 {(hasPermission('MANAGE_PRODUCTS') || hasPermission('admin')) && (
                                                                     <button
                                                                         onClick={(e) => handleArchiveToggle(p, e)}
-                                                                        className={`${p.isArchived ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'} hover:bg-opacity-80 px-2 py-1 rounded transition`}
+                                                                        className={`${p.isArchived ? 'text-green-600 bg-green-50' : 'text-red-500 bg-red-50'} hover:bg-opacity-80 p-2 rounded-lg transition`}
                                                                         title={p.isArchived ? "Restore" : "Archive"}
                                                                     >
-                                                                        {p.isArchived ? '⟲' : '✕'}
+                                                                        {p.isArchived ? <ArchiveRestore size={14} /> : <Archive size={14} />}
                                                                     </button>
                                                                 )}
                                                             </>

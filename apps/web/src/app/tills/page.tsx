@@ -98,9 +98,12 @@ export default function TillsPage() {
     if (!isHydrated) return null;
 
     return (
-        <div className="max-w-4xl mx-auto p-8">
-            <div className="flex justify-between items-center mb-8">
-                <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">Till Management</h1>
+        <div className="max-w-7xl mx-auto p-8 lg:p-10 animate-fade-in-up">
+            <div className="flex flex-wrap justify-between items-center mb-10 gap-4">
+                <div className="flex flex-col gap-1">
+                    <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">Tills</h1>
+                    <span className="text-sm font-medium text-mid-grey">Registers and cash sessions</span>
+                </div>
                 {hasPermission('VIEW_TILL_REPORTS') && (
                     <button
                         onClick={() => router.push('/tills/reports')}
@@ -113,11 +116,11 @@ export default function TillsPage() {
             </div>
 
             {/* Create Till Card */}
-            <div className="bg-white p-6 rounded-2xl shadow-sm mb-8">
-                <h2 className="text-xl font-semibold mb-4">Add New Till</h2>
+            <div className="bg-white p-6 rounded-2xl shadow-card border border-gray-100/80 mb-8">
+                <h2 className="text-xl font-semibold tracking-tight mb-4">Add New Till</h2>
                 <form onSubmit={handleCreate} className="flex gap-4">
                     <input
-                        className="flex-1 p-3 border rounded-xl"
+                        className="flex-1 px-4 py-3 border border-cool-grey rounded-xl text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none"
                         placeholder="Till Name (e.g. Counter 1)"
                         value={newTillName}
                         onChange={e => setNewTillName(e.target.value)}
@@ -126,7 +129,7 @@ export default function TillsPage() {
                     <button
                         type="submit"
                         disabled={creating}
-                        className="bg-brand-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-brand-700 disabled:opacity-50"
+                        className="bg-brand-500 text-white px-6 py-3 rounded-xl text-sm font-semibold hover:bg-brand-600 shadow-soft disabled:opacity-50"
                     >
                         {creating ? 'Creating...' : 'Create Till'}
                     </button>
@@ -134,15 +137,15 @@ export default function TillsPage() {
             </div>
 
             {/* Tills List */}
-            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-card border border-gray-100/80 overflow-hidden">
                 <div className="p-6 border-b border-gray-100">
-                    <h2 className="text-xl font-semibold">All Tills</h2>
+                    <h2 className="text-xl font-semibold tracking-tight">All Tills</h2>
                 </div>
                 {loading ? (
                     <div className="p-8 text-center text-gray-500">Loading...</div>
                 ) : (
                     <table className="w-full text-left">
-                        <thead className="bg-gray-50 text-gray-400 text-xs uppercase">
+                        <thead className="bg-white border-b border-gray-100 text-mid-grey text-[11px] font-semibold uppercase tracking-widest">
                             <tr>
                                 <th className="p-4 pl-6">Name</th>
                                 <th className="p-4">Status</th>
@@ -156,20 +159,19 @@ export default function TillsPage() {
                                 <tr key={till.id} className="hover:bg-gray-50">
                                     <td className="p-4 pl-6 font-semibold">{till.name}</td>
                                     <td className="p-4">
-                                        <span className={`px-2 py-1 rounded text-xs font-semibold ${till.status === 'OPEN' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                                        <span className={`px-2 py-1 rounded-lg text-xs font-semibold ${till.status === 'OPEN' ? 'bg-green-50 text-green-700' : 'bg-surface-muted text-gray-500'
                                             }`}>
                                             {till.status}
                                         </span>
                                     </td>
-                                    <td className="p-4 text-sm text-gray-500">{till.storeId}</td>
+                                    <td className="p-4 text-sm text-gray-500">{till.store?.name || user?.store?.name || `${String(till.storeId).slice(0, 8)}…`}</td>
                                     <td className="p-4">
-                                        <div className="flex items-center gap-2">
-                                            <button onClick={() => fetchHistory(till)} className="text-blue-600 hover:underline text-sm font-semibold">History</button>
-                                            <span className="text-gray-300">|</span>
+                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                            <button onClick={() => fetchHistory(till)} className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-gray-500 hover:text-charcoal hover:bg-surface-muted transition-colors">History</button>
                                             <button onClick={() => {
                                                 const name = prompt('New name:', till.name);
                                                 if (name) api.tills.update(till.id, { name }).then(fetchTills);
-                                            }} className="text-brand-600 hover:underline text-sm font-semibold">Edit</button>
+                                            }} className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-brand-600 hover:bg-brand-50 transition-colors">Edit</button>
                                             <button onClick={async () => {
                                                 if (confirm('Delete this till?')) {
                                                     try {
@@ -179,7 +181,7 @@ export default function TillsPage() {
                                                         toast.error('Cannot delete: ' + err.message);
                                                     }
                                                 }
-                                            }} className="text-red-500 hover:underline text-sm font-semibold">Delete</button>
+                                            }} className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-red-500 hover:bg-red-50 transition-colors">Delete</button>
 
                                             {till.status === 'OPEN' && till.sessions?.[0] && (
                                                 <button
@@ -197,7 +199,7 @@ export default function TillsPage() {
                                                             toast.error('Failed to close: ' + err.message);
                                                         }
                                                     }}
-                                                    className="text-orange-600 hover:underline text-sm font-semibold ml-2"
+                                                    className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-amber-600 hover:bg-amber-50 transition-colors"
                                                 >
                                                     Close Session
                                                 </button>
@@ -207,7 +209,7 @@ export default function TillsPage() {
                                     <td className="p-4">
                                         {till.sessions && till.sessions.length > 0 ? (
                                             <div className="text-sm">
-                                                <div className="font-semibold">Open since {new Date(till.sessions[0].openedAt).toLocaleTimeString()}</div>
+                                                <div className="font-semibold">Open since {new Date(till.sessions[0].openedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                                                 <div className="text-gray-400">Float: {formatCurrency(till.sessions[0].openingFloat, user?.currency, user?.locale)}</div>
                                             </div>
                                         ) : <span className="text-gray-400">-</span>}

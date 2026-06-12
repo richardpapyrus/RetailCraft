@@ -103,7 +103,7 @@ export default function DashboardPage() {
 
     return (
         <div className="h-full bg-canvas overflow-y-auto font-sans">
-            <div className="max-w-[1600px] mx-auto p-8 lg:p-12">
+            <div className="max-w-[1600px] mx-auto p-8 lg:p-12 animate-fade-in-up">
                 {/* Header */}
                 <div className="flex flex-col md:flex-row justify-between items-center mb-12 gap-6">
                     <div className="flex flex-col gap-1">
@@ -152,8 +152,36 @@ export default function DashboardPage() {
                 </div>
 
                 {loading && !stats ? (
-                    <div className="flex items-center justify-center h-96">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600"></div>
+                    <div className="animate-fade-in-up">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
+                            {[...Array(5)].map((_, i) => (
+                                <div key={i} className="bg-white rounded-2xl p-6 shadow-card border border-gray-100/80">
+                                    <div className="skeleton h-3 w-20 mb-5"></div>
+                                    <div className="skeleton h-8 w-28 mb-2"></div>
+                                    <div className="skeleton h-3 w-24"></div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                            <div className="xl:col-span-2 bg-white p-8 rounded-2xl shadow-card border border-gray-100/80">
+                                <div className="skeleton h-5 w-48 mb-3"></div>
+                                <div className="skeleton h-3 w-72 mb-8"></div>
+                                <div className="skeleton h-[360px] w-full"></div>
+                            </div>
+                            <div className="bg-white p-8 rounded-2xl shadow-card border border-gray-100/80">
+                                <div className="skeleton h-5 w-32 mb-8"></div>
+                                {[...Array(6)].map((_, i) => (
+                                    <div key={i} className="flex items-center gap-4 mb-6">
+                                        <div className="skeleton h-10 w-10 rounded-full"></div>
+                                        <div className="flex-1">
+                                            <div className="skeleton h-3.5 w-32 mb-2"></div>
+                                            <div className="skeleton h-3 w-24"></div>
+                                        </div>
+                                        <div className="skeleton h-4 w-16"></div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 ) : (
                     <>
@@ -161,19 +189,26 @@ export default function DashboardPage() {
                             const revenue = stats?.filtered?.revenue || 0;
                             const profit = stats?.filtered?.profit || 0;
                             const margin = revenue > 0 ? (profit / revenue) * 100 : 0;
+                            const count = stats?.filtered?.count || 0;
+                            const avgBasket = count > 0 ? revenue / count : 0;
+                            const prevRevenue = Number(stats?.comparison?.revenue) || 0;
+                            const revenueDelta = prevRevenue > 0 ? ((revenue - prevRevenue) / prevRevenue) * 100 : null;
+                            // Trim trailing ".00" for an executive-friendly dashboard read
+                            const compact = (s: string) => s.replace(/([.,]00)(?=\s|$)/, '');
 
                             return (
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
                                     <StatsCard
                                         title="Revenue"
-                                        value={formatCurrency(revenue, user?.currency, user?.locale)}
+                                        value={compact(formatCurrency(revenue, user?.currency, user?.locale))}
                                         icon={<DollarSign size={20} className="text-brand-600" />}
                                         bgColor="bg-brand-50"
-                                        subtext="Selected Period"
+                                        subtext={revenueDelta === null ? 'Selected Period' : undefined}
+                                        trend={revenueDelta !== null ? { value: revenueDelta, label: 'vs previous period' } : undefined}
                                     />
                                     <StatsCard
                                         title="Profit"
-                                        value={formatCurrency(profit, user?.currency, user?.locale)}
+                                        value={compact(formatCurrency(profit, user?.currency, user?.locale))}
                                         icon={<TrendingUp size={20} className="text-brand-600" />}
                                         bgColor="bg-brand-50"
                                         subtext="Selected Period"
@@ -187,17 +222,17 @@ export default function DashboardPage() {
                                     />
                                     <StatsCard
                                         title="Transactions"
-                                        value={stats?.filtered?.count || 0}
+                                        value={count}
                                         icon={<FileText size={20} className="text-charcoal" />}
                                         bgColor="bg-surface-muted"
                                         subtext="Selected Period"
                                     />
                                     <StatsCard
-                                        title="Comparison"
-                                        value={formatCurrency(stats?.comparison?.revenue, user?.currency, user?.locale)}
+                                        title="Avg. Basket"
+                                        value={compact(formatCurrency(avgBasket, user?.currency, user?.locale))}
                                         icon={<Calendar size={20} className="text-charcoal" />}
                                         bgColor="bg-surface-muted"
-                                        subtext="Previous Period"
+                                        subtext="Revenue per sale"
                                     />
                                 </div>
                             );
@@ -231,6 +266,7 @@ export default function DashboardPage() {
                                                     tickLine={false}
                                                     tick={{ fontSize: 12, fill: '#94a3b8' }}
                                                     dy={10}
+                                                    interval={4}
                                                 />
                                                 <YAxis
                                                     axisLine={false}
@@ -277,7 +313,8 @@ export default function DashboardPage() {
                                             value={formatCurrency(stats?.filtered?.totalDiscount || 0, user?.currency, user?.locale)}
                                             icon={<Tag size={20} className="text-charcoal" />}
                                             bgColor="bg-surface-muted"
-                                            subtext="Click to view history"
+                                            subtext="View history →"
+                                            isLink
                                         />
                                     </Link>
                                     <Link href="/sales?filter=refund" className="block cursor-pointer">
@@ -286,7 +323,8 @@ export default function DashboardPage() {
                                             value={formatCurrency(stats?.filtered?.totalRefund || 0, user?.currency, user?.locale)}
                                             icon={<RotateCcw size={20} className="text-red-500" />}
                                             bgColor="bg-red-50"
-                                            subtext="Click to view history"
+                                            subtext="View history →"
+                                            isLink
                                         />
                                     </Link>
                                 </div>
@@ -315,8 +353,7 @@ export default function DashboardPage() {
                                                 className="flex justify-between items-center group cursor-pointer hover:bg-gray-50 rounded-lg p-2 -mx-2 transition-colors"
                                             >
                                                 <div className="flex items-center gap-4">
-                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 ${sale.status === 'COMPLETED' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
-                                                        }`}>
+                                                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 bg-brand-50 text-brand-700">
                                                         {sale.customer?.name?.[0] || 'W'}
                                                     </div>
                                                     <div>
@@ -396,9 +433,17 @@ export default function DashboardPage() {
     );
 }
 
-function StatsCard({ title, value, icon, bgColor, subtext }: { title: string, value: string | number, icon: React.ReactNode, bgColor: string, subtext?: string }) {
+function StatsCard({ title, value, icon, bgColor, subtext, trend, isLink }: {
+    title: string,
+    value: string | number,
+    icon: React.ReactNode,
+    bgColor: string,
+    subtext?: string,
+    trend?: { value: number, label: string },
+    isLink?: boolean
+}) {
     return (
-        <div className="bg-white rounded-2xl p-6 shadow-card border border-gray-100/80 hover:shadow-lifted transition-shadow duration-300">
+        <div className={`bg-white rounded-2xl p-6 shadow-card border border-gray-100/80 transition-all duration-300 ${isLink ? 'hover:shadow-lifted hover:-translate-y-0.5' : 'hover:shadow-lifted'}`}>
             <div className="flex items-start justify-between gap-3 mb-5">
                 <p className="text-[11px] font-semibold text-mid-grey uppercase tracking-widest truncate pt-1.5">{title}</p>
                 <div className={`w-10 h-10 rounded-xl ${bgColor} flex items-center justify-center shrink-0`}>
@@ -409,7 +454,17 @@ function StatsCard({ title, value, icon, bgColor, subtext }: { title: string, va
                 <div className="text-xl xl:text-2xl 2xl:text-3xl font-semibold text-gray-900 tracking-tight mb-1">
                     <FitText>{value}</FitText>
                 </div>
-                {subtext && <p className="text-xs font-medium text-mid-grey truncate">{subtext}</p>}
+                {trend && (
+                    <p className="text-xs font-medium flex items-center gap-1.5 truncate">
+                        <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md font-semibold ${trend.value >= 0 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>
+                            {trend.value >= 0 ? '▲' : '▼'} {Math.abs(trend.value).toFixed(1)}%
+                        </span>
+                        <span className="text-mid-grey">{trend.label}</span>
+                    </p>
+                )}
+                {!trend && subtext && (
+                    <p className={`text-xs font-medium truncate ${isLink ? 'text-brand-600' : 'text-mid-grey'}`}>{subtext}</p>
+                )}
             </div>
         </div>
     );

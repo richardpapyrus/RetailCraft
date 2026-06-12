@@ -142,7 +142,7 @@ export default function GeneralSettings() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Regional Settings (Currency & Format)</label>
                     <p className="text-xs text-gray-500 mb-2">Currency is defined at the Organization level.</p>
                     <select
-                        className="w-full p-2 border border-gray-300 rounded-lg disabled:bg-gray-100 disabled:text-gray-500"
+                        className="w-full px-3 py-2.5 border border-cool-grey rounded-xl text-sm disabled:bg-surface-muted disabled:text-mid-grey disabled:border-dashed disabled:cursor-not-allowed"
                         value={selectedCountry.name}
                         onChange={(e) => {
                             const c = COUNTRIES.find(x => x.name === e.target.value);
@@ -155,7 +155,7 @@ export default function GeneralSettings() {
                         ))}
                     </select>
                     {!!selectedStoreId && (
-                        <p className="text-xs text-blue-600 mt-1">
+                        <p className="text-xs text-brand-600 mt-1">
                             Switch to "All Locations" (deselect store) to edit Currency settings.
                         </p>
                     )}
@@ -228,22 +228,34 @@ export default function GeneralSettings() {
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Brand Color</label>
+                            <div className="flex items-center gap-1.5 mb-2">
+                                {['#38C3B5', '#2E3232', '#3664A6', '#7C5CBF', '#C75D4F', '#C99A2E'].map(preset => (
+                                    <button
+                                        key={preset}
+                                        type="button"
+                                        onClick={() => setBrandColor(preset)}
+                                        className={`w-7 h-7 rounded-lg transition-transform hover:scale-110 ${brandColor.toUpperCase() === preset ? 'ring-2 ring-offset-2 ring-brand-500' : ''}`}
+                                        style={{ backgroundColor: preset }}
+                                        title={preset}
+                                    />
+                                ))}
+                            </div>
                             <div className="flex items-center gap-2">
                                 <input
                                     type="color"
                                     value={brandColor}
                                     onChange={(e) => setBrandColor(e.target.value)}
-                                    className="h-10 w-10 p-1 rounded border border-gray-300 cursor-pointer"
+                                    className="h-10 w-10 p-1 rounded-lg border border-cool-grey cursor-pointer"
                                 />
                                 <input
                                     type="text"
                                     value={brandColor}
                                     onChange={(e) => setBrandColor(e.target.value)}
-                                    className="flex-1 p-2 border border-gray-300 rounded-lg text-sm uppercase"
+                                    className="flex-1 px-3 py-2 border border-cool-grey rounded-xl text-sm uppercase font-mono"
                                     maxLength={7}
                                 />
                             </div>
-                            <p className="text-[10px] text-gray-400 mt-1">Used for sidebar headers and accents.</p>
+                            <p className="text-xs text-gray-500 mt-1.5">Used for sidebar headers and accents.</p>
                         </div>
                     </div>
                 </div>
@@ -252,7 +264,7 @@ export default function GeneralSettings() {
                     <button
                         onClick={handleSave}
                         disabled={saving}
-                        className="bg-brand-600 text-white px-4 py-2 rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-50"
+                        className="bg-brand-500 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-brand-600 shadow-soft transition-colors disabled:opacity-50"
                     >
                         {saving ? 'Saving...' : 'Save Changes'}
                     </button>

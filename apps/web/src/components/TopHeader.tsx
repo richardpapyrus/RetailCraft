@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/useAuth';
 import { api, API_URL } from '@/lib/api';
+import { ChevronDown } from 'lucide-react';
 
 export function TopHeader() {
     const { user, selectedStoreId, setSelectedStoreId } = useAuth();
@@ -85,39 +86,22 @@ export function TopHeader() {
                                     value={selectedStoreId || ''}
                                     onChange={handleStoreChange}
                                 >
-                                    <option value="">📍 Organization HQ (Global)</option>
+                                    <option value="">Organization HQ (Global)</option>
                                     {stores.map(s => (
-                                        <option key={s.id} value={s.id}>📍 {s.name}</option>
+                                        <option key={s.id} value={s.id}>{s.name}</option>
                                     ))}
                                 </select>
-                                <span className="absolute right-0 top-0.5 pointer-events-none text-[8px] text-gray-400">▼</span>
+                                <ChevronDown size={10} className="absolute right-0 top-0.5 pointer-events-none text-gray-400" />
                             </div>
                             {error && <span className="text-[10px] text-red-500 font-semibold ml-2">⚠️ {error}</span>}
                         </div>
                     </div>
                 </div>
 
-                <div className="h-8 w-px bg-gray-200 hidden md:block"></div>
-
-                {/* Quick Info (Optional) */}
-                {selectedStoreId && (
-                    <div className="hidden lg:flex flex-col">
-                        <span className="text-[10px] text-gray-400 font-semibold uppercase">Current Store</span>
-                        <span className="text-sm font-semibold text-gray-700">{currentStore?.name}</span>
-                    </div>
-                )}
             </div>
 
-            {/* Right: User / Logout usually goes here but for now just powered by */}
-            <div className="flex items-center gap-4">
-                {/* ... existing right content ... */}
-                <div className="flex items-center gap-2 opacity-50 hover:opacity-100 transition-opacity">
-                    <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Powered by</span>
-                    <span className="font-semibold text-gray-600 text-sm tracking-tight flex items-center gap-1">
-                        RetailCraft
-                    </span>
-                </div>
-            </div>
+            {/* Right: reserved for page-level actions */}
+            <div className="flex items-center gap-4"></div>
         </header>
     );
 }
