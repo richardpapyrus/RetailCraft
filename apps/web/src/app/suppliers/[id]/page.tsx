@@ -99,7 +99,7 @@ export default function SupplierDetailsPage() {
                         <ArrowLeft className="w-5 h-5" />
                     </button>
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">{supplier?.name}</h1>
+                        <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">{supplier?.name}</h1>
                         <p className="text-sm text-gray-500">Manage Supplier Details & Products</p>
                     </div>
                 </div>
@@ -108,13 +108,13 @@ export default function SupplierDetailsPage() {
                 <div className="flex border-b border-gray-200 mb-6">
                     <button
                         onClick={() => setActiveTab('details')}
-                        className={`px-4 py-2 font-medium text-sm ${activeTab === 'details' ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+                        className={`px-4 py-2 font-medium text-sm ${activeTab === 'details' ? 'border-b-2 border-brand-600 text-brand-600' : 'text-gray-500 hover:text-gray-700'}`}
                     >
                         Details
                     </button>
                     <button
                         onClick={() => { setActiveTab('products'); loadAvailableProducts(); }}
-                        className={`px-4 py-2 font-medium text-sm ${activeTab === 'products' ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+                        className={`px-4 py-2 font-medium text-sm ${activeTab === 'products' ? 'border-b-2 border-brand-600 text-brand-600' : 'text-gray-500 hover:text-gray-700'}`}
                     >
                         Products ({products.length})
                     </button>
@@ -183,7 +183,7 @@ export default function SupplierDetailsPage() {
                                     </div>
                                 </div>
                                 <div className="pt-4">
-                                    <button type="submit" className="flex items-center bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
+                                    <button type="submit" className="flex items-center bg-brand-500 text-white px-4 py-2 rounded-xl hover:bg-brand-600">
                                         <Save className="w-4 h-4 mr-2" /> Save Changes
                                     </button>
                                 </div>
@@ -191,7 +191,7 @@ export default function SupplierDetailsPage() {
 
                             {/* Transaction History Section */}
                             <div className="mt-12 pt-8 border-t border-gray-100">
-                                <h3 className="text-lg font-bold text-gray-900 mb-4">Transaction History</h3>
+                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Transaction History</h3>
                                 <div className="border border-gray-200 rounded-lg overflow-hidden">
                                     <table className="w-full text-left text-sm">
                                         <thead className="bg-gray-50 border-b border-gray-200">
@@ -212,9 +212,9 @@ export default function SupplierDetailsPage() {
                                                         className="hover:bg-gray-50 cursor-pointer transition-colors"
                                                     >
                                                         <td className="p-3 text-gray-900">{new Date(po.createdAt).toLocaleDateString()}</td>
-                                                        <td className="p-3 font-mono text-indigo-600">#{po.poNumber || po.id.slice(0, 8)}</td>
+                                                        <td className="p-3 font-mono text-brand-600">#{po.poNumber || po.id.slice(0, 8)}</td>
                                                         <td className="p-3">
-                                                            <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wide
+                                                            <span className={`px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wide
                                                             ${po.status === 'DRAFT' ? 'bg-gray-100 text-gray-600' : ''}
                                                             ${po.status === 'ISSUED' ? 'bg-blue-100 text-blue-600' : ''}
                                                             ${po.status === 'RECEIVED' ? 'bg-green-100 text-green-600' : ''}
@@ -223,7 +223,7 @@ export default function SupplierDetailsPage() {
                                                             </span>
                                                         </td>
                                                         <td className="p-3 text-right text-gray-600">{po.items?.length || 0}</td>
-                                                        <td className="p-3 text-right font-bold text-gray-900">
+                                                        <td className="p-3 text-right font-semibold text-gray-900">
                                                             {po.items?.reduce((sum: number, item: any) => sum + (item.quantityOrdered * item.unitCost), 0).toLocaleString(undefined, { style: 'currency', currency: supplier.currency || 'USD' })}
                                                         </td>
                                                     </tr>
@@ -247,7 +247,7 @@ export default function SupplierDetailsPage() {
                             <div className="flex justify-end mb-4">
                                 <button
                                     onClick={() => setIsAddProductOpen(true)}
-                                    className="flex items-center bg-indigo-600 text-white px-3 py-1.5 rounded text-sm hover:bg-indigo-700"
+                                    className="flex items-center bg-brand-600 text-white px-3 py-1.5 rounded text-sm hover:bg-brand-700"
                                 >
                                     <Plus className="w-4 h-4 mr-1" /> Link Product
                                 </button>
@@ -300,7 +300,7 @@ export default function SupplierDetailsPage() {
             {isAddProductOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white p-6 rounded-lg w-96 shadow-xl">
-                        <h3 className="font-bold mb-4">Link Product</h3>
+                        <h3 className="font-semibold mb-4">Link Product</h3>
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-xs font-medium mb-1">Select Product</label>
@@ -347,7 +347,7 @@ export default function SupplierDetailsPage() {
                                 <button
                                     onClick={handleAddProduct}
                                     disabled={!newProductData.productId}
-                                    className="px-3 py-1 bg-indigo-600 text-white rounded disabled:opacity-50"
+                                    className="px-3 py-1 bg-brand-600 text-white rounded disabled:opacity-50"
                                 >
                                     Link
                                 </button>

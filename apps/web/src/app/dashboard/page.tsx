@@ -102,16 +102,16 @@ export default function DashboardPage() {
     if (!isHydrated) return null;
 
     return (
-        <div className="h-full bg-[#f8f9fc] overflow-y-auto font-sans">
-            <div className="max-w-[1600px] mx-auto p-8">
+        <div className="h-full bg-canvas overflow-y-auto font-sans">
+            <div className="max-w-[1600px] mx-auto p-8 lg:p-12">
                 {/* Header */}
-                <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
-                    <div className="flex flex-col">
-                        <h1 className="text-3xl font-extrabold text-[#111827] tracking-tight leading-tight">
-                            Dashboard Overview
+                <div className="flex flex-col md:flex-row justify-between items-center mb-12 gap-6">
+                    <div className="flex flex-col gap-1">
+                        <h1 className="text-3xl lg:text-4xl font-semibold text-gray-900 tracking-tight leading-tight">
+                            Dashboard
                         </h1>
-                        <span className="text-sm font-bold text-gray-400 uppercase tracking-wider">
-                            {selectedStoreId || (!isAdmin && user?.store) ? 'Store Performance' : 'Organization Performance'}
+                        <span className="text-sm font-medium text-mid-grey tracking-wide">
+                            {selectedStoreId || (!isAdmin && user?.store) ? 'Store performance overview' : 'Organization performance overview'}
                         </span>
                     </div>
 
@@ -121,16 +121,16 @@ export default function DashboardPage() {
                         {/* EOD Report Button */}
                         <button
                             onClick={() => window.print()}
-                            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-full font-bold text-sm flex items-center shadow-sm"
+                            className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-xl font-semibold text-sm flex items-center shadow-soft"
                         >
                             <FileText size={16} className="mr-2" />
                             EOD Report
                         </button>
 
                         {/* Date Picker Pill */}
-                        <div className="flex items-center bg-white px-1 py-1 rounded-full shadow-sm border border-gray-100">
+                        <div className="flex items-center bg-white px-1 py-1 rounded-xl shadow-soft border border-gray-100">
                             <div className="flex items-center px-4 py-2 border-r border-gray-100">
-                                <span className="text-xs font-bold text-gray-400 mr-2 uppercase tracking-wide">From</span>
+                                <span className="text-xs font-semibold text-mid-grey mr-2 uppercase tracking-wide">From</span>
                                 <input
                                     type="date"
                                     value={dateRange.from}
@@ -139,7 +139,7 @@ export default function DashboardPage() {
                                 />
                             </div>
                             <div className="flex items-center px-4 py-2">
-                                <span className="text-xs font-bold text-gray-400 mr-2 uppercase tracking-wide">To</span>
+                                <span className="text-xs font-semibold text-gray-400 mr-2 uppercase tracking-wide">To</span>
                                 <input
                                     type="date"
                                     value={dateRange.to}
@@ -153,7 +153,7 @@ export default function DashboardPage() {
 
                 {loading && !stats ? (
                     <div className="flex items-center justify-center h-96">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600"></div>
                     </div>
                 ) : (
                     <>
@@ -167,36 +167,36 @@ export default function DashboardPage() {
                                     <StatsCard
                                         title="Revenue"
                                         value={formatCurrency(revenue, user?.currency, user?.locale)}
-                                        icon={<DollarSign size={24} className="text-yellow-600" />}
-                                        bgColor="bg-yellow-50"
+                                        icon={<DollarSign size={20} className="text-brand-600" />}
+                                        bgColor="bg-brand-50"
                                         subtext="Selected Period"
                                     />
                                     <StatsCard
                                         title="Profit"
                                         value={formatCurrency(profit, user?.currency, user?.locale)}
-                                        icon={<TrendingUp size={24} className="text-rose-500" />}
-                                        bgColor="bg-rose-50"
+                                        icon={<TrendingUp size={20} className="text-brand-600" />}
+                                        bgColor="bg-brand-50"
                                         subtext="Selected Period"
                                     />
                                     <StatsCard
                                         title="Margin"
                                         value={`${margin.toFixed(1)}%`}
-                                        icon={<Percent size={24} className="text-emerald-500" />}
-                                        bgColor="bg-emerald-50"
+                                        icon={<Percent size={20} className="text-brand-600" />}
+                                        bgColor="bg-brand-50"
                                         subtext="Selected Period"
                                     />
                                     <StatsCard
                                         title="Transactions"
                                         value={stats?.filtered?.count || 0}
-                                        icon={<FileText size={24} className="text-blue-500" />}
-                                        bgColor="bg-blue-50"
+                                        icon={<FileText size={20} className="text-charcoal" />}
+                                        bgColor="bg-surface-muted"
                                         subtext="Selected Period"
                                     />
                                     <StatsCard
                                         title="Comparison"
                                         value={formatCurrency(stats?.comparison?.revenue, user?.currency, user?.locale)}
-                                        icon={<Calendar size={24} className="text-orange-500" />}
-                                        bgColor="bg-orange-50"
+                                        icon={<Calendar size={20} className="text-charcoal" />}
+                                        bgColor="bg-surface-muted"
                                         subtext="Previous Period"
                                     />
                                 </div>
@@ -210,18 +210,18 @@ export default function DashboardPage() {
                             {/* Left Column: Chart & Best Sellers */}
                             <div className="xl:col-span-2 flex flex-col gap-8">
                                 {/* Chart Section */}
-                                <div className="bg-white p-8 rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.04)]">
+                                <div className="bg-white p-8 rounded-2xl shadow-card border border-gray-100/80">
                                     <div className="mb-8">
-                                        <h2 className="text-2xl font-bold text-gray-900 mb-1">Month to Date Trend</h2>
-                                        <p className="text-sm text-gray-500 font-medium">Daily sales comparison: Current Month vs Previous Month</p>
+                                        <h2 className="text-xl font-semibold text-gray-900 tracking-tight mb-1">Month to Date Trend</h2>
+                                        <p className="text-sm text-mid-grey font-medium">Daily sales comparison: current month vs previous month</p>
                                     </div>
                                     <div className="h-[400px]">
                                         <ResponsiveContainer width="100%" height="100%">
                                             <AreaChart data={stats?.trendChartData || []} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                                                 <defs>
                                                     <linearGradient id="colorCurrent" x1="0" y1="0" x2="0" y2="1">
-                                                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2} />
-                                                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                                                        <stop offset="5%" stopColor="#38C3B5" stopOpacity={0.2} />
+                                                        <stop offset="95%" stopColor="#38C3B5" stopOpacity={0} />
                                                     </linearGradient>
                                                 </defs>
                                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -249,7 +249,7 @@ export default function DashboardPage() {
                                                 <Area
                                                     type="monotone"
                                                     dataKey="current"
-                                                    stroke="#6366f1"
+                                                    stroke="#38C3B5"
                                                     strokeWidth={3}
                                                     fillOpacity={1}
                                                     fill="url(#colorCurrent)"
@@ -275,8 +275,8 @@ export default function DashboardPage() {
                                         <StatsCard
                                             title="Discounts Given"
                                             value={formatCurrency(stats?.filtered?.totalDiscount || 0, user?.currency, user?.locale)}
-                                            icon={<Tag size={24} className="text-purple-600" />}
-                                            bgColor="bg-purple-50"
+                                            icon={<Tag size={20} className="text-charcoal" />}
+                                            bgColor="bg-surface-muted"
                                             subtext="Click to view history"
                                         />
                                     </Link>
@@ -284,7 +284,7 @@ export default function DashboardPage() {
                                         <StatsCard
                                             title="Refunds Processed"
                                             value={formatCurrency(stats?.filtered?.totalRefund || 0, user?.currency, user?.locale)}
-                                            icon={<RotateCcw size={24} className="text-red-600" />}
+                                            icon={<RotateCcw size={20} className="text-red-500" />}
                                             bgColor="bg-red-50"
                                             subtext="Click to view history"
                                         />
@@ -292,8 +292,8 @@ export default function DashboardPage() {
                                 </div>
 
                                 {/* Best Sellers */}
-                                <div className="bg-white p-6 rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] flex-1 flex flex-col">
-                                    <h2 className="text-xl font-bold text-gray-900 mb-2">Best Sellers</h2>
+                                <div className="bg-white p-8 rounded-2xl shadow-card border border-gray-100/80 flex-1 flex flex-col">
+                                    <h2 className="text-xl font-semibold text-gray-900 tracking-tight mb-2">Best Sellers</h2>
                                     <div className="flex-1">
                                         <BestSellersWidget from={dateRange.from} to={dateRange.to} storeId={selectedStoreId || undefined} />
                                     </div>
@@ -302,10 +302,10 @@ export default function DashboardPage() {
 
                             {/* Right Column: Recent Sales */}
                             <div>
-                                <div className="bg-white p-6 rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] sticky top-8">
-                                    <div className="flex justify-between items-center mb-6 pl-2 pr-2 pt-2">
-                                        <h2 className="text-xl font-bold text-gray-900">Recent Sales</h2>
-                                        <Link href="/sales" className="text-sm text-indigo-600 hover:text-indigo-800 font-bold">View All</Link>
+                                <div className="bg-white p-8 rounded-2xl shadow-card border border-gray-100/80 sticky top-8">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <h2 className="text-xl font-semibold text-gray-900 tracking-tight">Recent Sales</h2>
+                                        <Link href="/sales" className="text-sm text-brand-600 hover:text-brand-700 font-semibold">View all</Link>
                                     </div>
                                     <div className="space-y-6">
                                         {stats?.recentSales?.map((sale: any) => (
@@ -315,12 +315,12 @@ export default function DashboardPage() {
                                                 className="flex justify-between items-center group cursor-pointer hover:bg-gray-50 rounded-lg p-2 -mx-2 transition-colors"
                                             >
                                                 <div className="flex items-center gap-4">
-                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${sale.status === 'COMPLETED' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 ${sale.status === 'COMPLETED' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
                                                         }`}>
                                                         {sale.customer?.name?.[0] || 'W'}
                                                     </div>
                                                     <div>
-                                                        <div className="font-bold text-gray-900 text-sm">{sale.customer?.name || 'Walk-In Customer'}</div>
+                                                        <div className="font-semibold text-gray-900 text-sm">{sale.customer?.name || 'Walk-In Customer'}</div>
                                                         <div className="text-xs font-medium text-gray-400 flex items-center gap-2">
                                                             <span>
                                                                 {(() => {
@@ -347,14 +347,14 @@ export default function DashboardPage() {
                                                         return hasRefund ? (
                                                             <div className="flex flex-col items-end">
                                                                 <span className="text-gray-400 line-through text-xs">{formatCurrency(originalTotal, user?.currency, user?.locale)}</span>
-                                                                <span className="font-bold text-red-600 text-base">{formatCurrency(netTotal, user?.currency, user?.locale)}</span>
+                                                                <span className="font-semibold text-red-600 text-base">{formatCurrency(netTotal, user?.currency, user?.locale)}</span>
                                                                 <span className="text-[9px] bg-red-100 text-red-600 px-1 rounded uppercase tracking-wider mt-0.5">Refunded</span>
                                                             </div>
                                                         ) : (
-                                                            <div className="font-bold text-gray-900 text-base">{formatCurrency(originalTotal, user?.currency, user?.locale)}</div>
+                                                            <div className="font-semibold text-gray-900 text-base">{formatCurrency(originalTotal, user?.currency, user?.locale)}</div>
                                                         );
                                                     })()}
-                                                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-1">
+                                                    <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mt-1">
                                                         {sale.paymentMethod}
                                                     </div>
                                                 </div>
@@ -398,16 +398,18 @@ export default function DashboardPage() {
 
 function StatsCard({ title, value, icon, bgColor, subtext }: { title: string, value: string | number, icon: React.ReactNode, bgColor: string, subtext?: string }) {
     return (
-        <div className="bg-white rounded-3xl p-5 shadow-[0_2px_15px_rgba(0,0,0,0.03)] border border-gray-100 flex items-center gap-4 hover:-translate-y-1 transition-transform duration-300">
-            <div className={`w-12 h-12 rounded-2xl ${bgColor} flex items-center justify-center shrink-0`}>
-                {icon}
+        <div className="bg-white rounded-2xl p-6 shadow-card border border-gray-100/80 hover:shadow-lifted transition-shadow duration-300">
+            <div className="flex items-start justify-between gap-3 mb-5">
+                <p className="text-[11px] font-semibold text-mid-grey uppercase tracking-widest truncate pt-1.5">{title}</p>
+                <div className={`w-10 h-10 rounded-xl ${bgColor} flex items-center justify-center shrink-0`}>
+                    {icon}
+                </div>
             </div>
-            <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold text-gray-400 mb-0.5 uppercase tracking-wide truncate">{title}</p>
-                <div className="text-lg xl:text-xl 2xl:text-2xl font-extrabold text-[#111827] mb-0.5">
+            <div className="min-w-0">
+                <div className="text-xl xl:text-2xl 2xl:text-3xl font-semibold text-gray-900 tracking-tight mb-1">
                     <FitText>{value}</FitText>
                 </div>
-                {subtext && <p className="text-[10px] xl:text-xs font-medium text-gray-400 truncate">{subtext}</p>}
+                {subtext && <p className="text-xs font-medium text-mid-grey truncate">{subtext}</p>}
             </div>
         </div>
     );

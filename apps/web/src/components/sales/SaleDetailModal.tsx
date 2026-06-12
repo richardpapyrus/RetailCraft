@@ -44,7 +44,7 @@ export function SaleDetailModal({ sale, onClose, onReturn }: SaleDetailModalProp
                     {/* Header */}
                     <div className="p-6 border-b border-gray-100 flex justify-between items-start shrink-0">
                         <div>
-                            <h2 className="text-xl font-bold text-gray-900">Receipt Details</h2>
+                            <h2 className="text-xl font-semibold text-gray-900">Receipt Details</h2>
                             <p className="text-sm text-gray-500 font-mono">#{sale.id}</p>
                         </div>
                         <button className="text-gray-400 hover:text-gray-600" onClick={onClose}>
@@ -56,7 +56,7 @@ export function SaleDetailModal({ sale, onClose, onReturn }: SaleDetailModalProp
                     <div className="p-6 overflow-y-auto flex-1">
                         <div className="mb-6 text-center">
                             <div className="text-sm text-gray-500">{formatDate(sale.createdAt)}</div>
-                            <div className="font-bold text-lg mt-1">{sale.customer?.name || 'Walk-In Customer'}</div>
+                            <div className="font-semibold text-lg mt-1">{sale.customer?.name || 'Walk-In Customer'}</div>
                             {sale.customer?.code && <div className="text-xs text-gray-400 font-mono">{sale.customer.code}</div>}
                         </div>
 
@@ -97,7 +97,7 @@ export function SaleDetailModal({ sale, onClose, onReturn }: SaleDetailModalProp
                         </div>
 
                         <div className="border-t border-gray-200 mt-6 pt-4 space-y-2">
-                            <div className="flex justify-between font-bold text-lg">
+                            <div className="flex justify-between font-semibold text-lg">
                                 <span>Total</span>
                                 <span>{formatCurrency(sale.total, user?.currency, user?.locale)}</span>
                             </div>
@@ -108,7 +108,7 @@ export function SaleDetailModal({ sale, onClose, onReturn }: SaleDetailModalProp
                                         <span>Refunded</span>
                                         <span>-{formatCurrency(totalRefunded, user?.currency, user?.locale)}</span>
                                     </div>
-                                    <div className="flex justify-between font-bold text-lg border-t border-dashed pt-2">
+                                    <div className="flex justify-between font-semibold text-lg border-t border-dashed pt-2">
                                         <span>Net Total</span>
                                         <span>{formatCurrency(Number(sale.total) - totalRefunded, user?.currency, user?.locale)}</span>
                                     </div>
@@ -124,7 +124,7 @@ export function SaleDetailModal({ sale, onClose, onReturn }: SaleDetailModalProp
                                 <div className="mt-2 bg-gray-50 p-2 rounded text-xs space-y-1">
                                     {sale.payments.map((p: any, i: number) => (
                                         <div key={i} className="flex justify-between">
-                                            <span className="font-bold">{p.method}</span>
+                                            <span className="font-semibold">{p.method}</span>
                                             <span>{formatCurrency(p.amount, user?.currency, user?.locale)}</span>
                                         </div>
                                     ))}
@@ -151,7 +151,7 @@ export function SaleDetailModal({ sale, onClose, onReturn }: SaleDetailModalProp
                             <div></div>
                         )}
                         <button
-                            className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 font-medium"
+                            className="px-4 py-2 bg-brand-500 text-white rounded-xl hover:bg-brand-600 font-medium"
                             onClick={() => window.print()}
                         >
                             Print Receipt

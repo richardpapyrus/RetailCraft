@@ -98,7 +98,7 @@ export default function ReceivePOPage() {
                         <ArrowLeft className="w-5 h-5" />
                     </button>
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Receive Goods (GRN)</h1>
+                        <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">Receive Goods (GRN)</h1>
                         <p className="text-sm text-gray-500">
                             PO #{po.poNumber} • {po.supplier?.name}
                         </p>
@@ -110,11 +110,11 @@ export default function ReceivePOPage() {
                         <thead className="bg-gray-50 border-b">
                             <tr>
                                 <th className="p-4">Product</th>
-                                <th className="p-4 text-center w-28 font-extrabold text-gray-900 border-l border-r">Qty Ordered</th>
+                                <th className="p-4 text-center w-28 font-semibold text-gray-900 border-l border-r">Qty Ordered</th>
                                 <th className="p-4 text-center w-24">Prev. Recv</th>
                                 <th className="p-4 w-32 border-l">Unit Cost</th>
                                 <th className="p-4 w-32">Selling Price</th>
-                                <th className="p-4 w-40 border-l bg-indigo-50 text-indigo-900 font-bold">Quantity Received</th>
+                                <th className="p-4 w-40 border-l bg-brand-50 text-brand-900 font-semibold">Quantity Received</th>
                                 <th className="p-4 w-40">Batch #</th>
                                 <th className="p-4 w-40">Expiry Date</th>
                             </tr>
@@ -122,8 +122,8 @@ export default function ReceivePOPage() {
                         <tbody className="divide-y">
                             {items.map(item => (
                                 <tr key={item.id} className={item.toReceive > 0 ? 'bg-white' : 'bg-gray-50 opacity-50'}>
-                                    <td className="p-4 font-bold">{item.productName}</td>
-                                    <td className="p-4 text-center font-extrabold text-gray-900 text-lg border-l border-r bg-gray-50">{item.ordered}</td>
+                                    <td className="p-4 font-semibold">{item.productName}</td>
+                                    <td className="p-4 text-center font-semibold text-gray-900 text-lg border-l border-r bg-gray-50">{item.ordered}</td>
                                     <td className="p-4 text-center text-gray-600">{item.receivedSoFar}</td>
                                     <td className="p-4 border-l">
                                         <input
@@ -145,11 +145,11 @@ export default function ReceivePOPage() {
                                             onChange={e => handleUpdate(item.id, 'sellingPrice', e.target.value)}
                                         />
                                     </td>
-                                    <td className="p-4 border-l bg-indigo-50">
+                                    <td className="p-4 border-l bg-brand-50">
                                         <input
                                             type="number"
                                             min="0"
-                                            className="w-full p-2 border border-indigo-300 rounded font-bold text-center text-lg focus:ring-2 focus:ring-indigo-500 text-indigo-900"
+                                            className="w-full p-2 border border-brand-300 rounded font-semibold text-center text-lg focus:ring-2 focus:ring-brand-500 text-brand-900"
                                             value={item.toReceive}
                                             onChange={e => handleUpdate(item.id, 'toReceive', Number(e.target.value))}
                                         />
@@ -179,7 +179,7 @@ export default function ReceivePOPage() {
                     <div className="p-6 bg-gray-50 border-t flex justify-end">
                         <button
                             onClick={handleSubmit}
-                            className="flex items-center bg-green-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-green-700 shadow-lg"
+                            className="flex items-center bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 shadow-lg"
                         >
                             <CheckCircle className="w-5 h-5 mr-2" /> Confirm Receipt (GRN)
                         </button>

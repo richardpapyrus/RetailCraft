@@ -109,7 +109,7 @@ export function ReturnModal({ isOpen, onClose, sale, onSuccess }: ReturnModalPro
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl overflow-hidden max-h-[90vh] flex flex-col">
                 <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                    <h2 className="text-xl font-bold text-gray-900">Process Return</h2>
+                    <h2 className="text-xl font-semibold text-gray-900">Process Return</h2>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
                 </div>
 
@@ -123,7 +123,7 @@ export function ReturnModal({ isOpen, onClose, sale, onSuccess }: ReturnModalPro
                         Select items to return from Sale <b>#{sale.id.slice(0, 8)}</b>.
                     </p>
 
-                    <table className="min-w-full divide-y divide-gray-200">
+                    <table className="min-w-full divide-y divide-gray-100">
                         <thead>
                             <tr>
                                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
@@ -132,7 +132,7 @@ export function ReturnModal({ isOpen, onClose, sale, onSuccess }: ReturnModalPro
                                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Restock?</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-200">
+                        <tbody className="divide-y divide-gray-100">
                             {sale.items.map(item => {
                                 // Fallback ID resolution
                                 const pId = item.productId || (item.product as any).id;
@@ -176,7 +176,7 @@ export function ReturnModal({ isOpen, onClose, sale, onSuccess }: ReturnModalPro
                     <div className="mt-6 flex justify-end items-center gap-4">
                         <div className="text-right">
                             <span className="block text-xs text-gray-500">Refund Total</span>
-                            <span className="block text-2xl font-bold text-red-600">{formatCurrency(totalRefund, user?.currency)}</span>
+                            <span className="block text-2xl font-semibold text-red-600">{formatCurrency(totalRefund, user?.currency)}</span>
                         </div>
                     </div>
                 </div>
@@ -186,7 +186,7 @@ export function ReturnModal({ isOpen, onClose, sale, onSuccess }: ReturnModalPro
                     <button
                         onClick={handleSubmit}
                         disabled={loading || totalRefund === 0}
-                        className="px-6 py-2 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 disabled:opacity-50"
+                        className="px-6 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 disabled:opacity-50"
                     >
                         {loading ? 'Processing...' : 'Confirm Return'}
                     </button>

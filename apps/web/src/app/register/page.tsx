@@ -44,7 +44,7 @@ export default function RegisterPage() {
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src="/logo.jpg" alt="RetailCraft Logo" className="h-20 w-auto object-contain" />
                     </div>
-                    <h2 className="text-3xl font-extrabold text-gray-900">Start your journey</h2>
+                    <h2 className="text-3xl font-semibold text-gray-900">Start your journey</h2>
                     <p className="mt-2 text-sm text-gray-600">Create your new RetailCraft account</p>
                 </div>
                 <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -61,7 +61,7 @@ export default function RegisterPage() {
                                 name="businessName"
                                 type="text"
                                 required
-                                className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                                className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-brand-500 focus:border-brand-500 focus:z-10 sm:text-sm"
                                 placeholder="Business Name"
                                 value={formData.businessName}
                                 onChange={e => setFormData({ ...formData, businessName: e.target.value })}
@@ -74,7 +74,7 @@ export default function RegisterPage() {
                                 name="storeName"
                                 type="text"
                                 required
-                                className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                                className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-brand-500 focus:border-brand-500 focus:z-10 sm:text-sm"
                                 placeholder="First Location Name (e.g. Main Street Branch)"
                                 value={formData.storeName}
                                 onChange={e => setFormData({ ...formData, storeName: e.target.value })}
@@ -88,7 +88,7 @@ export default function RegisterPage() {
                                 type="email"
                                 autoComplete="email"
                                 required
-                                className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                                className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-brand-500 focus:border-brand-500 focus:z-10 sm:text-sm"
                                 placeholder="Email address"
                                 value={formData.email}
                                 onChange={e => setFormData({ ...formData, email: e.target.value })}
@@ -102,7 +102,7 @@ export default function RegisterPage() {
                                 type="password"
                                 autoComplete="new-password"
                                 required
-                                className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                                className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-brand-500 focus:border-brand-500 focus:z-10 sm:text-sm"
                                 placeholder="Password"
                                 value={formData.password}
                                 onChange={e => setFormData({ ...formData, password: e.target.value })}
@@ -115,7 +115,7 @@ export default function RegisterPage() {
                                 name="fullName"
                                 type="text"
                                 required
-                                className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                                className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-brand-500 focus:border-brand-500 focus:z-10 sm:text-sm"
                                 placeholder="Full Name"
                                 value={formData.fullName}
                                 onChange={e => setFormData({ ...formData, fullName: e.target.value })}
@@ -127,7 +127,7 @@ export default function RegisterPage() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-70 transition-colors"
+                            className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-brand-500 hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 disabled:opacity-70 transition-colors"
                         >
                             {loading ? 'Creating Account...' : 'Sign up'}
                         </button>
@@ -135,7 +135,7 @@ export default function RegisterPage() {
 
                     <div className="text-center text-sm">
                         <span className="text-gray-600">Already have an account? </span>
-                        <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
+                        <Link href="/login" className="font-medium text-brand-600 hover:text-brand-500">
                             Sign in
                         </Link>
                     </div>

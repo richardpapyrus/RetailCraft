@@ -87,7 +87,7 @@ export default function RolesPage() {
         <div className="p-6 max-w-6xl mx-auto">
             <div className="flex justify-between items-center mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold">Roles</h1>
+                    <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">Roles</h1>
                     <p className="text-gray-500">Manage roles and their access privileges.</p>
                 </div>
                 <button
@@ -118,7 +118,7 @@ export default function RolesPage() {
                                     </div>
                                 )}
                             </div>
-                            <h3 className="text-lg font-bold text-gray-800">{role.name}</h3>
+                            <h3 className="text-lg font-semibold text-gray-800">{role.name}</h3>
                             <p className="text-sm text-gray-500 mb-4 h-10 line-clamp-2">{role.description || 'No description provided.'}</p>
 
                             <div className="flex items-center gap-2 text-sm text-gray-600 mb-4 bg-gray-50 p-2 rounded">
@@ -150,7 +150,7 @@ export default function RolesPage() {
                     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
                         <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
                             <div className="p-6 border-b sticky top-0 bg-white z-10 flex justify-between items-center">
-                                <h2 className="text-xl font-bold">{isEditing ? 'Edit Role' : 'Create Role'}</h2>
+                                <h2 className="text-xl font-semibold">{isEditing ? 'Edit Role' : 'Create Role'}</h2>
                                 <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600"><X /></button>
                             </div>
 

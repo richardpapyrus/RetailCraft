@@ -9,11 +9,11 @@ import { toast } from 'react-hot-toast';
 // Shared Form for Create/Edit
 const StoreForm = ({ isEdit = false, onSave, onCancel, formData, setFormData }: any) => (
     <div className="mb-6 p-6 bg-gray-50 rounded-xl border border-gray-200">
-        <h3 className="font-bold text-lg mb-4">{isEdit ? 'Edit Location' : 'New Location'}</h3>
+        <h3 className="font-semibold text-lg mb-4">{isEdit ? 'Edit Location' : 'New Location'}</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div className="col-span-2">
-                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Store Name</label>
+                <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">Store Name</label>
                 <input
                     className="w-full p-2 border border-gray-300 rounded-lg"
                     placeholder="e.g. Main Street Branch"
@@ -24,7 +24,7 @@ const StoreForm = ({ isEdit = false, onSave, onCancel, formData, setFormData }: 
             </div>
 
             <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Address</label>
+                <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">Address</label>
                 <input
                     className="w-full p-2 border border-gray-300 rounded-lg"
                     placeholder="123 Main St, City"
@@ -33,7 +33,7 @@ const StoreForm = ({ isEdit = false, onSave, onCancel, formData, setFormData }: 
                 />
             </div>
             <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Phone</label>
+                <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">Phone</label>
                 <input
                     className="w-full p-2 border border-gray-300 rounded-lg"
                     placeholder="+1 234 567 8900"
@@ -42,7 +42,7 @@ const StoreForm = ({ isEdit = false, onSave, onCancel, formData, setFormData }: 
                 />
             </div>
             <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Email</label>
+                <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">Email</label>
                 <input
                     className="w-full p-2 border border-gray-300 rounded-lg"
                     placeholder="store@example.com"
@@ -51,7 +51,7 @@ const StoreForm = ({ isEdit = false, onSave, onCancel, formData, setFormData }: 
                 />
             </div>
             <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Website</label>
+                <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">Website</label>
                 <input
                     className="w-full p-2 border border-gray-300 rounded-lg"
                     placeholder="www.example.com"
@@ -62,10 +62,10 @@ const StoreForm = ({ isEdit = false, onSave, onCancel, formData, setFormData }: 
         </div>
 
         <div className="border-t border-gray-200 pt-4 mt-4">
-            <h4 className="font-bold text-indigo-700 mb-3 text-sm uppercase tracking-wide">Receipt Customization</h4>
+            <h4 className="font-semibold text-brand-700 mb-3 text-sm uppercase tracking-wide">Receipt Customization</h4>
             <div className="space-y-3">
                 <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Logo URL</label>
+                    <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">Logo URL</label>
                     <input
                         className="w-full p-2 border border-gray-300 rounded-lg"
                         placeholder="https://example.com/logo.png"
@@ -75,7 +75,7 @@ const StoreForm = ({ isEdit = false, onSave, onCancel, formData, setFormData }: 
                     <p className="text-[10px] text-gray-400 mt-1">Direct link to an image (PNG/JPG).</p>
                 </div>
                 <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Receipt Header Message</label>
+                    <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">Receipt Header Message</label>
                     <input
                         className="w-full p-2 border border-gray-300 rounded-lg"
                         placeholder="Welcome to our store!"
@@ -84,7 +84,7 @@ const StoreForm = ({ isEdit = false, onSave, onCancel, formData, setFormData }: 
                     />
                 </div>
                 <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Receipt Footer Message</label>
+                    <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">Receipt Footer Message</label>
                     <textarea
                         className="w-full p-2 border border-gray-300 rounded-lg h-20"
                         placeholder="Return Policy: 30 days..."
@@ -96,8 +96,8 @@ const StoreForm = ({ isEdit = false, onSave, onCancel, formData, setFormData }: 
         </div>
 
         <div className="flex justify-end gap-2 mt-6">
-            <button onClick={onCancel} className="px-4 py-2 text-gray-600 font-bold hover:bg-gray-100 rounded-lg">Cancel</button>
-            <button onClick={onSave} className="px-6 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 shadow-lg shadow-indigo-200">
+            <button onClick={onCancel} className="px-4 py-2 text-gray-600 font-semibold hover:bg-gray-100 rounded-lg">Cancel</button>
+            <button onClick={onSave} className="px-6 py-2 bg-brand-600 text-white font-semibold rounded-lg hover:bg-brand-700 shadow-soft">
                 {isEdit ? 'Save Changes' : 'Create Location'}
             </button>
         </div>
@@ -182,11 +182,11 @@ export default function StoreSettings() {
     return (
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
             <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-gray-800">Locations</h2>
+                <h2 className="text-xl font-semibold text-gray-800">Locations</h2>
                 {!isCreating && !editingStore && (
                     <button
                         onClick={openCreate}
-                        className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors font-bold shadow-md shadow-indigo-200"
+                        className="bg-brand-600 text-white px-4 py-2 rounded-lg hover:bg-brand-700 transition-colors font-semibold shadow-soft"
                     >
                         + Add Location
                     </button>
@@ -202,10 +202,10 @@ export default function StoreSettings() {
                     <table className="w-full text-left">
                         <thead>
                             <tr className="border-b border-gray-200 text-gray-500 text-xs uppercase tracking-wider">
-                                <th className="pb-3 font-bold">Name</th>
-                                <th className="pb-3 font-bold">Contact</th>
-                                <th className="pb-3 font-bold">Receipt Info</th>
-                                <th className="pb-3 font-bold text-right">Actions</th>
+                                <th className="pb-3 font-semibold">Name</th>
+                                <th className="pb-3 font-semibold">Contact</th>
+                                <th className="pb-3 font-semibold">Receipt Info</th>
+                                <th className="pb-3 font-semibold text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
@@ -213,7 +213,7 @@ export default function StoreSettings() {
                                 <tr><td colSpan={4} className="py-8 text-center text-gray-400 font-medium">Loading locations...</td></tr>
                             ) : stores.map(store => (
                                 <tr key={store.id} className="group hover:bg-gray-50 transition-colors">
-                                    <td className="py-4 font-bold text-gray-900">{store.name}</td>
+                                    <td className="py-4 font-semibold text-gray-900">{store.name}</td>
                                     <td className="py-4 text-sm text-gray-600">
                                         {store.address && <div className="text-xs">{store.address}</div>}
                                         {store.phone && <div className="text-xs text-gray-400">{store.phone}</div>}
@@ -226,7 +226,7 @@ export default function StoreSettings() {
                                         )}
                                     </td>
                                     <td className="py-4 text-right">
-                                        <button onClick={() => startEdit(store)} className="text-indigo-600 font-bold hover:text-indigo-800 text-sm">Edit</button>
+                                        <button onClick={() => startEdit(store)} className="text-brand-600 font-semibold hover:text-brand-800 text-sm">Edit</button>
                                     </td>
                                 </tr>
                             ))}

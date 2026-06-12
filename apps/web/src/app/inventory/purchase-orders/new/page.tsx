@@ -164,9 +164,9 @@ export default function CreatePOPage() {
                 ) : (
                     <div className="h-full flex flex-col items-center justify-center p-8 text-center bg-gray-50/50">
                         <div className="bg-white p-4 rounded-2xl shadow-sm mb-4 border border-gray-100">
-                            <Store className="w-8 h-8 text-indigo-600" />
+                            <Store className="w-8 h-8 text-brand-600" />
                         </div>
-                        <h3 className="text-lg font-bold text-gray-800">Select a Store</h3>
+                        <h3 className="text-lg font-semibold text-gray-800">Select a Store</h3>
                         <p className="text-sm text-gray-500 mt-2 max-w-[200px]">Please select a store from the top bar to browse inventory.</p>
                     </div>
                 )}
@@ -181,15 +181,15 @@ export default function CreatePOPage() {
                             <button onClick={() => router.back()} className="text-gray-400 hover:text-gray-600 transition-colors">
                                 <ArrowLeft size={20} />
                             </button>
-                            <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2 py-0.5 rounded">Draft Mode</span>
+                            <span className="text-xs font-semibold text-brand-600 uppercase tracking-widest bg-brand-50 px-2 py-0.5 rounded">Draft Mode</span>
                         </div>
-                        <h1 className="text-3xl font-black text-gray-900 tracking-tight">New Purchase Order</h1>
+                        <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">New Purchase Order</h1>
                     </div>
 
                     <div className="w-72">
-                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 ml-1">Select Supplier</label>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 ml-1">Select Supplier</label>
                         <select
-                            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-800 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all cursor-pointer hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-800 shadow-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all cursor-pointer hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                             value={supplierId}
                             onChange={(e) => handleSupplierChange(e.target.value)}
                             disabled={isLoadingSuggestions}
@@ -212,7 +212,7 @@ export default function CreatePOPage() {
                             <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-6 shadow-sm border border-gray-100">
                                 <ShoppingCart className="w-10 h-10 text-gray-300" />
                             </div>
-                            <h3 className="text-xl font-bold text-gray-900">Your cart is empty</h3>
+                            <h3 className="text-xl font-semibold text-gray-900">Your cart is empty</h3>
                             <p className="text-gray-500 text-sm mt-2 max-w-sm text-center">
                                 Use the inventory browser on the left to add items to this order.
                             </p>
@@ -222,35 +222,35 @@ export default function CreatePOPage() {
                             <table className="min-w-full divide-y divide-gray-50">
                                 <thead className="bg-gray-50/80">
                                     <tr>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Item Details</th>
-                                        <th className="px-6 py-4 text-center text-xs font-bold text-gray-400 uppercase tracking-wider w-32">Qty</th>
-                                        <th className="px-6 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-wider w-32">Unit Cost</th>
-                                        <th className="px-6 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-wider w-32">Line Total</th>
+                                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Item Details</th>
+                                        <th className="px-6 py-4 text-center text-xs font-semibold text-gray-400 uppercase tracking-wider w-32">Qty</th>
+                                        <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider w-32">Unit Cost</th>
+                                        <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider w-32">Line Total</th>
                                         <th className="px-6 py-4 w-10"></th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-50 bg-white">
                                     {cart.map((item, idx) => (
-                                        <tr key={idx} className="hover:bg-indigo-50/30 transition-colors group">
+                                        <tr key={idx} className="hover:bg-brand-50/30 transition-colors group">
                                             <td className="px-6 py-4">
-                                                <div className="font-bold text-gray-900">{item.product.name}</div>
+                                                <div className="font-semibold text-gray-900">{item.product.name}</div>
                                                 <div className="flex items-center gap-2 mt-1">
                                                     <span className="text-[10px] font-mono text-gray-400 bg-gray-100 px-1.5 rounded">{item.product.sku}</span>
                                                     {item.product.currentStock <= item.product.minStock && (
-                                                        <span className="text-[10px] text-amber-600 font-bold flex items-center gap-1">
+                                                        <span className="text-[10px] text-amber-600 font-semibold flex items-center gap-1">
                                                             <AlertCircle size={10} /> Low Stock
                                                         </span>
                                                     )}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <div className="flex items-center justify-center border border-gray-200 rounded-lg bg-white shadow-sm overflow-hidden w-28 mx-auto hover:border-indigo-300 transition-colors">
+                                                <div className="flex items-center justify-center border border-gray-200 rounded-lg bg-white shadow-sm overflow-hidden w-28 mx-auto hover:border-brand-300 transition-colors">
                                                     <button
                                                         onClick={() => updateQuantity(idx, -1)}
                                                         className="px-3 py-1.5 hover:bg-gray-50 text-gray-500 transition-colors active:bg-gray-100"
                                                     >-</button>
                                                     <input
-                                                        className="w-full text-center text-sm font-bold focus:outline-none text-gray-800"
+                                                        className="w-full text-center text-sm font-semibold focus:outline-none text-gray-800"
                                                         value={item.quantity}
                                                         onChange={(e) => updateQuantityDirect(idx, parseInt(e.target.value) || 0)}
                                                     />
@@ -268,11 +268,11 @@ export default function CreatePOPage() {
                                                         step="0.01"
                                                         value={item.unitCost}
                                                         onChange={(e) => updateCost(idx, parseFloat(e.target.value))}
-                                                        className="w-24 text-right py-1.5 pl-6 pr-2 border border-transparent hover:border-gray-200 focus:border-indigo-500 rounded bg-transparent focus:bg-white focus:shadow-sm outline-none font-mono text-sm font-medium transition-all"
+                                                        className="w-24 text-right py-1.5 pl-6 pr-2 border border-transparent hover:border-gray-200 focus:border-brand-500 rounded bg-transparent focus:bg-white focus:shadow-sm outline-none font-mono text-sm font-medium transition-all"
                                                     />
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 text-right font-bold text-gray-900 font-mono">
+                                            <td className="px-6 py-4 text-right font-semibold text-gray-900 font-mono">
                                                 {formatCurrency((item.unitCost || 0) * item.quantity, user?.currency)}
                                             </td>
                                             <td className="px-6 py-4 text-right">
@@ -292,9 +292,9 @@ export default function CreatePOPage() {
 
                     {/* Notes */}
                     <div className="mt-8">
-                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Internal Notes</label>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Internal Notes</label>
                         <textarea
-                            className="w-full p-4 border border-gray-200 rounded-2xl shadow-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none resize-none text-sm bg-white transition-all"
+                            className="w-full p-4 border border-gray-200 rounded-2xl shadow-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none resize-none text-sm bg-white transition-all"
                             rows={3}
                             placeholder="Add reference numbers, delivery instructions, or approvals..."
                             value={notes}
@@ -308,19 +308,19 @@ export default function CreatePOPage() {
                     <div className="flex justify-between items-center max-w-none mx-auto">
                         <div className="flex gap-12 text-sm pl-4">
                             <div>
-                                <span className="block text-gray-400 text-[10px] uppercase tracking-wider font-bold">Total Items</span>
-                                <span className="font-bold text-gray-900 text-xl">{cart.length}</span>
+                                <span className="block text-gray-400 text-[10px] uppercase tracking-wider font-semibold">Total Items</span>
+                                <span className="font-semibold text-gray-900 text-xl">{cart.length}</span>
                             </div>
                             <div>
-                                <span className="block text-gray-400 text-[10px] uppercase tracking-wider font-bold">Total Qty</span>
-                                <span className="font-bold text-gray-900 text-xl">{cart.reduce((a, b) => a + b.quantity, 0)}</span>
+                                <span className="block text-gray-400 text-[10px] uppercase tracking-wider font-semibold">Total Qty</span>
+                                <span className="font-semibold text-gray-900 text-xl">{cart.reduce((a, b) => a + b.quantity, 0)}</span>
                             </div>
                         </div>
 
                         <div className="flex items-center gap-8">
                             <div className="text-right">
-                                <span className="block text-gray-400 text-[10px] uppercase tracking-wider font-bold mb-0.5">Estimated Total</span>
-                                <span className="font-black text-3xl text-gray-900 leading-none tracking-tight">
+                                <span className="block text-gray-400 text-[10px] uppercase tracking-wider font-semibold mb-0.5">Estimated Total</span>
+                                <span className="font-semibold text-3xl text-gray-900 leading-none tracking-tight">
                                     {formatCurrency(totalAmount, user?.currency)}
                                 </span>
                             </div>
@@ -329,8 +329,8 @@ export default function CreatePOPage() {
                                 onClick={handleSave}
                                 disabled={cart.length === 0 || isSaving}
                                 className={`
-                                    px-8 py-3.5 rounded-xl font-bold text-white shadow-xl shadow-indigo-200/50 hover:shadow-indigo-300 text-sm tracking-wide transform hover:-translate-y-0.5 transition-all
-                                    ${cart.length === 0 || isSaving ? 'bg-gray-300 cursor-not-allowed shadow-none' : 'bg-gradient-to-tr from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700'}
+                                    px-8 py-3.5 rounded-xl font-semibold text-white shadow-xl shadow-brand-200/50 hover:shadow-brand-300 text-sm tracking-wide transform hover:-translate-y-0.5 transition-all
+                                    ${cart.length === 0 || isSaving ? 'bg-gray-300 cursor-not-allowed shadow-none' : 'bg-gradient-to-tr from-brand-600 to-blue-600 hover:from-brand-700 hover:to-blue-700'}
                                 `}
                             >
                                 {isSaving ? 'Creating...' : 'Create Purchase Order'}

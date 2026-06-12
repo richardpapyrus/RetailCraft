@@ -65,7 +65,7 @@ function AcceptInviteContent() {
     if (!token) {
         return (
             <div className="text-center">
-                <h2 className="text-red-600 font-bold">Invalid Invitation</h2>
+                <h2 className="text-red-600 font-semibold">Invalid Invitation</h2>
                 <p className="text-gray-600 mt-2">No token provided in the URL.</p>
             </div>
         );
@@ -82,7 +82,7 @@ function AcceptInviteContent() {
                         required
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="relative block w-full rounded-t-md border-0 p-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                        className="relative block w-full rounded-t-md border-0 p-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6"
                         placeholder="New Password"
                     />
                 </div>
@@ -94,7 +94,7 @@ function AcceptInviteContent() {
                         required
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="relative block w-full rounded-b-md border-0 p-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                        className="relative block w-full rounded-b-md border-0 p-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6"
                         placeholder="Confirm Password"
                     />
                 </div>
@@ -102,7 +102,7 @@ function AcceptInviteContent() {
 
             {error && (
                 <div className="bg-red-50 border border-red-200 rounded-md p-3 text-sm text-red-600 text-center">
-                    <p className="font-bold">{error}</p>
+                    <p className="font-semibold">{error}</p>
                 </div>
             )}
 
@@ -110,7 +110,7 @@ function AcceptInviteContent() {
                 <button
                     type="submit"
                     disabled={loading}
-                    className="group relative flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
+                    className="group relative flex w-full justify-center rounded-md bg-brand-600 px-3 py-2 text-sm font-semibold text-white hover:bg-brand-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 disabled:opacity-50"
                 >
                     {loading ? 'Setting Password...' : 'Set Password & Login'}
                 </button>
@@ -127,10 +127,10 @@ export default function AcceptInvitePage() {
                     <div className="flex flex-col items-center justify-center mb-8">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src="/logo.jpg" alt="RetailCraft Logo" className="h-32 w-auto object-contain mb-4 filter drop-shadow-xl" />
-                        <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">RetailCraft</h1>
+                        <h1 className="text-4xl font-semibold text-gray-900 tracking-tight">RetailCraft</h1>
                         <p className="text-gray-500 font-medium mt-2">The Operating System for Retail</p>
                     </div>
-                    <h2 className="mt-2 text-center text-xl font-bold tracking-tight text-gray-900">
+                    <h2 className="mt-2 text-center text-xl font-semibold tracking-tight text-gray-900">
                         Set your password
                     </h2>
                     <p className="mt-2 text-center text-sm text-gray-600">
@@ -146,7 +146,7 @@ export default function AcceptInvitePage() {
             <div className="absolute bottom-6 left-0 right-0 flex flex-col items-center justify-center opacity-70">
                 <div className="flex items-center gap-2">
                     <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">Powered by</span>
-                    <span className="font-bold text-gray-600 text-sm tracking-tight">RetailCraft</span>
+                    <span className="font-semibold text-gray-600 text-sm tracking-tight">RetailCraft</span>
                 </div>
             </div>
         </div>

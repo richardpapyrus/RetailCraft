@@ -119,7 +119,7 @@ export default function GeneralSettings() {
 
     return (
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 max-w-2xl">
-            <h2 className="text-xl font-bold text-gray-800 mb-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-6">
                 {selectedStoreId ? 'Store Information' : 'General Information'}
             </h2>
 
@@ -162,7 +162,7 @@ export default function GeneralSettings() {
                 </div>
 
                 <div className="pt-4 border-t border-gray-100">
-                    <h3 className="text-sm font-bold text-gray-900 mb-4">Branding</h3>
+                    <h3 className="text-sm font-semibold text-gray-900 mb-4">Branding</h3>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
@@ -194,8 +194,8 @@ export default function GeneralSettings() {
                                       file:mr-4 file:py-2 file:px-4
                                       file:rounded-full file:border-0
                                       file:text-sm file:font-semibold
-                                      file:bg-indigo-50 file:text-indigo-700
-                                      hover:file:bg-indigo-100
+                                      file:bg-brand-50 file:text-brand-700
+                                      hover:file:bg-brand-100
                                     "
                                 />
 
@@ -252,7 +252,7 @@ export default function GeneralSettings() {
                     <button
                         onClick={handleSave}
                         disabled={saving}
-                        className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                        className="bg-brand-600 text-white px-4 py-2 rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-50"
                     >
                         {saving ? 'Saving...' : 'Save Changes'}
                     </button>

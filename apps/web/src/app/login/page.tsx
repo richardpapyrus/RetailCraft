@@ -55,7 +55,7 @@ export default function LoginPage() {
             </div>
 
             {/* Glassmorphism Login Panel */}
-            <div className="relative z-20 w-full max-w-md p-8 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl space-y-8 animate-in fade-in zoom-in duration-500">
+            <div className="relative z-20 w-full max-w-md p-8 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 shadow-lifted space-y-8 animate-in fade-in zoom-in duration-500">
                 <div>
                     <div className="flex flex-col items-center justify-center mb-6">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -64,10 +64,10 @@ export default function LoginPage() {
                             alt="RetailCraft Logo"
                             className="h-28 w-auto object-contain mb-4 filter drop-shadow-lg rounded-xl"
                         />
-                        <h1 className="text-4xl font-extrabold text-white tracking-tight drop-shadow-md">RetailCraft</h1>
+                        <h1 className="text-4xl font-semibold text-white tracking-tight drop-shadow-md">RetailCraft</h1>
                         <p className="text-gray-200 font-medium mt-2 drop-shadow-sm">The Operating System for Retail</p>
                     </div>
-                    <h2 className="mt-2 text-center text-xl font-bold tracking-tight text-white drop-shadow-sm">
+                    <h2 className="mt-2 text-center text-xl font-semibold tracking-tight text-white drop-shadow-sm">
                         Sign in to your workspace
                     </h2>
                 </div>
@@ -84,7 +84,7 @@ export default function LoginPage() {
                                 required
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="relative block w-full rounded-lg border-0 bg-white/20 p-4 text-white placeholder-gray-300 ring-1 ring-inset ring-white/30 focus:ring-2 focus:ring-inset focus:ring-indigo-400 sm:text-sm sm:leading-6 backdrop-blur-sm transition-all duration-200 hover:bg-white/30"
+                                className="relative block w-full rounded-lg border-0 bg-white/20 p-4 text-white placeholder-gray-300 ring-1 ring-inset ring-white/30 focus:ring-2 focus:ring-inset focus:ring-brand-400 sm:text-sm sm:leading-6 backdrop-blur-sm transition-all duration-200 hover:bg-white/30"
                                 placeholder="Email address"
                             />
                         </div>
@@ -98,7 +98,7 @@ export default function LoginPage() {
                                 required
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="relative block w-full rounded-lg border-0 bg-white/20 p-4 text-white placeholder-gray-300 ring-1 ring-inset ring-white/30 focus:ring-2 focus:ring-inset focus:ring-indigo-400 sm:text-sm sm:leading-6 backdrop-blur-sm transition-all duration-200 hover:bg-white/30"
+                                className="relative block w-full rounded-lg border-0 bg-white/20 p-4 text-white placeholder-gray-300 ring-1 ring-inset ring-white/30 focus:ring-2 focus:ring-inset focus:ring-brand-400 sm:text-sm sm:leading-6 backdrop-blur-sm transition-all duration-200 hover:bg-white/30"
                                 placeholder="Password"
                             />
                         </div>
@@ -106,7 +106,7 @@ export default function LoginPage() {
 
                     {error && (
                         <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-3 text-sm text-red-100 text-center backdrop-blur-sm">
-                            <p className="font-bold">{error}</p>
+                            <p className="font-semibold">{error}</p>
                             <p className="text-xs mt-1 text-red-200/80">
                                 Connecting to: {API_URL_DISPLAY}
                             </p>
@@ -116,7 +116,7 @@ export default function LoginPage() {
                     <div>
                         <button
                             type="submit"
-                            className="group relative flex w-full justify-center rounded-lg bg-indigo-600/90 px-4 py-3 text-sm font-bold text-white shadow-lg hover:bg-indigo-500 hover:shadow-indigo-500/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 transition-all duration-200 backdrop-blur-sm transform hover:scale-[1.02]"
+                            className="group relative flex w-full justify-center rounded-lg bg-brand-600/90 px-4 py-3 text-sm font-semibold text-white shadow-lg hover:bg-brand-500 hover:shadow-brand-500/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 transition-all duration-200 backdrop-blur-sm transform hover:scale-[1.02]"
                         >
                             Sign in
                         </button>
@@ -126,7 +126,7 @@ export default function LoginPage() {
                 {/* Footer inside the card for better visibility */}
                 <div className="flex items-center justify-center gap-2 mt-6 opacity-80">
                     <span className="text-xs text-gray-300 font-medium uppercase tracking-wider">Powered by</span>
-                    <span className="font-bold text-white text-sm tracking-tight">RetailCraft</span>
+                    <span className="font-semibold text-white text-sm tracking-tight">RetailCraft</span>
                 </div>
             </div>
 

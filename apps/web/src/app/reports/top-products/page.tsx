@@ -73,15 +73,15 @@ export default function TopProductsPage() {
                     <span className="text-sm font-medium text-gray-900">Reports</span>
                 </div>
                 <div className="flex flex-col md:flex-row justify-between items-end gap-4">
-                    <h1 className="text-2xl font-bold text-gray-900">
+                    <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">
                         Best Selling Products
                     </h1>
 
                     <div className="flex flex-wrap gap-4 items-center">
                         {/* Sort Toggle */}
                         <div className="bg-gray-100 p-1 rounded-lg flex">
-                            <button onClick={() => setSortBy('value')} className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${sortBy === 'value' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>By Value</button>
-                            <button onClick={() => setSortBy('count')} className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${sortBy === 'count' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>By Count</button>
+                            <button onClick={() => setSortBy('value')} className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${sortBy === 'value' ? 'bg-white text-brand-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>By Value</button>
+                            <button onClick={() => setSortBy('count')} className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${sortBy === 'count' ? 'bg-white text-brand-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>By Count</button>
                         </div>
 
                         {/* Date Picker */}
@@ -114,7 +114,7 @@ export default function TopProductsPage() {
                                 products.map((p, idx) => (
                                     <tr key={p.productId} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-6 py-4">
-                                            <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${(idx + (page - 1) * LIMIT) < 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-500'}`}>
+                                            <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold ${(idx + (page - 1) * LIMIT) < 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-500'}`}>
                                                 {idx + 1 + (page - 1) * LIMIT}
                                             </span>
                                         </td>
@@ -125,7 +125,7 @@ export default function TopProductsPage() {
                                         <td className="px-6 py-4 text-right font-medium text-gray-700">
                                             {p.quantity}
                                         </td>
-                                        <td className="px-6 py-4 text-right font-bold text-gray-900">
+                                        <td className="px-6 py-4 text-right font-semibold text-gray-900">
                                             {formatCurrency(p.value, user?.currency, user?.locale)}
                                         </td>
                                     </tr>

@@ -112,13 +112,13 @@ export default function CustomersPage() {
             <div className="flex-1 p-8 overflow-auto">
                 <div className="max-w-4xl mx-auto">
                     <div className="flex justify-between items-center mb-6">
-                        <h1 className="text-2xl font-bold text-gray-800">Customers</h1>
+                        <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">Customers</h1>
                         <div className="flex items-center gap-3">
                             <button
                                 onClick={() => router.push('/loyalty')}
                                 className="px-4 py-2 rounded bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 flex items-center gap-2 shadow-sm font-medium"
                             >
-                                <Award size={18} className="text-indigo-600" />
+                                <Award size={18} className="text-brand-600" />
                                 Loyalty Program
                             </button>
                             <input
@@ -136,7 +136,7 @@ export default function CustomersPage() {
                                     }
                                     setIsModalOpen(true);
                                 }}
-                                className={`px-4 py-2 rounded transition shadow-sm ${!selectedStoreId ? 'bg-gray-300 cursor-not-allowed text-gray-500' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+                                className={`px-4 py-2 rounded transition shadow-sm ${!selectedStoreId ? 'bg-gray-300 cursor-not-allowed text-gray-500' : 'bg-brand-600 text-white hover:bg-brand-700'}`}
                             >
                                 + Add Customer
                             </button>
@@ -166,15 +166,15 @@ export default function CustomersPage() {
                                     customers.map(c => (
                                         <tr key={c.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => router.push(`/customers/${c.id}`)} >
                                             <td className="p-3">
-                                                <span className="font-mono bg-gray-100 px-2 py-1 rounded text-sm font-bold text-gray-600">
+                                                <span className="font-mono bg-gray-100 px-2 py-1 rounded text-sm font-semibold text-gray-600">
                                                     {c.code || 'PENDING'}
                                                 </span>
                                             </td>
-                                            <td className="p-3 font-bold">{c.name}</td>
+                                            <td className="p-3 font-semibold">{c.name}</td>
                                             <td className="p-3">{c.phone || '-'}</td>
                                             <td className="p-4 text-gray-600">{c.email || '-'}</td>
                                             <td className="p-3">
-                                                <span className="inline-flex items-center px-2 py-1 rounded text-sm font-medium bg-indigo-100 text-indigo-800">
+                                                <span className="inline-flex items-center px-2 py-1 rounded text-sm font-medium bg-brand-100 text-brand-800">
                                                     {c.loyaltyPoints || 0} pts
                                                 </span>
                                             </td>
@@ -187,7 +187,7 @@ export default function CustomersPage() {
                                                     )}
                                                     <button
                                                         onClick={(e) => handleEdit(c, e)}
-                                                        className="p-1 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                                                        className="p-1 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded transition-colors"
                                                     >
                                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
                                                     </button>
@@ -208,7 +208,7 @@ export default function CustomersPage() {
                             <button
                                 onClick={() => loadCustomers(false)}
                                 disabled={loadingMore}
-                                className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                                className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 disabled:opacity-50"
                             >
                                 {loadingMore ? 'Loading...' : 'Load More Customers'}
                             </button>
@@ -221,7 +221,7 @@ export default function CustomersPage() {
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white p-6 rounded-lg shadow-xl w-96">
-                        <h2 className="text-xl font-bold mb-4">New Customer</h2>
+                        <h2 className="text-xl font-semibold mb-4">New Customer</h2>
                         <form onSubmit={handleSubmit}>
                             <div className="mb-4">
                                 <label className="block text-sm font-medium mb-1">Name</label>
@@ -250,11 +250,11 @@ export default function CustomersPage() {
                                 <input
                                     type="checkbox"
                                     id="loyalty"
-                                    className="w-5 h-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                                    className="w-5 h-5 text-brand-600 rounded border-gray-300 focus:ring-brand-500"
                                     checked={(formData as any).isLoyaltyMember || false}
                                     onChange={e => setFormData({ ...formData, isLoyaltyMember: e.target.checked } as any)}
                                 />
-                                <label htmlFor="loyalty" className="ml-2 block text-sm font-bold text-gray-700">
+                                <label htmlFor="loyalty" className="ml-2 block text-sm font-semibold text-gray-700">
                                     Enroll in Loyalty Program
                                 </label>
                             </div>
@@ -268,7 +268,7 @@ export default function CustomersPage() {
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                                    className="px-4 py-2 bg-brand-500 text-white rounded-xl hover:bg-brand-600"
                                 >
                                     Save Customer
                                 </button>

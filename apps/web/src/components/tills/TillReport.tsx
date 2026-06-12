@@ -146,7 +146,7 @@ export function TillReport({ data, onClose }: TillReportProps) {
                     <div className="flex gap-2">
                         <button
                             onClick={handlePrint}
-                            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium"
+                            className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 font-medium"
                         >
                             <Printer size={16} /> Print
                         </button>

@@ -100,11 +100,11 @@ export default function TillsPage() {
     return (
         <div className="max-w-4xl mx-auto p-8">
             <div className="flex justify-between items-center mb-8">
-                <h1 className="text-3xl font-bold">Till Management</h1>
+                <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">Till Management</h1>
                 {hasPermission('VIEW_TILL_REPORTS') && (
                     <button
                         onClick={() => router.push('/tills/reports')}
-                        className="flex items-center gap-2 px-4 py-2 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-xl hover:bg-indigo-100 font-bold shadow-sm transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 bg-brand-50 border border-brand-200 text-brand-700 rounded-xl hover:bg-brand-100 font-semibold shadow-sm transition-colors"
                     >
                         <FileText className="w-5 h-5" />
                         Activity Dashboard
@@ -114,7 +114,7 @@ export default function TillsPage() {
 
             {/* Create Till Card */}
             <div className="bg-white p-6 rounded-2xl shadow-sm mb-8">
-                <h2 className="text-xl font-bold mb-4">Add New Till</h2>
+                <h2 className="text-xl font-semibold mb-4">Add New Till</h2>
                 <form onSubmit={handleCreate} className="flex gap-4">
                     <input
                         className="flex-1 p-3 border rounded-xl"
@@ -126,7 +126,7 @@ export default function TillsPage() {
                     <button
                         type="submit"
                         disabled={creating}
-                        className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-indigo-700 disabled:opacity-50"
+                        className="bg-brand-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-brand-700 disabled:opacity-50"
                     >
                         {creating ? 'Creating...' : 'Create Till'}
                     </button>
@@ -136,7 +136,7 @@ export default function TillsPage() {
             {/* Tills List */}
             <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
                 <div className="p-6 border-b border-gray-100">
-                    <h2 className="text-xl font-bold">All Tills</h2>
+                    <h2 className="text-xl font-semibold">All Tills</h2>
                 </div>
                 {loading ? (
                     <div className="p-8 text-center text-gray-500">Loading...</div>
@@ -154,9 +154,9 @@ export default function TillsPage() {
                         <tbody className="divide-y divide-gray-100">
                             {tills.map(till => (
                                 <tr key={till.id} className="hover:bg-gray-50">
-                                    <td className="p-4 pl-6 font-bold">{till.name}</td>
+                                    <td className="p-4 pl-6 font-semibold">{till.name}</td>
                                     <td className="p-4">
-                                        <span className={`px-2 py-1 rounded text-xs font-bold ${till.status === 'OPEN' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                                        <span className={`px-2 py-1 rounded text-xs font-semibold ${till.status === 'OPEN' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
                                             }`}>
                                             {till.status}
                                         </span>
@@ -164,12 +164,12 @@ export default function TillsPage() {
                                     <td className="p-4 text-sm text-gray-500">{till.storeId}</td>
                                     <td className="p-4">
                                         <div className="flex items-center gap-2">
-                                            <button onClick={() => fetchHistory(till)} className="text-blue-600 hover:underline text-sm font-bold">History</button>
+                                            <button onClick={() => fetchHistory(till)} className="text-blue-600 hover:underline text-sm font-semibold">History</button>
                                             <span className="text-gray-300">|</span>
                                             <button onClick={() => {
                                                 const name = prompt('New name:', till.name);
                                                 if (name) api.tills.update(till.id, { name }).then(fetchTills);
-                                            }} className="text-indigo-600 hover:underline text-sm font-bold">Edit</button>
+                                            }} className="text-brand-600 hover:underline text-sm font-semibold">Edit</button>
                                             <button onClick={async () => {
                                                 if (confirm('Delete this till?')) {
                                                     try {
@@ -179,7 +179,7 @@ export default function TillsPage() {
                                                         toast.error('Cannot delete: ' + err.message);
                                                     }
                                                 }
-                                            }} className="text-red-500 hover:underline text-sm font-bold">Delete</button>
+                                            }} className="text-red-500 hover:underline text-sm font-semibold">Delete</button>
 
                                             {till.status === 'OPEN' && till.sessions?.[0] && (
                                                 <button
@@ -197,7 +197,7 @@ export default function TillsPage() {
                                                             toast.error('Failed to close: ' + err.message);
                                                         }
                                                     }}
-                                                    className="text-orange-600 hover:underline text-sm font-bold ml-2"
+                                                    className="text-orange-600 hover:underline text-sm font-semibold ml-2"
                                                 >
                                                     Close Session
                                                 </button>
@@ -207,7 +207,7 @@ export default function TillsPage() {
                                     <td className="p-4">
                                         {till.sessions && till.sessions.length > 0 ? (
                                             <div className="text-sm">
-                                                <div className="font-bold">Open since {new Date(till.sessions[0].openedAt).toLocaleTimeString()}</div>
+                                                <div className="font-semibold">Open since {new Date(till.sessions[0].openedAt).toLocaleTimeString()}</div>
                                                 <div className="text-gray-400">Float: {formatCurrency(till.sessions[0].openingFloat, user?.currency, user?.locale)}</div>
                                             </div>
                                         ) : <span className="text-gray-400">-</span>}
@@ -230,13 +230,13 @@ export default function TillsPage() {
             {
                 historyTill && (
                     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-                        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[80vh] flex flex-col">
+                        <div className="bg-white rounded-2xl shadow-lifted w-full max-w-4xl max-h-[80vh] flex flex-col">
                             <div className="p-6 border-b flex justify-between items-center bg-gray-50 rounded-t-2xl">
                                 <div>
-                                    <h3 className="text-xl font-bold">Session History</h3>
+                                    <h3 className="text-xl font-semibold">Session History</h3>
                                     <p className="text-sm text-gray-500">{historyTill.name}</p>
                                 </div>
-                                <button onClick={() => setHistoryTill(null)} className="text-gray-400 hover:text-black font-bold p-2">✕</button>
+                                <button onClick={() => setHistoryTill(null)} className="text-gray-400 hover:text-black font-semibold p-2">✕</button>
                             </div>
                             <div className="flex-1 overflow-auto p-0">
                                 <table className="w-full text-left text-sm">
@@ -264,13 +264,13 @@ export default function TillsPage() {
                                                 <td className="p-4 text-right">{formatCurrency(session.openingFloat, user?.currency, user?.locale)}</td>
                                                 <td className="p-4 text-right font-mono">{formatCurrency(session.expectedCash, user?.currency, user?.locale)}</td>
                                                 <td className="p-4 text-right font-mono">{formatCurrency(session.closingCash, user?.currency, user?.locale)}</td>
-                                                <td className={`p-4 text-right font-bold ${Number(session.variance) < 0 ? 'text-red-500' : Number(session.variance) > 0 ? 'text-green-500' : 'text-gray-400'}`}>
+                                                <td className={`p-4 text-right font-semibold ${Number(session.variance) < 0 ? 'text-red-500' : Number(session.variance) > 0 ? 'text-green-500' : 'text-gray-400'}`}>
                                                     {formatCurrency(session.variance, user?.currency, user?.locale)}
                                                 </td>
                                                 <td className="p-4 text-right">
                                                     <button
                                                         onClick={() => setReportSessionId(session.id)}
-                                                        className="text-xs font-bold text-indigo-600 hover:text-indigo-800 underline"
+                                                        className="text-xs font-semibold text-brand-600 hover:text-brand-800 underline"
                                                     >
                                                         View Report
                                                     </button>
@@ -281,7 +281,7 @@ export default function TillsPage() {
                                 </table>
                             </div>
                             <div className="p-4 border-t bg-gray-50 rounded-b-2xl flex justify-end">
-                                <button onClick={() => setHistoryTill(null)} className="px-6 py-2 bg-white border border-gray-300 rounded-xl font-bold hover:bg-gray-50">Close</button>
+                                <button onClick={() => setHistoryTill(null)} className="px-6 py-2 bg-white border border-gray-300 rounded-xl font-semibold hover:bg-gray-50">Close</button>
                             </div>
                         </div>
                     </div>

@@ -53,7 +53,7 @@ export function TopHeader() {
     const currentStore = stores.find(s => s.id === selectedStoreId);
 
     return (
-        <header className="h-16 bg-white border-b border-gray-100 flex items-center justify-between px-6 shrink-0 z-10 sticky top-0 shadow-sm print:hidden">
+        <header className="h-16 bg-white border-b border-gray-100 flex items-center justify-between px-8 shrink-0 z-10 sticky top-0 print:hidden">
             {/* Left: Business Branding & Store Selector */}
             <div className="flex items-center gap-6">
                 <div className="flex items-center gap-3">
@@ -66,22 +66,22 @@ export function TopHeader() {
                             onError={() => setImgError(true)}
                         />
                     ) : (
-                        <div className="h-10 w-10 bg-gray-100 rounded-md flex items-center justify-center text-gray-400 font-bold text-xl uppercase">
+                        <div className="h-10 w-10 bg-gray-100 rounded-md flex items-center justify-center text-gray-400 font-semibold text-xl uppercase">
                             {user?.tenantName?.[0] || 'B'}
                         </div>
                     )}
 
                     <div className="flex flex-col">
                         <h1
-                            className="font-bold text-lg leading-tight truncate max-w-[200px]"
-                            style={{ color: user?.tenantBrandColor || '#111827' }}
+                            className="font-semibold text-lg leading-tight truncate max-w-[200px] tracking-tight"
+                            style={{ color: user?.tenantBrandColor || '#2E3232' }}
                         >
                             {user?.tenantName || 'Business Name'}
                         </h1>
                         <div className="flex items-center gap-1 mt-0.5">
                             <div className="relative group">
                                 <select
-                                    className="appearance-none bg-transparent text-[10px] font-bold uppercase tracking-widest text-indigo-600 hover:text-indigo-800 cursor-pointer outline-none w-full pr-4"
+                                    className="appearance-none bg-transparent text-[10px] font-semibold uppercase tracking-widest text-brand-600 hover:text-brand-700 cursor-pointer outline-none w-full pr-4"
                                     value={selectedStoreId || ''}
                                     onChange={handleStoreChange}
                                 >
@@ -92,7 +92,7 @@ export function TopHeader() {
                                 </select>
                                 <span className="absolute right-0 top-0.5 pointer-events-none text-[8px] text-gray-400">▼</span>
                             </div>
-                            {error && <span className="text-[10px] text-red-500 font-bold ml-2">⚠️ {error}</span>}
+                            {error && <span className="text-[10px] text-red-500 font-semibold ml-2">⚠️ {error}</span>}
                         </div>
                     </div>
                 </div>
@@ -102,8 +102,8 @@ export function TopHeader() {
                 {/* Quick Info (Optional) */}
                 {selectedStoreId && (
                     <div className="hidden lg:flex flex-col">
-                        <span className="text-[10px] text-gray-400 font-bold uppercase">Current Store</span>
-                        <span className="text-sm font-bold text-gray-700">{currentStore?.name}</span>
+                        <span className="text-[10px] text-gray-400 font-semibold uppercase">Current Store</span>
+                        <span className="text-sm font-semibold text-gray-700">{currentStore?.name}</span>
                     </div>
                 )}
             </div>
@@ -113,7 +113,7 @@ export function TopHeader() {
                 {/* ... existing right content ... */}
                 <div className="flex items-center gap-2 opacity-50 hover:opacity-100 transition-opacity">
                     <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Powered by</span>
-                    <span className="font-bold text-gray-600 text-sm tracking-tight flex items-center gap-1">
+                    <span className="font-semibold text-gray-600 text-sm tracking-tight flex items-center gap-1">
                         RetailCraft
                     </span>
                 </div>

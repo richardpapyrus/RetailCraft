@@ -116,7 +116,7 @@ export default function TillReportsPage() {
                             <ArrowLeft className="w-5 h-5 text-gray-500" />
                         </button>
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-900">Till Activity Dashboard</h1>
+                            <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">Till Activity Dashboard</h1>
                             <p className="text-sm text-gray-500">Strictly Confidential - Authorized Personnel Only</p>
                         </div>
                     </div>
@@ -125,7 +125,7 @@ export default function TillReportsPage() {
                             <Download className="w-4 h-4" />
                             Export CSV
                         </button>
-                        <button className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700">
+                        <button className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700">
                             <FileText className="w-4 h-4" />
                             Audit PDF
                         </button>
@@ -137,7 +137,7 @@ export default function TillReportsPage() {
                     <select
                         value={dateRange}
                         onChange={(e) => setDateRange(e.target.value)}
-                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 outline-none"
                     >
                         <option value="today">Today</option>
                         <option value="yesterday">Yesterday</option>
@@ -188,7 +188,7 @@ export default function TillReportsPage() {
                             <h3 className="text-sm font-medium text-gray-500">Gross Sales</h3>
                             <Activity className="w-4 h-4 text-green-500" />
                         </div>
-                        <p className="text-2xl font-bold text-gray-900">{formatCurrency(overview.sales.grossSales, user?.currency, user?.locale)}</p>
+                        <p className="text-3xl font-semibold text-gray-900 tracking-tight">{formatCurrency(overview.sales.grossSales, user?.currency, user?.locale)}</p>
                         <p className="text-xs text-gray-500 mt-1">{overview.sales.transactionCount} transactions</p>
                     </div>
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
@@ -196,29 +196,29 @@ export default function TillReportsPage() {
                             <h3 className="text-sm font-medium text-gray-500">Discounts</h3>
                             <Activity className="w-4 h-4 text-orange-500" />
                         </div>
-                        <p className="text-2xl font-bold text-gray-900">{formatCurrency(overview.sales.totalDiscount, user?.currency, user?.locale)}</p>
+                        <p className="text-3xl font-semibold text-gray-900 tracking-tight">{formatCurrency(overview.sales.totalDiscount, user?.currency, user?.locale)}</p>
                     </div>
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-sm font-medium text-gray-500">Refunds</h3>
                             <Activity className="w-4 h-4 text-red-500" />
                         </div>
-                        <p className="text-2xl font-bold text-gray-900">{formatCurrency(overview.sales.refundTotal, user?.currency, user?.locale)}</p>
+                        <p className="text-3xl font-semibold text-gray-900 tracking-tight">{formatCurrency(overview.sales.refundTotal, user?.currency, user?.locale)}</p>
                         <p className="text-xs text-gray-500 mt-1">{overview.sales.refundCount} refunds</p>
                     </div>
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-sm font-medium text-gray-500">Net Collected</h3>
-                            <Activity className="w-4 h-4 text-indigo-500" />
+                            <Activity className="w-4 h-4 text-brand-500" />
                         </div>
-                        <p className="text-2xl font-bold text-indigo-600">{formatCurrency(overview.sales.totalCollected, user?.currency, user?.locale)}</p>
+                        <p className="text-2xl font-semibold text-brand-600">{formatCurrency(overview.sales.totalCollected, user?.currency, user?.locale)}</p>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     {/* 2. Payment Breakdown */}
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                        <h2 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+                        <h2 className="text-lg font-semibold text-gray-800 mb-6 flex items-center gap-2">
                             <CreditCard className="w-5 h-5" />
                             Payment Methods
                         </h2>
@@ -226,10 +226,10 @@ export default function TillReportsPage() {
                             {overview.payments.map((p: any) => (
                                 <div key={p.method} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                                     <div>
-                                        <p className="font-bold text-gray-700">{p.method}</p>
+                                        <p className="font-semibold text-gray-700">{p.method}</p>
                                         <p className="text-xs text-gray-500">{p.count} txns</p>
                                     </div>
-                                    <p className="font-bold text-gray-900">{formatCurrency(p.amount, user?.currency, user?.locale)}</p>
+                                    <p className="font-semibold text-gray-900">{formatCurrency(p.amount, user?.currency, user?.locale)}</p>
                                 </div>
                             ))}
                             {overview.payments.length === 0 && <p className="text-gray-400 italic">No payments recorded</p>}
@@ -238,13 +238,13 @@ export default function TillReportsPage() {
 
                     {/* 3. Cash Reconciliation (Variance) */}
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                        <h2 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+                        <h2 className="text-lg font-semibold text-gray-800 mb-6 flex items-center gap-2">
                             <AlertTriangle className="w-5 h-5" />
                             Cash Reconciliation
                         </h2>
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm">
-                                <thead className="bg-gray-50">
+                                <thead className="bg-white border-b border-gray-100">
                                     <tr>
                                         <th className="px-4 py-2 text-left">Till</th>
                                         <th className="px-4 py-2 text-left">Status</th>
@@ -259,12 +259,12 @@ export default function TillReportsPage() {
                                                 <span className="text-xs text-gray-400">{s.staffName}</span>
                                             </td>
                                             <td className="px-4 py-3">
-                                                <span className={`px-2 py-1 rounded-full text-xs font-bold ${s.status === 'OPEN' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                                                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${s.status === 'OPEN' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
                                                     }`}>
                                                     {s.status}
                                                 </span>
                                             </td>
-                                            <td className={`px-4 py-3 text-right font-bold ${s.variance < 0 ? 'text-red-500' : s.variance > 0 ? 'text-green-500' : 'text-gray-400'
+                                            <td className={`px-4 py-3 text-right font-semibold ${s.variance < 0 ? 'text-red-500' : s.variance > 0 ? 'text-green-500' : 'text-gray-400'
                                                 }`}>
                                                 {s.variance !== null ? formatCurrency(s.variance, user?.currency, user?.locale) : '-'}
                                             </td>
@@ -278,13 +278,13 @@ export default function TillReportsPage() {
 
                 {/* 4. Exceptions & Audit */}
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                    <h2 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+                    <h2 className="text-lg font-semibold text-gray-800 mb-6 flex items-center gap-2">
                         <AlertTriangle className="w-5 h-5" />
                         Exceptions & Audit Log
                     </h2>
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
-                            <thead className="bg-gray-50">
+                            <thead className="bg-white border-b border-gray-100">
                                 <tr>
                                     <th className="px-4 py-3 text-left">Type</th>
                                     <th className="px-4 py-3 text-left">Staff</th>
@@ -295,26 +295,26 @@ export default function TillReportsPage() {
                             <tbody className="divide-y divide-gray-100">
                                 {exceptions.refunds.map((r: any) => (
                                     <tr key={r.id} className="hover:bg-red-50">
-                                        <td className="px-4 py-3 text-red-600 font-bold">REFUND</td>
+                                        <td className="px-4 py-3 text-red-600 font-semibold">REFUND</td>
                                         <td className="px-4 py-3">{r.user.name}</td>
                                         <td className="px-4 py-3 text-gray-500">{new Date(r.createdAt).toLocaleTimeString()}</td>
-                                        <td className="px-4 py-3 text-right font-bold text-red-600">-{formatCurrency(r.total, user?.currency, user?.locale)}</td>
+                                        <td className="px-4 py-3 text-right font-semibold text-red-600">-{formatCurrency(r.total, user?.currency, user?.locale)}</td>
                                     </tr>
                                 ))}
                                 {exceptions.voids.map((v: any) => (
                                     <tr key={v.id} className="hover:bg-orange-50">
-                                        <td className="px-4 py-3 text-orange-600 font-bold">VOID</td>
+                                        <td className="px-4 py-3 text-orange-600 font-semibold">VOID</td>
                                         <td className="px-4 py-3">{v.user.name}</td>
                                         <td className="px-4 py-3 text-gray-500">{new Date(v.createdAt).toLocaleTimeString()}</td>
-                                        <td className="px-4 py-3 text-right font-bold text-gray-400">-</td>
+                                        <td className="px-4 py-3 text-right font-semibold text-gray-400">-</td>
                                     </tr>
                                 ))}
                                 {exceptions.cashEvents.map((c: any) => (
                                     <tr key={c.id}>
-                                        <td className="px-4 py-3 font-bold">{c.type}</td>
+                                        <td className="px-4 py-3 font-semibold">{c.type}</td>
                                         <td className="px-4 py-3">-</td>
                                         <td className="px-4 py-3 text-gray-500">{new Date(c.createdAt).toLocaleTimeString()}</td>
-                                        <td className="px-4 py-3 text-right font-bold">{formatCurrency(c.amount, user?.currency, user?.locale)}</td>
+                                        <td className="px-4 py-3 text-right font-semibold">{formatCurrency(c.amount, user?.currency, user?.locale)}</td>
                                     </tr>
                                 ))}
                                 {exceptions.refunds.length === 0 && exceptions.voids.length === 0 && exceptions.cashEvents.length === 0 && (
@@ -329,13 +329,13 @@ export default function TillReportsPage() {
 
                 {/* 5. Inventory Impact */}
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                    <h2 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+                    <h2 className="text-lg font-semibold text-gray-800 mb-6 flex items-center gap-2">
                         <Package className="w-5 h-5" />
                         Inventory Impact
                     </h2>
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
-                            <thead className="bg-gray-50">
+                            <thead className="bg-white border-b border-gray-100">
                                 <tr>
                                     <th className="px-4 py-3 text-left">Product</th>
                                     <th className="px-4 py-3 text-left">SKU</th>
@@ -347,7 +347,7 @@ export default function TillReportsPage() {
                                     <tr key={i.productId} className="hover:bg-gray-50">
                                         <td className="px-4 py-3 font-medium text-gray-900">{i.name}</td>
                                         <td className="px-4 py-3 text-gray-500">{i.sku}</td>
-                                        <td className="px-4 py-3 text-right font-bold">{i.quantitySold}</td>
+                                        <td className="px-4 py-3 text-right font-semibold">{i.quantitySold}</td>
                                     </tr>
                                 ))}
                                 {inventory.length === 0 && (

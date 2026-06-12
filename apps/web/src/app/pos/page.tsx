@@ -451,11 +451,11 @@ export default function POSPage() {
     if (isHydrated && !selectedStoreId) {
         return (
             <div className="h-full w-full flex items-center justify-center bg-gray-50">
-                <div className="text-center p-8 bg-white rounded-3xl shadow-xl max-w-md">
+                <div className="text-center p-8 bg-white rounded-2xl shadow-xl max-w-md">
                     <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2-2H7" /></svg>
                     </div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Select a Store</h2>
+                    <h2 className="text-2xl font-semibold text-gray-900 mb-2">Select a Store</h2>
                     <p className="text-gray-500 mb-6">POS and Sales features are disabled in Global View. Please select a specific location from the sidebar to continue.</p>
                 </div>
             </div>
@@ -478,35 +478,35 @@ export default function POSPage() {
     return (
         <div className="h-full w-full">
 
-            <div className="flex h-full w-full bg-[#f8f9fc] font-sans overflow-hidden print:hidden">
+            <div className="flex h-full w-full bg-canvas font-sans overflow-hidden print:hidden">
                 {/* CENTER: INVOICE / CART */}
-                <div className="flex-1 flex flex-col min-w-[500px] max-w-4xl mx-auto my-6 bg-white rounded-3xl shadow-xl overflow-hidden ml-6 mb-6">
+                <div className="flex-1 flex flex-col min-w-[500px] max-w-4xl mx-auto my-6 bg-white rounded-2xl shadow-card border border-gray-100/80 overflow-hidden ml-6 mb-6">
                     {/* Header Card */}
-                    <div className="p-8 border-b-4 border-indigo-600">
+                    <div className="p-8 border-b border-gray-100">
                         <div className="flex justify-between items-start mb-6">
                             <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600">
+                                <div className="w-12 h-12 bg-brand-100 rounded-full flex items-center justify-center text-brand-600">
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                     </svg>
                                 </div>
                                 <div>
-                                    <h1 className="text-2xl font-black text-gray-900 uppercase tracking-tight">
+                                    <h1 className="text-2xl font-semibold text-gray-900 uppercase tracking-tight">
                                         {selectedCustomer ? selectedCustomer.name : 'Walk-In Customer'}
                                     </h1>
                                     <div className="flex items-center gap-2 text-sm font-medium text-gray-500">
                                         <span>{selectedCustomer ? (selectedCustomer.phone || selectedCustomer.email) : 'General Sales'}</span>
-                                        <span className="text-indigo-400">•</span>
-                                        <span className="text-indigo-600 font-bold">In-Store</span>
+                                        <span className="text-brand-400">•</span>
+                                        <span className="text-brand-600 font-semibold">In-Store</span>
                                     </div>
                                 </div>
                             </div>
-                            <div className="bg-green-100 text-green-700 font-bold px-3 py-1 rounded text-xs uppercase tracking-wider">
+                            <div className="bg-green-100 text-green-700 font-semibold px-3 py-1 rounded text-xs uppercase tracking-wider">
                                 New Sale
                             </div>
                         </div>
 
-                        <div className="flex justify-between items-center text-xs font-bold text-gray-400 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <div className="flex justify-between items-center text-xs font-semibold text-gray-400 bg-gray-50 p-4 rounded-xl border border-gray-100">
                             <div className="flex items-center gap-2">
                                 {/* PRINTER CONNECT BUTTON */}
                                 <button
@@ -520,9 +520,9 @@ export default function POSPage() {
                                             toast.error('Connection failed: ' + e.message);
                                         }
                                     }}
-                                    className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-bold transition-colors ${printerConnected
+                                    className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold transition-colors ${printerConnected
                                         ? 'bg-green-100 text-green-700 cursor-default'
-                                        : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200'
+                                        : 'bg-brand-50 text-brand-600 hover:bg-brand-100 border border-brand-200'
                                         }`}
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -553,11 +553,11 @@ export default function POSPage() {
                     <div className="flex-1 overflow-auto bg-white">
                         <table className="w-full text-left">
                             <thead className="bg-white sticky top-0 z-10">
-                                <tr className="text-gray-400 text-[10px] font-bold uppercase tracking-widest border-b border-gray-100">
-                                    <th className="py-2 pl-8 w-[40%]">Item Details</th>
-                                    <th className="py-2 text-center w-[20%]">Qty</th>
-                                    <th className="py-2 text-right w-[20%]">Price</th>
-                                    <th className="py-2 text-right pr-8 w-[20%]">Total</th>
+                                <tr className="text-mid-grey text-[10px] font-semibold uppercase tracking-widest border-b border-gray-100">
+                                    <th className="py-3 pl-8 w-[40%]">Item Details</th>
+                                    <th className="py-3 text-center w-[20%]">Qty</th>
+                                    <th className="py-3 text-right w-[20%]">Price</th>
+                                    <th className="py-3 text-right pr-8 w-[20%]">Total</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50">
@@ -576,27 +576,27 @@ export default function POSPage() {
                                         return (
                                             <tr key={item.id} className="group hover:bg-gray-50/50 transition-colors">
                                                 <td className="py-4 pl-8">
-                                                    <div className="font-bold text-gray-900 text-sm">{item.name}</div>
-                                                    <div className="text-[10px] font-bold text-gray-400 mt-0.5 uppercase tracking-wider">{item.sku}</div>
+                                                    <div className="font-semibold text-gray-900 text-sm">{item.name}</div>
+                                                    <div className="text-[10px] font-semibold text-gray-400 mt-0.5 uppercase tracking-wider">{item.sku}</div>
                                                 </td>
                                                 <td className="py-4 text-center">
                                                     <div className="inline-flex items-center border border-gray-200 rounded-lg p-0.5 bg-white shadow-sm">
-                                                        <button onClick={() => updateQty(item.id, -1)} className="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded font-bold transition-colors">-</button>
-                                                        <span className="w-8 text-center font-bold text-gray-900 text-sm">{item.cartQty}</span>
+                                                        <button onClick={() => updateQty(item.id, -1)} className="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded font-semibold transition-colors">-</button>
+                                                        <span className="w-8 text-center font-semibold text-gray-900 text-sm">{item.cartQty}</span>
                                                         <button
                                                             onClick={() => updateQty(item.id, 1)}
                                                             disabled={isMaxed}
-                                                            className={`w-6 h-6 flex items-center justify-center rounded font-bold transition-colors ${isMaxed ? 'text-gray-200 cursor-not-allowed' : 'text-gray-400 hover:text-indigo-600 hover:bg-indigo-50'}`}
+                                                            className={`w-6 h-6 flex items-center justify-center rounded font-semibold transition-colors ${isMaxed ? 'text-gray-200 cursor-not-allowed' : 'text-gray-400 hover:text-brand-600 hover:bg-brand-50'}`}
                                                         >
                                                             +
                                                         </button>
                                                     </div>
-                                                    {isMaxed && <div className="text-[9px] text-red-500 font-bold mt-1 uppercase tracking-wide">Max Reached</div>}
+                                                    {isMaxed && <div className="text-[9px] text-red-500 font-semibold mt-1 uppercase tracking-wide">Max Reached</div>}
                                                 </td>
                                                 <td className="py-4 text-right text-gray-500 font-medium text-sm">{formatCurrency(item.price, user?.currency, user?.locale)}</td>
                                                 <td className="py-4 pr-8 text-right">
-                                                    <div className="font-bold text-gray-900 text-sm">{formatCurrency(Number(item.price) * item.cartQty, user?.currency, user?.locale)}</div>
-                                                    <button onClick={() => removeFromCart(item.id)} className="text-[10px] font-bold text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity mt-1 uppercase tracking-wider">Remove</button>
+                                                    <div className="font-semibold text-gray-900 text-sm">{formatCurrency(Number(item.price) * item.cartQty, user?.currency, user?.locale)}</div>
+                                                    <button onClick={() => removeFromCart(item.id)} className="text-[10px] font-semibold text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity mt-1 uppercase tracking-wider">Remove</button>
                                                 </td>
                                             </tr>
                                         )
@@ -608,31 +608,31 @@ export default function POSPage() {
                     </div>
 
                     {/* Footer Payment */}
-                    <div className="p-4 bg-gray-50 border-t-2 border-dashed border-gray-200">
+                    <div className="p-6 bg-white border-t border-gray-100">
                         <div className="space-y-1 mb-3 text-right">
                             <div className="flex justify-end gap-12 text-xs font-medium text-gray-500">
                                 <span>Subtotal</span>
-                                <span className="text-gray-900 font-bold w-24">{formatCurrency(subtotal, user?.currency, user?.locale)}</span>
+                                <span className="text-gray-900 font-semibold w-24">{formatCurrency(subtotal, user?.currency, user?.locale)}</span>
                             </div>
                             <div className="flex justify-end gap-12 text-xs font-medium text-gray-500 items-center">
                                 <div className="flex items-center gap-2">
                                     <span>Discount</span>
-                                    {appliedDiscount && <span className="text-[10px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded font-bold uppercase">{appliedDiscount.name}</span>}
-                                    <button onClick={() => setDiscountModalOpen(true)} className="text-[10px] text-indigo-600 font-bold hover:underline uppercase tracking-wider">
+                                    {appliedDiscount && <span className="text-[10px] bg-brand-100 text-brand-700 px-1.5 py-0.5 rounded font-semibold uppercase">{appliedDiscount.name}</span>}
+                                    <button onClick={() => setDiscountModalOpen(true)} className="text-[10px] text-brand-600 font-semibold hover:underline uppercase tracking-wider">
                                         {appliedDiscount ? 'Edit' : 'Add'}
                                     </button>
                                 </div>
-                                <span className={`${discountAmount > 0 ? "text-green-600 font-bold" : "text-gray-900 font-bold"} w-24`}>-{formatCurrency(discountAmount, user?.currency, user?.locale)}</span>
+                                <span className={`${discountAmount > 0 ? "text-green-600 font-semibold" : "text-gray-900 font-semibold"} w-24`}>-{formatCurrency(discountAmount, user?.currency, user?.locale)}</span>
                             </div>
                             <div className="flex justify-end gap-12 text-xs font-medium text-gray-500">
                                 <span>Tax ({(totalTaxRate * 100).toFixed(0)}%)</span>
-                                <span className="text-gray-900 font-bold w-24">{formatCurrency(taxAmount, user?.currency, user?.locale)}</span>
+                                <span className="text-gray-900 font-semibold w-24">{formatCurrency(taxAmount, user?.currency, user?.locale)}</span>
                             </div>
                             <div className="pt-2 mt-2 border-t border-gray-200">
                                 <div className="flex justify-end items-end gap-12">
                                     <div className="text-right">
-                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-0.5">Total Due</span>
-                                        <div className="text-3xl font-black text-gray-900 leading-none">{formatCurrency(cartTotal, user?.currency, user?.locale)}</div>
+                                        <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest block mb-0.5">Total Due</span>
+                                        <div className="text-3xl font-semibold text-gray-900 leading-none">{formatCurrency(cartTotal, user?.currency, user?.locale)}</div>
                                         <div className="text-[10px] text-gray-400 mt-1 font-medium">{cart.reduce((a, b) => a + b.cartQty, 0)} Items</div>
                                     </div>
                                 </div>
@@ -645,7 +645,7 @@ export default function POSPage() {
                                 setSelectedPaymentMethod('CASH');
                             }}
                             disabled={cart.length === 0}
-                            className="group w-full bg-black hover:bg-gray-900 text-white py-3 rounded-xl font-bold text-base shadow-xl shadow-gray-200 disabled:opacity-50 disabled:shadow-none transition-all flex items-center justify-center gap-3"
+                            className="group w-full bg-brand-500 hover:bg-brand-600 text-white py-3.5 rounded-xl font-semibold text-base shadow-soft disabled:opacity-50 disabled:shadow-none transition-all flex items-center justify-center gap-3"
                         >
                             <span>Proceed to Payment</span>
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 transform group-hover:translate-x-1 transition-transform" viewBox="0 0 20 20" fill="currentColor">
@@ -654,7 +654,7 @@ export default function POSPage() {
                         </button>
 
                         {!activeSession && (
-                            <button onClick={() => setCloseTillModalOpen(true)} className="w-full mt-4 text-xs font-bold text-gray-400 hover:text-gray-600 uppercase tracking-widest">
+                            <button onClick={() => setCloseTillModalOpen(true)} className="w-full mt-4 text-xs font-semibold text-gray-400 hover:text-gray-600 uppercase tracking-widest">
                                 Manager Options
                             </button>
                         )}
@@ -662,12 +662,12 @@ export default function POSPage() {
                 </div>
 
                 {/* RIGHT: RESOURCES */}
-                <div className="w-[420px] bg-white border-l border-gray-100 flex flex-col z-10 m-6 rounded-3xl shadow-sm overflow-hidden">
+                <div className="w-[420px] bg-white flex flex-col z-10 m-6 ml-0 rounded-2xl shadow-card border border-gray-100/80 overflow-hidden">
                     {/* Tabs */}
                     <div className="flex p-4 gap-2 bg-white">
                         <button
                             onClick={() => setActiveTab('products')}
-                            className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${activeTab === 'products' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-500 hover:bg-gray-50'
+                            className={`flex-1 py-2.5 text-sm font-semibold rounded-xl transition-all flex items-center justify-center gap-2 ${activeTab === 'products' ? 'bg-brand-50 text-brand-700' : 'text-gray-500 hover:bg-gray-50'
                                 }`}
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
@@ -675,7 +675,7 @@ export default function POSPage() {
                         </button>
                         <button
                             onClick={() => setActiveTab('customers')}
-                            className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${activeTab === 'customers' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-500 hover:bg-gray-50'
+                            className={`flex-1 py-2.5 text-sm font-semibold rounded-xl transition-all flex items-center justify-center gap-2 ${activeTab === 'customers' ? 'bg-brand-50 text-brand-700' : 'text-gray-500 hover:bg-gray-50'
                                 }`}
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
@@ -689,11 +689,11 @@ export default function POSPage() {
                             <>
                                 <div className="px-4 pb-4">
                                     <div className="relative group">
-                                        <span className="absolute left-4 top-3.5 text-gray-400 group-focus-within:text-indigo-500 transition-colors">
+                                        <span className="absolute left-4 top-3.5 text-gray-400 group-focus-within:text-brand-500 transition-colors">
                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                                         </span>
                                         <input
-                                            className="w-full bg-gray-50 border border-transparent focus:bg-white focus:border-indigo-100 rounded-xl py-3 pl-11 pr-4 text-gray-800 placeholder-gray-400 focus:ring-4 focus:ring-indigo-500/10 transition-all font-medium"
+                                            className="w-full bg-gray-50 border border-transparent focus:bg-white focus:border-brand-100 rounded-xl py-3 pl-11 pr-4 text-gray-800 placeholder-gray-400 focus:ring-4 focus:ring-brand-500/10 transition-all font-medium"
                                             placeholder="Search by Name, SKU..."
                                             value={search}
                                             onChange={e => setSearch(e.target.value)}
@@ -710,21 +710,21 @@ export default function POSPage() {
                                             <button
                                                 key={product.id}
                                                 onClick={() => addToCart(product)}
-                                                className="w-full flex items-center p-2 bg-white hover:bg-indigo-50 border border-gray-100 hover:border-indigo-200 rounded-lg transition-all group text-left h-14"
+                                                className="w-full flex items-center p-2 bg-white hover:bg-brand-50 border border-gray-100 hover:border-brand-200 rounded-lg transition-all group text-left h-14"
                                             >
-                                                <div className="w-10 h-10 rounded bg-gray-50 flex items-center justify-center text-gray-300 mr-3 flex-shrink-0 group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-colors">
+                                                <div className="w-10 h-10 rounded bg-gray-50 flex items-center justify-center text-gray-300 mr-3 flex-shrink-0 group-hover:bg-brand-100 group-hover:text-brand-600 transition-colors">
                                                     <Package className="w-5 h-5" />
                                                 </div>
                                                 <div className="flex-1 min-w-0 pr-3">
                                                     <div className="flex items-center justify-between">
-                                                        <span className="font-semibold text-gray-800 text-sm truncate group-hover:text-indigo-900">{product.name}</span>
-                                                        <span className="font-bold text-gray-900 text-sm ml-2">
+                                                        <span className="font-semibold text-gray-800 text-sm truncate group-hover:text-brand-900">{product.name}</span>
+                                                        <span className="font-semibold text-gray-900 text-sm ml-2">
                                                             {formatCurrency(product.price, user?.currency, user?.locale)}
                                                         </span>
                                                     </div>
                                                     <div className="flex items-center justify-between mt-0.5">
                                                         <span className="text-[10px] text-gray-400 font-mono truncate">{product.sku}</span>
-                                                        <span className={`text-[10px] font-bold ${isLow ? 'text-amber-600' : 'text-green-600'} flex items-center gap-1`}>
+                                                        <span className={`text-[10px] font-semibold ${isLow ? 'text-amber-600' : 'text-green-600'} flex items-center gap-1`}>
                                                             {isLow && <AlertCircle size={10} />}
                                                             {stock} units
                                                         </span>
@@ -738,7 +738,7 @@ export default function POSPage() {
                                             <button
                                                 onClick={() => loadProducts(false)}
                                                 disabled={loadingMoreProducts}
-                                                className="text-indigo-600 text-xs font-bold uppercase tracking-widest hover:underline disabled:opacity-50"
+                                                className="text-brand-600 text-xs font-semibold uppercase tracking-widest hover:underline disabled:opacity-50"
                                             >
                                                 {loadingMoreProducts ? 'Loading...' : 'Load More'}
                                             </button>
@@ -750,11 +750,11 @@ export default function POSPage() {
                             <>
                                 <div className="px-4 pb-4">
                                     <div className="relative group">
-                                        <span className="absolute left-4 top-3.5 text-gray-400 group-focus-within:text-indigo-500 transition-colors">
+                                        <span className="absolute left-4 top-3.5 text-gray-400 group-focus-within:text-brand-500 transition-colors">
                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                                         </span>
                                         <input
-                                            className="w-full bg-gray-50 border border-transparent focus:bg-white focus:border-indigo-100 rounded-xl py-3 pl-11 pr-4 text-gray-800 placeholder-gray-400 focus:ring-4 focus:ring-indigo-500/10 transition-all font-medium"
+                                            className="w-full bg-gray-50 border border-transparent focus:bg-white focus:border-brand-100 rounded-xl py-3 pl-11 pr-4 text-gray-800 placeholder-gray-400 focus:ring-4 focus:ring-brand-500/10 transition-all font-medium"
                                             placeholder="Search customers..."
                                             value={customerSearch}
                                             onChange={e => setCustomerSearch(e.target.value)}
@@ -763,7 +763,7 @@ export default function POSPage() {
                                     </div>
                                     <button
                                         onClick={() => setSelectedCustomer(null)}
-                                        className={`w-full py-3 mt-3 text-xs font-bold rounded-xl border border-dashed border-gray-300 hover:border-indigo-500 hover:text-indigo-600 transition uppercase tracking-wide ${!selectedCustomer ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'text-gray-400'}`}
+                                        className={`w-full py-3 mt-3 text-xs font-semibold rounded-xl border border-dashed border-gray-300 hover:border-brand-500 hover:text-brand-600 transition uppercase tracking-wide ${!selectedCustomer ? 'bg-brand-50 border-brand-200 text-brand-600' : 'text-gray-400'}`}
                                     >
                                         Reset to Walk-In Default
                                     </button>
@@ -773,28 +773,28 @@ export default function POSPage() {
                                         <button
                                             key={customer.id}
                                             onClick={() => setSelectedCustomer(customer)}
-                                            className={`w-full flex items-center p-2 border hover:bg-indigo-50 hover:border-indigo-200 rounded-lg transition-all group text-left h-14 ${selectedCustomer?.id === customer.id ? 'bg-indigo-600 border-indigo-600 hover:bg-indigo-700 text-white' : 'bg-white border-gray-100'}`}
+                                            className={`w-full flex items-center p-2 border hover:bg-brand-50 hover:border-brand-200 rounded-lg transition-all group text-left h-14 ${selectedCustomer?.id === customer.id ? 'bg-brand-600 border-brand-600 hover:bg-brand-700 text-white' : 'bg-white border-gray-100'}`}
                                         >
-                                            <div className={`w-10 h-10 rounded flex items-center justify-center mr-3 flex-shrink-0 transition-colors ${selectedCustomer?.id === customer.id ? 'bg-white/20 text-white' : 'bg-gray-50 text-gray-400 group-hover:bg-indigo-100 group-hover:text-indigo-600'}`}>
+                                            <div className={`w-10 h-10 rounded flex items-center justify-center mr-3 flex-shrink-0 transition-colors ${selectedCustomer?.id === customer.id ? 'bg-white/20 text-white' : 'bg-gray-50 text-gray-400 group-hover:bg-brand-100 group-hover:text-brand-600'}`}>
                                                 <User className="w-5 h-5" />
                                             </div>
                                             <div className="flex-1 min-w-0 pr-3">
                                                 <div className="flex items-center justify-between">
                                                     <span className={`font-semibold text-sm truncate ${selectedCustomer?.id === customer.id ? 'text-white' : 'text-gray-800'}`}>{customer.name}</span>
                                                     {(customer as any).isLoyaltyMember && (
-                                                        <div className={`flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${selectedCustomer?.id === customer.id ? 'bg-white/20 text-white' : 'bg-indigo-100 text-indigo-700'}`}>
+                                                        <div className={`flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${selectedCustomer?.id === customer.id ? 'bg-white/20 text-white' : 'bg-brand-100 text-brand-700'}`}>
                                                             <Award size={10} />
                                                             <span>{(customer as any).loyaltyPoints || 0}</span>
                                                         </div>
                                                     )}
                                                 </div>
                                                 <div className="flex items-center justify-between mt-0.5">
-                                                    <div className={`flex items-center gap-1 text-[10px] truncate ${selectedCustomer?.id === customer.id ? 'text-indigo-200' : 'text-gray-400'}`}>
+                                                    <div className={`flex items-center gap-1 text-[10px] truncate ${selectedCustomer?.id === customer.id ? 'text-brand-200' : 'text-gray-400'}`}>
                                                         <Phone size={10} />
                                                         <span>{customer.phone || 'No Phone'}</span>
                                                     </div>
                                                     {selectedCustomer?.id === customer.id && (
-                                                        <span className="text-[10px] font-bold bg-white text-indigo-600 px-1.5 rounded">Selected</span>
+                                                        <span className="text-[10px] font-semibold bg-white text-brand-600 px-1.5 rounded">Selected</span>
                                                     )}
                                                 </div>
                                             </div>
@@ -805,7 +805,7 @@ export default function POSPage() {
                                             <button
                                                 onClick={() => loadCustomers(false)}
                                                 disabled={loadingMoreCustomers}
-                                                className="text-indigo-600 text-xs font-bold uppercase tracking-widest hover:underline disabled:opacity-50"
+                                                className="text-brand-600 text-xs font-semibold uppercase tracking-widest hover:underline disabled:opacity-50"
                                             >
                                                 {loadingMoreCustomers ? 'Loading...' : 'Load More'}
                                             </button>
@@ -822,15 +822,15 @@ export default function POSPage() {
                 {/* Checkout Modal */}
                 {checkoutModalOpen && (
                     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 backdrop-blur-sm">
-                        <div className="bg-white p-8 rounded-2xl shadow-2xl w-96 transform transition-all scale-100">
+                        <div className="bg-white p-8 rounded-2xl shadow-lifted w-96 transform transition-all scale-100">
                             <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-2xl font-bold">Payment Method</h3>
+                                <h3 className="text-2xl font-semibold">Payment Method</h3>
                                 <button onClick={() => setCheckoutModalOpen(false)} className="text-gray-400 hover:text-gray-600 bg-gray-100 w-8 h-8 rounded-full">✕</button>
                             </div>
 
                             <div className="text-center mb-8">
                                 <p className="text-gray-500 text-sm uppercase tracking-wider mb-1">Total to Pay</p>
-                                <div className="text-5xl font-bold text-gray-800">
+                                <div className="text-5xl font-semibold text-gray-800">
                                     {formatCurrency(cartTotal, user?.currency, user?.locale)}
                                 </div>
                             </div>
@@ -839,43 +839,43 @@ export default function POSPage() {
                             <div className="grid grid-cols-3 gap-4 mb-8">
                                 <button
                                     onClick={() => setSelectedPaymentMethod('CASH')}
-                                    className={`p-4 border-2 rounded-2xl flex flex-col items-center relative transition-all ${selectedPaymentMethod === 'CASH' ? 'border-indigo-600 bg-indigo-50' : 'border-gray-100 hover:border-indigo-200'}`}>
-                                    {selectedPaymentMethod === 'CASH' && <div className="absolute -top-3 bg-indigo-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">SELECTED</div>}
+                                    className={`p-4 border-2 rounded-2xl flex flex-col items-center relative transition-all ${selectedPaymentMethod === 'CASH' ? 'border-brand-600 bg-brand-50' : 'border-gray-100 hover:border-brand-200'}`}>
+                                    {selectedPaymentMethod === 'CASH' && <div className="absolute -top-3 bg-brand-600 text-white text-[10px] px-2 py-0.5 rounded-full font-semibold">SELECTED</div>}
                                     <div className="text-3xl mb-2">💵</div>
-                                    <span className={`font-bold ${selectedPaymentMethod === 'CASH' ? 'text-indigo-800' : 'text-gray-600'}`}>Cash</span>
+                                    <span className={`font-semibold ${selectedPaymentMethod === 'CASH' ? 'text-brand-800' : 'text-gray-600'}`}>Cash</span>
                                 </button>
                                 <button
                                     onClick={() => setSelectedPaymentMethod('CARD')}
-                                    className={`p-4 border-2 rounded-2xl flex flex-col items-center relative transition-all ${selectedPaymentMethod === 'CARD' ? 'border-indigo-600 bg-indigo-50' : 'border-gray-100 hover:border-indigo-200'}`}>
-                                    {selectedPaymentMethod === 'CARD' && <div className="absolute -top-3 bg-indigo-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">SELECTED</div>}
+                                    className={`p-4 border-2 rounded-2xl flex flex-col items-center relative transition-all ${selectedPaymentMethod === 'CARD' ? 'border-brand-600 bg-brand-50' : 'border-gray-100 hover:border-brand-200'}`}>
+                                    {selectedPaymentMethod === 'CARD' && <div className="absolute -top-3 bg-brand-600 text-white text-[10px] px-2 py-0.5 rounded-full font-semibold">SELECTED</div>}
                                     <div className="text-3xl mb-2">💳</div>
-                                    <span className={`font-bold ${selectedPaymentMethod === 'CARD' ? 'text-indigo-800' : 'text-gray-600'}`}>Card</span>
+                                    <span className={`font-semibold ${selectedPaymentMethod === 'CARD' ? 'text-brand-800' : 'text-gray-600'}`}>Card</span>
                                 </button>
                                 <button
                                     onClick={() => setSelectedPaymentMethod('BANK_TRANSFER')}
-                                    className={`p-4 border-2 rounded-2xl flex flex-col items-center relative transition-all ${selectedPaymentMethod === 'BANK_TRANSFER' ? 'border-indigo-600 bg-indigo-50' : 'border-gray-100 hover:border-indigo-200'}`}>
-                                    {selectedPaymentMethod === 'BANK_TRANSFER' && <div className="absolute -top-3 bg-indigo-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">SELECTED</div>}
+                                    className={`p-4 border-2 rounded-2xl flex flex-col items-center relative transition-all ${selectedPaymentMethod === 'BANK_TRANSFER' ? 'border-brand-600 bg-brand-50' : 'border-gray-100 hover:border-brand-200'}`}>
+                                    {selectedPaymentMethod === 'BANK_TRANSFER' && <div className="absolute -top-3 bg-brand-600 text-white text-[10px] px-2 py-0.5 rounded-full font-semibold">SELECTED</div>}
                                     <div className="text-3xl mb-2">🏦</div>
-                                    <span className={`font-bold ${selectedPaymentMethod === 'BANK_TRANSFER' ? 'text-indigo-800' : 'text-gray-600'}`}>Transfer</span>
+                                    <span className={`font-semibold ${selectedPaymentMethod === 'BANK_TRANSFER' ? 'text-brand-800' : 'text-gray-600'}`}>Transfer</span>
                                 </button>
                                 <button
                                     onClick={() => setSplitModalOpen(true)}
-                                    className={`p-4 border-2 rounded-2xl flex flex-col items-center relative transition-all border-dashed border-indigo-300 hover:bg-indigo-50`}>
+                                    className={`p-4 border-2 rounded-2xl flex flex-col items-center relative transition-all border-dashed border-brand-300 hover:bg-brand-50`}>
                                     <div className="text-3xl mb-2">✂️</div>
-                                    <span className="font-bold text-indigo-600">Split / Multi</span>
+                                    <span className="font-semibold text-brand-600">Split / Multi</span>
                                 </button>
                             </div>
 
                             <div className="mb-6">
-                                <label className="block text-sm font-bold text-gray-700 mb-2">
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">
                                     {splitPayments.length > 0 ? 'Split Payment Configured' : (selectedPaymentMethod === 'CASH' ? 'Amount Tendered' : 'Transaction Amount')}
                                 </label>
                                 {splitPayments.length > 0 ? (
                                     <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex justify-between items-center cursor-pointer hover:bg-green-100" onClick={() => setSplitModalOpen(true)}>
-                                        <div className="font-bold text-green-800">
+                                        <div className="font-semibold text-green-800">
                                             {splitPayments.length} Payments Added
                                         </div>
-                                        <div className="font-mono font-bold text-green-700">
+                                        <div className="font-mono font-semibold text-green-700">
                                             {formatCurrency(splitPayments.reduce((s, p) => s + p.amount, 0), user?.currency, user?.locale)}
                                         </div>
                                     </div>
@@ -887,7 +887,7 @@ export default function POSPage() {
                                         <input
                                             type="number"
                                             autoFocus
-                                            className="w-full text-3xl py-3 pl-8 pr-4 border-2 border-gray-200 rounded-xl text-right font-bold focus:border-indigo-500 focus:outline-none text-gray-800"
+                                            className="w-full text-3xl py-3 pl-8 pr-4 border-2 border-gray-200 rounded-xl text-right font-semibold focus:border-brand-500 focus:outline-none text-gray-800"
                                             placeholder="0.00"
                                             value={tendered}
                                             onChange={e => setTendered(e.target.value)}
@@ -898,10 +898,10 @@ export default function POSPage() {
 
                             {/* Loyalty Redemption UI */}
                             {selectedCustomer && selectedCustomer.isLoyaltyMember && (selectedCustomer.loyaltyPoints > 0) && (
-                                <div className="mb-6 bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+                                <div className="mb-6 bg-brand-50 p-4 rounded-xl border border-brand-100">
                                     <div className="flex justify-between items-center mb-2">
-                                        <span className="text-sm font-bold text-indigo-900">Loyalty Points</span>
-                                        <span className="text-xs font-medium text-indigo-600 px-2 py-0.5 bg-white rounded-full border border-indigo-200">
+                                        <span className="text-sm font-semibold text-brand-900">Loyalty Points</span>
+                                        <span className="text-xs font-medium text-brand-600 px-2 py-0.5 bg-white rounded-full border border-brand-200">
                                             Balance: {selectedCustomer.loyaltyPoints}
                                         </span>
                                     </div>
@@ -940,7 +940,7 @@ export default function POSPage() {
                                         <div className="mt-3">
                                             <div className="flex justify-between items-center text-xs text-gray-500 mb-1">
                                                 <span>Points to Redeem</span>
-                                                <span className="font-bold text-green-600">-{formatCurrency((pointsToRedeem * (Number(user?.tenant?.loyaltyRedeemRate) || 0.10)), user?.currency, user?.locale)}</span>
+                                                <span className="font-semibold text-green-600">-{formatCurrency((pointsToRedeem * (Number(user?.tenant?.loyaltyRedeemRate) || 0.10)), user?.currency, user?.locale)}</span>
                                             </div>
                                             <input
                                                 type="range"
@@ -948,9 +948,9 @@ export default function POSPage() {
                                                 max={Math.min(selectedCustomer.loyaltyPoints, Math.ceil(subtotal / (Number(user?.tenant?.loyaltyRedeemRate) || 0.10)))}
                                                 value={pointsToRedeem}
                                                 onChange={(e) => setPointsToRedeem(parseInt(e.target.value))}
-                                                className="w-full h-2 bg-indigo-200 rounded-lg appearance-none cursor-pointer"
+                                                className="w-full h-2 bg-brand-200 rounded-lg appearance-none cursor-pointer"
                                             />
-                                            <div className="text-right text-xs font-bold text-indigo-700 mt-1">{pointsToRedeem} Points</div>
+                                            <div className="text-right text-xs font-semibold text-brand-700 mt-1">{pointsToRedeem} Points</div>
                                         </div>
                                     )}
                                 </div>
@@ -966,8 +966,8 @@ export default function POSPage() {
                                         {tendVal > 0 && (
                                             <div className={`p-4 rounded-xl flex justify-between items-center ${change >= 0 ? 'bg-green-100 text-green-900' : 'bg-red-50 text-red-900'
                                                 }`}>
-                                                <span className="font-bold text-sm uppercase">{change >= 0 ? 'Change Due' : 'Remaining'}</span>
-                                                <span className="text-2xl font-bold font-mono">
+                                                <span className="font-semibold text-sm uppercase">{change >= 0 ? 'Change Due' : 'Remaining'}</span>
+                                                <span className="text-2xl font-semibold font-mono">
                                                     {formatCurrency(Math.abs(change >= 0 ? change : remaining), user?.currency, user?.locale)}
                                                 </span>
                                             </div>
@@ -976,7 +976,7 @@ export default function POSPage() {
                                         <button
                                             onClick={() => handleCheckout()}
                                             disabled={(change < 0 && tendVal > 0) || isProcessingCheckout}
-                                            className={`w-full py-4 rounded-xl font-bold text-white shadow-lg transition-all transform active:scale-[0.98] ${(change < 0 && tendVal > 0) || isProcessingCheckout ? 'bg-gray-300 cursor-not-allowed shadow-none' : 'bg-green-600 hover:bg-green-500 shadow-green-600/30'
+                                            className={`w-full py-4 rounded-xl font-semibold text-white shadow-lg transition-all transform active:scale-[0.98] ${(change < 0 && tendVal > 0) || isProcessingCheckout ? 'bg-gray-300 cursor-not-allowed shadow-none' : 'bg-green-600 hover:bg-green-500 shadow-green-600/30'
                                                 }`}
                                         >
                                             {isProcessingCheckout ? (
@@ -1002,36 +1002,36 @@ export default function POSPage() {
                 {/* Split Payment Modal (World-Class Design V2) */}
                 {splitModalOpen && (
                     <div className="fixed inset-0 bg-gray-900/80 flex items-center justify-center z-[60] backdrop-blur transition-all duration-300">
-                        <div className="bg-white rounded-3xl shadow-2xl w-[800px] h-[600px] overflow-hidden flex transform scale-100 ring-1 ring-white/10">
+                        <div className="bg-white rounded-2xl shadow-lifted w-[800px] h-[600px] overflow-hidden flex transform scale-100 ring-1 ring-white/10">
 
                             {/* Left Panel: Summary (Dark) */}
                             <div className="w-[300px] bg-slate-900 p-8 flex flex-col justify-between text-white relative overflow-hidden">
-                                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-indigo-500/10 to-transparent pointer-events-none"></div>
+                                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-brand-500/10 to-transparent pointer-events-none"></div>
 
                                 <div>
-                                    <h3 className="text-xl font-bold tracking-tight mb-8 flex items-center gap-2">
-                                        <div className="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center">✂️</div>
+                                    <h3 className="text-xl font-semibold tracking-tight mb-8 flex items-center gap-2">
+                                        <div className="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center">✂️</div>
                                         Split Pay
                                     </h3>
 
                                     <div className="space-y-6">
                                         <div>
-                                            <div className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Total Amount</div>
-                                            <div className="text-3xl font-mono font-bold tracking-tight">{formatCurrency(cartTotal, user?.currency, user?.locale)}</div>
+                                            <div className="text-slate-400 text-xs font-semibold uppercase tracking-widest mb-1">Total Amount</div>
+                                            <div className="text-3xl font-mono font-semibold tracking-tight">{formatCurrency(cartTotal, user?.currency, user?.locale)}</div>
                                         </div>
 
                                         <div className="h-px bg-slate-800"></div>
 
                                         <div>
-                                            <div className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Paid So Far</div>
-                                            <div className="text-2xl font-mono text-green-400 font-bold">
+                                            <div className="text-slate-400 text-xs font-semibold uppercase tracking-widest mb-1">Paid So Far</div>
+                                            <div className="text-2xl font-mono text-green-400 font-semibold">
                                                 {formatCurrency(splitPayments.reduce((s, p) => s + p.amount, 0), user?.currency, user?.locale)}
                                             </div>
                                         </div>
 
                                         <div>
-                                            <div className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Remaining</div>
-                                            <div className={`text-4xl font-mono font-bold tracking-tighter ${cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0) <= 0.01 ? 'text-green-400' : 'text-orange-400'}`}>
+                                            <div className="text-slate-400 text-xs font-semibold uppercase tracking-widest mb-1">Remaining</div>
+                                            <div className={`text-4xl font-mono font-semibold tracking-tighter ${cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0) <= 0.01 ? 'text-green-400' : 'text-orange-400'}`}>
                                                 {formatCurrency(Math.max(0, cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0)), user?.currency, user?.locale)}
                                             </div>
                                         </div>
@@ -1051,7 +1051,7 @@ export default function POSPage() {
                                 <button onClick={() => { setSplitPayments([]); setSplitModalOpen(false); }} className="absolute top-6 right-6 w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-900 transition-colors z-10">✕</button>
 
                                 <div className="p-8 pb-0 flex-1 overflow-y-auto custom-scrollbar">
-                                    <h4 className="text-gray-900 font-bold mb-4 flex items-center justify-between">
+                                    <h4 className="text-gray-900 font-semibold mb-4 flex items-center justify-between">
                                         <span>Add Payment</span>
                                         {splitPayments.length > 0 && <span className="text-xs bg-gray-100 px-2 py-1 rounded-md text-gray-500">{splitPayments.length} Added</span>}
                                     </h4>
@@ -1059,20 +1059,20 @@ export default function POSPage() {
                                     {/* Input Amount */}
                                     <div className="mb-6">
                                         <div className="relative group">
-                                            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl pointer-events-none group-focus-within:text-indigo-500 transition-colors">
+                                            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl pointer-events-none group-focus-within:text-brand-500 transition-colors">
                                                 {formatCurrency(0, user?.currency, user?.locale).replace(/[\d\s.,]/g, '')}
                                             </span>
                                             <input
                                                 type="number"
                                                 value={splitAmount}
                                                 onChange={(e) => setSplitAmount(e.target.value)}
-                                                className="w-full h-14 pl-10 pr-20 bg-gray-50 border border-gray-200 rounded-xl text-2xl font-bold text-gray-900 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
+                                                className="w-full h-14 pl-10 pr-20 bg-gray-50 border border-gray-200 rounded-xl text-2xl font-semibold text-gray-900 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all outline-none"
                                                 placeholder="0.00"
                                                 autoFocus
                                             />
                                             <button
                                                 onClick={() => setSplitAmount(Math.max(0, cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0)).toFixed(2))}
-                                                className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white shadow-sm border border-gray-200 hover:border-indigo-300 text-[10px] font-bold px-3 py-1.5 rounded-lg text-gray-600 uppercase tracking-wider transition-all"
+                                                className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white shadow-sm border border-gray-200 hover:border-brand-300 text-[10px] font-semibold px-3 py-1.5 rounded-lg text-gray-600 uppercase tracking-wider transition-all"
                                             >
                                                 Max
                                             </button>
@@ -1101,23 +1101,23 @@ export default function POSPage() {
                                                 className={`flex flex-col items-center justify-center p-3 rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-all active:scale-95 ${m.color}`}
                                             >
                                                 <div className="text-2xl mb-1">{m.icon}</div>
-                                                <div className="text-xs font-bold text-gray-600">{m.label}</div>
+                                                <div className="text-xs font-semibold text-gray-600">{m.label}</div>
                                             </button>
                                         ))}
                                     </div>
 
                                     {/* List */}
                                     <div className="flex-1">
-                                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Allocated Payments</h4>
+                                        <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Allocated Payments</h4>
                                         <div className="space-y-2">
                                             {splitPayments.map((p, idx) => (
                                                 <div key={idx} className="flex justify-between items-center p-3 bg-white border border-gray-100 rounded-lg shadow-sm group hover:border-gray-300 transition-colors">
                                                     <div className="flex items-center gap-3">
                                                         <div className="w-8 h-8 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center text-sm">{p.method === 'CASH' ? '💵' : p.method === 'CARD' ? '💳' : '🏦'}</div>
-                                                        <span className="font-bold text-gray-700 text-sm">{p.method}</span>
+                                                        <span className="font-semibold text-gray-700 text-sm">{p.method}</span>
                                                     </div>
                                                     <div className="flex items-center gap-3">
-                                                        <span className="font-mono font-bold text-gray-900">{formatCurrency(p.amount, user?.currency, user?.locale)}</span>
+                                                        <span className="font-mono font-semibold text-gray-900">{formatCurrency(p.amount, user?.currency, user?.locale)}</span>
                                                         <button onClick={() => setSplitPayments(prev => prev.filter((_, i) => i !== idx))} className="text-gray-300 hover:text-red-500 transition-colors">✕</button>
                                                     </div>
                                                 </div>
@@ -1136,9 +1136,9 @@ export default function POSPage() {
                                     <button
                                         onClick={() => handleCheckout()}
                                         disabled={Math.max(0, cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0)) > 0.01}
-                                        className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg transition-all flex justify-center items-center gap-2 ${Math.max(0, cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0)) > 0.01
+                                        className={`w-full py-4 rounded-xl font-semibold text-lg shadow-lg transition-all flex justify-center items-center gap-2 ${Math.max(0, cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0)) > 0.01
                                             ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
-                                            : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200 active:scale-[0.99]'
+                                            : 'bg-brand-500 hover:bg-brand-600 text-white shadow-brand-200 active:scale-[0.99]'
                                             }`}
                                     >
                                         <span>Finalize Sale</span>
@@ -1153,11 +1153,11 @@ export default function POSPage() {
                 {/* Discount Modal */}
                 {discountModalOpen && (
                     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[70] backdrop-blur-sm">
-                        <div className="bg-white p-6 rounded-2xl shadow-2xl w-96 transform transition-all">
+                        <div className="bg-white p-6 rounded-2xl shadow-lifted w-96 transform transition-all">
 
                             {/* Header */}
                             <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-xl font-bold">
+                                <h3 className="text-xl font-semibold">
                                     {supervisorMode ? 'Manager Override' : (manualDiscountInput !== '') ? 'Manual Discount' : 'Apply Discount'}
                                 </h3>
                                 <button onClick={() => {
@@ -1176,27 +1176,27 @@ export default function POSPage() {
                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
                                         </div>
                                         <div>
-                                            <h4 className="text-sm font-bold text-amber-800">Authorization Required</h4>
+                                            <h4 className="text-sm font-semibold text-amber-800">Authorization Required</h4>
                                             <p className="text-xs text-amber-700 mt-1">
                                                 A supervisor or manager must sign in to approve this manual discount.
                                             </p>
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="text-xs font-bold text-gray-500 uppercase">Email</label>
+                                        <label className="text-xs font-semibold text-gray-500 uppercase">Email</label>
                                         <input
                                             type="email"
                                             autoFocus
-                                            className="w-full mt-1 p-3 border rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                                            className="w-full mt-1 p-3 border rounded-xl focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none"
                                             value={supervisorCreds.email}
                                             onChange={e => setSupervisorCreds(prev => ({ ...prev, email: e.target.value }))}
                                         />
                                     </div>
                                     <div>
-                                        <label className="text-xs font-bold text-gray-500 uppercase">Password</label>
+                                        <label className="text-xs font-semibold text-gray-500 uppercase">Password</label>
                                         <input
                                             type="password"
-                                            className="w-full mt-1 p-3 border rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                                            className="w-full mt-1 p-3 border rounded-xl focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none"
                                             value={supervisorCreds.password}
                                             onChange={e => setSupervisorCreds(prev => ({ ...prev, password: e.target.value }))}
                                         />
@@ -1241,7 +1241,7 @@ export default function POSPage() {
                                             }
                                         }}
                                         disabled={verifyingSupervisor}
-                                        className="w-full py-3 bg-black text-white rounded-xl font-bold hover:bg-gray-800 disabled:opacity-50"
+                                        className="w-full py-3 bg-black text-white rounded-xl font-semibold hover:bg-gray-800 disabled:opacity-50"
                                     >
                                         {verifyingSupervisor ? 'Verifying...' : 'Authorize Override'}
                                     </button>
@@ -1251,24 +1251,24 @@ export default function POSPage() {
                                 <div className="space-y-6">
                                     <div>
                                         <div className="flex justify-between items-center mb-2">
-                                            <label className="text-sm font-bold text-gray-500 uppercase">Discount Amount</label>
+                                            <label className="text-sm font-semibold text-gray-500 uppercase">Discount Amount</label>
                                             <div className="flex bg-gray-100 p-1 rounded-lg">
                                                 <button
                                                     onClick={() => setManualDiscountType('FIXED')}
-                                                    className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${manualDiscountType === 'FIXED' ? 'bg-white shadow text-gray-900' : 'text-gray-500'}`}
+                                                    className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${manualDiscountType === 'FIXED' ? 'bg-white shadow text-gray-900' : 'text-gray-500'}`}
                                                 >
                                                     {formatCurrency(0, user?.currency, user?.locale).replace(/[\d\s.,]/g, '')} Fixed
                                                 </button>
                                                 <button
                                                     onClick={() => setManualDiscountType('PERCENTAGE')}
-                                                    className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${manualDiscountType === 'PERCENTAGE' ? 'bg-white shadow text-gray-900' : 'text-gray-500'}`}
+                                                    className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${manualDiscountType === 'PERCENTAGE' ? 'bg-white shadow text-gray-900' : 'text-gray-500'}`}
                                                 >
                                                     % Percent
                                                 </button>
                                             </div>
                                         </div>
                                         <div className="relative">
-                                            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 font-bold">
+                                            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 font-semibold">
                                                 {manualDiscountType === 'FIXED' ? formatCurrency(0, user?.currency, user?.locale).replace(/[\d\s.,]/g, '') : '%'}
                                             </span>
                                             <input
@@ -1276,7 +1276,7 @@ export default function POSPage() {
                                                 autoFocus
                                                 value={manualDiscountInput}
                                                 onChange={e => setManualDiscountInput(e.target.value)}
-                                                className="w-full pl-8 pr-4 py-4 text-3xl font-bold border rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none"
+                                                className="w-full pl-8 pr-4 py-4 text-3xl font-semibold border rounded-xl focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 outline-none"
                                                 placeholder="0.00"
                                             />
                                         </div>
@@ -1284,7 +1284,7 @@ export default function POSPage() {
                                     <div className="flex gap-3">
                                         <button
                                             onClick={() => setManualDiscountInput('')} // Back to List
-                                            className="flex-1 py-3 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200"
+                                            className="flex-1 py-3 bg-gray-100 text-gray-600 font-semibold rounded-xl hover:bg-gray-200"
                                         >
                                             Back
                                         </button>
@@ -1305,7 +1305,7 @@ export default function POSPage() {
                                                     toast.error('Enter a valid amount');
                                                 }
                                             }}
-                                            className="flex-1 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-200"
+                                            className="flex-1 py-3 bg-brand-600 text-white font-semibold rounded-xl hover:bg-brand-700 shadow-soft"
                                         >
                                             Apply
                                         </button>
@@ -1314,7 +1314,7 @@ export default function POSPage() {
                             ) : (
                                 /* View 3: Discount List */
                                 <div className="space-y-3">
-                                    <h4 className="text-sm font-bold text-gray-500 uppercase">System Discounts</h4>
+                                    <h4 className="text-sm font-semibold text-gray-500 uppercase">System Discounts</h4>
                                     <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto custom-scrollbar">
                                         {discounts.map(d => (
                                             <button
@@ -1330,9 +1330,9 @@ export default function POSPage() {
                                                     });
                                                     setDiscountModalOpen(false);
                                                 }}
-                                                className="p-3 border rounded-lg text-sm hover:bg-indigo-50 hover:border-indigo-500 text-left transition-colors"
+                                                className="p-3 border rounded-lg text-sm hover:bg-brand-50 hover:border-brand-500 text-left transition-colors"
                                             >
-                                                <div className="font-bold text-indigo-700">{d.name}</div>
+                                                <div className="font-semibold text-brand-700">{d.name}</div>
                                                 <div className="text-xs text-gray-500">
                                                     {d.type === 'PERCENTAGE' ? `${d.value}% Off` : `-${formatCurrency(Number(d.value), user?.currency, user?.locale)}`}
                                                 </div>
@@ -1353,7 +1353,7 @@ export default function POSPage() {
                                         } else {
                                             setSupervisorMode(true);
                                         }
-                                    }} className="w-full py-3 border border-dashed border-gray-300 rounded-xl text-sm font-bold text-gray-500 hover:bg-gray-50 hover:text-indigo-600 hover:border-indigo-300 transition-all flex items-center justify-center gap-2">
+                                    }} className="w-full py-3 border border-dashed border-gray-300 rounded-xl text-sm font-semibold text-gray-500 hover:bg-gray-50 hover:text-brand-600 hover:border-brand-300 transition-all flex items-center justify-center gap-2">
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                                         Enter Manual Amount
                                     </button>
@@ -1366,23 +1366,23 @@ export default function POSPage() {
                 {/* Receipt Modal (Success) */}
                 {receiptModalOpen && lastSale && (
                     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 backdrop-blur-sm">
-                        <div className="bg-white rounded-3xl shadow-2xl w-[400px] overflow-hidden">
+                        <div className="bg-white rounded-2xl shadow-lifted w-[400px] overflow-hidden">
                             <div className="bg-green-500 p-6 text-center text-white">
                                 <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-md">
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
                                 </div>
-                                <h2 className="text-2xl font-black uppercase tracking-wide">Sale Complete!</h2>
+                                <h2 className="text-2xl font-semibold uppercase tracking-wide">Sale Complete!</h2>
                                 <p className="opacity-90 font-medium">Receipt #{lastSale.id?.slice(-6).toUpperCase()}</p>
                             </div>
                             <div className="p-8">
                                 <div className="space-y-4 mb-8">
                                     <div className="flex justify-between items-center text-sm">
-                                        <span className="text-gray-500 font-bold uppercase tracking-wider">Total</span>
-                                        <span className="text-xl font-black text-gray-900">{formatCurrency(lastSale.total, user?.currency, user?.locale)}</span>
+                                        <span className="text-gray-500 font-semibold uppercase tracking-wider">Total</span>
+                                        <span className="text-xl font-semibold text-gray-900">{formatCurrency(lastSale.total, user?.currency, user?.locale)}</span>
                                     </div>
                                     <div className="flex justify-between items-center text-sm">
-                                        <span className="text-gray-500 font-bold uppercase tracking-wider">Change</span>
-                                        <span className="text-xl font-bold text-green-600">{formatCurrency(lastSale.change, user?.currency, user?.locale)}</span>
+                                        <span className="text-gray-500 font-semibold uppercase tracking-wider">Change</span>
+                                        <span className="text-xl font-semibold text-green-600">{formatCurrency(lastSale.change, user?.currency, user?.locale)}</span>
                                     </div>
                                 </div>
 
@@ -1394,16 +1394,16 @@ export default function POSPage() {
                                                 success: 'Sent!',
                                                 error: 'Print failed'
                                             });
-                                        }} className="py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-lg shadow-indigo-200 transition-all flex items-center justify-center gap-2">
+                                        }} className="py-4 bg-brand-500 hover:bg-brand-600 text-white rounded-xl font-semibold shadow-soft transition-all flex items-center justify-center gap-2">
                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
                                             <span>USB Print</span>
                                         </button>
-                                        <button onClick={() => window.print()} className="py-4 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl font-bold transition-all flex items-center justify-center gap-2">
+                                        <button onClick={() => window.print()} className="py-4 bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 rounded-xl font-semibold transition-all flex items-center justify-center gap-2">
                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                                             <span>Browser Print</span>
                                         </button>
                                     </div>
-                                    <button onClick={() => setReceiptModalOpen(false)} className="py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition-colors">
+                                    <button onClick={() => setReceiptModalOpen(false)} className="py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold transition-colors">
                                         New Sale
                                     </button>
                                 </div>
@@ -1465,7 +1465,7 @@ function ReportResult({ sessionId, onClose }: { sessionId: string; onClose: () =
             .finally(() => setLoading(false));
     }, [sessionId, onClose]);
 
-    if (loading) return <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center text-white font-bold">Loading Report...</div>;
+    if (loading) return <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center text-white font-semibold">Loading Report...</div>;
     if (!data) return null;
 
     return <TillReport data={data} onClose={onClose} />;
