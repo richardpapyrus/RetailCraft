@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { confirmDialog } from "@/lib/dialog";
 import { api } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 
@@ -46,7 +47,7 @@ export default function CategoryManager({ isOpen, onClose, onUpdate }: CategoryM
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Are you sure? Products in this category will not be deleted but logic may break if not handled.')) return;
+        if (!(await confirmDialog({ title: 'Delete Category', message: 'Products in this category will not be deleted, but they will become uncategorised. Continue?', destructive: true }))) return;
         try {
             await api.categories.delete(id);
             toast.success('Category deleted');

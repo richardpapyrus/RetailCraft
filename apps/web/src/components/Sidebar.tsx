@@ -24,12 +24,16 @@ import { useState, useEffect } from 'react';
 import { StoreSelector } from './StoreSelector';
 
 
-export function Sidebar() {
+export function Sidebar({ mobile = false, onNavigate }: { mobile?: boolean; onNavigate?: () => void } = {}) {
     const pathname = usePathname();
     const router = useRouter();
     const { logout, user, hasPermission, selectedStoreId } = useAuth();
     const [mounted, setMounted] = useState(false);
     const [isPinned, setIsPinned] = useState(false);
+
+    // In the mobile drawer the sidebar is always fully expanded (labels shown);
+    // on desktop it expands when pinned or hovered.
+    const expanded = isPinned || mobile;
 
     useEffect(() => setMounted(true), []);
 
@@ -73,14 +77,14 @@ export function Sidebar() {
     return (
         <div className={`
             bg-white flex flex-col items-center py-6 h-full shrink-0 transition-all duration-300 z-20 shadow-soft border-r border-gray-100 print:hidden group
-            ${isPinned ? 'w-72' : 'w-24 hover:w-72'}
+            ${mobile ? 'w-72' : isPinned ? 'w-72' : 'w-24 hover:w-72'}
         `}>
             {/* Logo Area */}
             {/* Branding Header */}
             <div className="mb-2 flex flex-col w-full pt-4 relative">
 
                 {/* Product Branding (Persistent) */}
-                <div className={`flex items-center justify-center w-full mb-6 transition-all duration-300 ${isPinned ? 'px-4 justify-start' : 'group-hover:px-4 group-hover:justify-start'}`}>
+                <div className={`flex items-center justify-center w-full mb-6 transition-all duration-300 ${expanded ? 'px-4 justify-start' : 'group-hover:px-4 group-hover:justify-start'}`}>
                     <div className="w-14 h-14 bg-brand-500 rounded-2xl flex items-center justify-center shadow-soft shrink-0 z-20 relative overflow-hidden p-1">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src="/logo.jpg" alt="RC" className="w-full h-full object-cover rounded-xl bg-white" />
@@ -88,8 +92,8 @@ export function Sidebar() {
 
                     {/* Product Name (Slide out) */}
                     <div className={`
-                        ml-3 overflow-hidden transition-all duration-300 
-                        ${isPinned
+                        ml-3 overflow-hidden transition-all duration-300
+                        ${expanded
                             ? 'opacity-100 w-auto'
                             : 'opacity-0 w-0 group-hover:opacity-100 group-hover:w-auto'
                         }
@@ -102,8 +106,8 @@ export function Sidebar() {
 
                 {/* Business Branding (Expanded Only) */}
                 <div className={`
-                    w-full px-3 mb-2 transition-all duration-300 
-                    ${isPinned
+                    w-full px-3 mb-2 transition-all duration-300
+                    ${expanded
                         ? 'opacity-100 block'
                         : 'opacity-0 hidden group-hover:opacity-100 group-hover:block'
                     }
@@ -128,7 +132,7 @@ export function Sidebar() {
                 {/* Store Context (Expanded Only) */}
                 <div className={`
                     w-full px-3 transition-all duration-300
-                    ${isPinned
+                    ${expanded
                         ? 'opacity-100 block'
                         : 'opacity-0 hidden group-hover:opacity-100 group-hover:block'
                     }
@@ -161,7 +165,7 @@ export function Sidebar() {
                                 </span>
                                 <span className={`
                                     ml-3 font-medium whitespace-nowrap overflow-hidden transition-all duration-300
-                                    ${isPinned
+                                    ${expanded
                                         ? 'opacity-100 relative left-0'
                                         : 'opacity-0 absolute left-12 group-hover:opacity-100 group-hover:relative group-hover:left-0'
                                     }
@@ -177,6 +181,7 @@ export function Sidebar() {
                             <a
                                 key={item.name}
                                 href={item.href}
+                                onClick={onNavigate}
                                 className={`
                                     flex items-center px-3 py-3 rounded-xl transition-all duration-200
                                     text-gray-400 hover:bg-brand-50 hover:text-brand-600
@@ -189,7 +194,7 @@ export function Sidebar() {
 
                                 <span className={`
                                     ml-3 font-medium whitespace-nowrap overflow-hidden transition-all duration-300
-                                    ${isPinned
+                                    ${expanded
                                         ? 'opacity-100 relative left-0'
                                         : 'opacity-0 absolute left-12 group-hover:opacity-100 group-hover:relative group-hover:left-0'
                                     }
@@ -204,6 +209,7 @@ export function Sidebar() {
                         <Link
                             key={item.name}
                             href={item.href}
+                            onClick={onNavigate}
                             className={`
                                 flex items-center px-3 py-3 rounded-xl transition-all duration-200
                                 ${isActive
@@ -219,7 +225,7 @@ export function Sidebar() {
 
                             <span className={`
                                 ml-3 font-medium whitespace-nowrap overflow-hidden transition-all duration-300
-                                ${isPinned
+                                ${expanded
                                     ? 'opacity-100 relative left-0'
                                     : 'opacity-0 absolute left-12 group-hover:opacity-100 group-hover:relative group-hover:left-0'
                                 }
@@ -239,7 +245,7 @@ export function Sidebar() {
                     </div>
                     <div className={`
                         ml-3 overflow-hidden transition-opacity duration-300 flex flex-col justify-center
-                        ${isPinned
+                        ${expanded
                             ? 'opacity-100'
                             : 'opacity-0 group-hover:opacity-100'
                         }
@@ -252,28 +258,30 @@ export function Sidebar() {
 
             {/* Bottom Actions */}
             <div className="px-3 w-full space-y-2 mb-4">
-                {/* Pin Toggle */}
-                <button
-                    onClick={togglePin}
-                    className={`
-                        flex items-center px-3 py-2 w-full rounded-xl transition-colors group/pin
-                        ${isPinned ? 'text-brand-600 bg-brand-50' : 'text-gray-400 hover:text-brand-600 hover:bg-brand-50'}
-                    `}
-                    title={isPinned ? "Unpin Sidebar" : "Pin Sidebar"}
-                >
-                    <span className="w-6 h-6 flex items-center justify-center shrink-0">
-                        {isPinned ? <PinOff size={20} /> : <Pin size={20} />}
-                    </span>
-                    <span className={`
-                        ml-3 font-medium whitespace-nowrap overflow-hidden transition-all duration-300
-                        ${isPinned
-                            ? 'opacity-100'
-                            : 'opacity-0 group-hover:opacity-100'
-                        }
-                    `}>
-                        {isPinned ? 'Unpin Sidebar' : 'Pin Sidebar'}
-                    </span>
-                </button>
+                {/* Pin Toggle — desktop only (the mobile drawer is always expanded) */}
+                {!mobile && (
+                    <button
+                        onClick={togglePin}
+                        className={`
+                            flex items-center px-3 py-2 w-full rounded-xl transition-colors group/pin
+                            ${isPinned ? 'text-brand-600 bg-brand-50' : 'text-gray-400 hover:text-brand-600 hover:bg-brand-50'}
+                        `}
+                        title={isPinned ? "Unpin Sidebar" : "Pin Sidebar"}
+                    >
+                        <span className="w-6 h-6 flex items-center justify-center shrink-0">
+                            {isPinned ? <PinOff size={20} /> : <Pin size={20} />}
+                        </span>
+                        <span className={`
+                            ml-3 font-medium whitespace-nowrap overflow-hidden transition-all duration-300
+                            ${expanded
+                                ? 'opacity-100'
+                                : 'opacity-0 group-hover:opacity-100'
+                            }
+                        `}>
+                            {isPinned ? 'Unpin Sidebar' : 'Pin Sidebar'}
+                        </span>
+                    </button>
+                )}
 
                 <button onClick={handleLogout} className="flex items-center px-3 py-3 w-full rounded-xl text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors group/logout">
                     <span className="w-6 h-6 flex items-center justify-center shrink-0">
@@ -281,7 +289,7 @@ export function Sidebar() {
                     </span>
                     <span className={`
                         ml-3 font-medium whitespace-nowrap overflow-hidden transition-all duration-300
-                        ${isPinned
+                        ${expanded
                             ? 'opacity-100'
                             : 'opacity-0 group-hover:opacity-100'
                         }

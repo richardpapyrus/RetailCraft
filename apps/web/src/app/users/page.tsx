@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import { confirmDialog } from "@/lib/dialog";
 import { api, Role } from '@/lib/api';
 import { useAuth } from '@/lib/useAuth';
 import { useRouter } from 'next/navigation';
@@ -86,7 +87,7 @@ export default function UsersPage() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this user?')) return;
+        if (!(await confirmDialog({ title: 'Delete User', message: 'Are you sure you want to delete this user?', destructive: true }))) return;
         try {
             await api.users.delete(id);
             loadData();

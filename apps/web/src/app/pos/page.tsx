@@ -478,7 +478,7 @@ export default function POSPage() {
     return (
         <div className="h-full w-full">
 
-            <div className="flex h-full w-full bg-canvas font-sans overflow-hidden print:hidden">
+            <div className="flex h-full w-full bg-canvas font-sans overflow-x-auto overflow-y-hidden print:hidden">
                 {/* CENTER: INVOICE / CART */}
                 <div className="flex-1 flex flex-col min-w-[500px] max-w-4xl mx-auto my-6 bg-white rounded-2xl shadow-card border border-gray-100/80 overflow-hidden ml-6 mb-6">
                     {/* Header Card */}
@@ -979,7 +979,7 @@ export default function POSPage() {
                                         <button
                                             onClick={() => handleCheckout()}
                                             disabled={(change < 0 && tendVal > 0) || isProcessingCheckout}
-                                            className={`w-full py-4 rounded-xl font-semibold text-white shadow-lg transition-all transform active:scale-[0.98] ${(change < 0 && tendVal > 0) || isProcessingCheckout ? 'bg-gray-300 cursor-not-allowed shadow-none' : 'bg-green-600 hover:bg-green-500 shadow-green-600/30'
+                                            className={`w-full py-4 rounded-xl font-semibold text-white shadow-soft transition-all transform active:scale-[0.98] ${(change < 0 && tendVal > 0) || isProcessingCheckout ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none' : 'bg-brand-500 hover:bg-brand-600'
                                                 }`}
                                         >
                                             {isProcessingCheckout ? (
@@ -1213,7 +1213,6 @@ export default function POSPage() {
                                                 // Verify credentials
                                                 // We use direct fetch to avoid messing with global auth state
                                                 // Use API_URL from lib/api to ensure correct environment (Prod/Staging/Dev)
-                                                console.log("Verifying credentials against:", `${API_URL}/auth/login`);
                                                 const res = await fetch(`${API_URL}/auth/login`, {
                                                     method: 'POST',
                                                     headers: { 'Content-Type': 'application/json' },

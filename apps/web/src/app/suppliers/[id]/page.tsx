@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import { confirmDialog } from "@/lib/dialog";
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/useAuth';
 import { useRouter, useParams } from 'next/navigation';
@@ -78,7 +79,7 @@ export default function SupplierDetailsPage() {
     };
 
     const handleRemoveProduct = async (productId: string) => {
-        if (!confirm("Unlink this product?")) return;
+        if (!(await confirmDialog({ title: 'Unlink Product', message: 'Unlink this product from the supplier?', confirmLabel: 'Unlink', destructive: true }))) return;
         try {
             await api.suppliers.removeProduct(id as string, productId);
             toast.success("Unlinked");

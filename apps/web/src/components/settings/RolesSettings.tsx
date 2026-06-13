@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { confirmDialog } from "@/lib/dialog";
 import { api, Role, PermissionGroup } from '@/lib/api';
 import { Plus, Edit2, Trash2, X, Shield, Users } from 'lucide-react';
 import { toast } from 'react-hot-toast';
@@ -63,7 +64,7 @@ export default function RolesSettings() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this role?')) return;
+        if (!(await confirmDialog({ title: 'Delete Role', message: 'Are you sure you want to delete this role?', destructive: true }))) return;
         try {
             await api.roles.delete(id);
             loadData();

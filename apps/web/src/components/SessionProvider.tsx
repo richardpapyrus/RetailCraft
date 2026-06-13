@@ -20,7 +20,6 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
         const interval = setInterval(() => {
             if (checkInactivity(INACTIVITY_LIMIT)) {
-                console.log("Session timed out due to inactivity");
                 router.push('/login');
             }
         }, CHECK_INTERVAL);

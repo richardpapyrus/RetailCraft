@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/useAuth';
 import { api, API_URL } from '@/lib/api';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Menu } from 'lucide-react';
 
-export function TopHeader() {
+export function TopHeader({ onMenuClick }: { onMenuClick?: () => void } = {}) {
     const { user, selectedStoreId, setSelectedStoreId } = useAuth();
     const [stores, setStores] = useState<any[]>([]);
     const [error, setError] = useState<string | null>(null);
@@ -54,9 +54,17 @@ export function TopHeader() {
     const currentStore = stores.find(s => s.id === selectedStoreId);
 
     return (
-        <header className="h-16 bg-white border-b border-gray-100 flex items-center justify-between px-8 shrink-0 z-10 sticky top-0 print:hidden">
+        <header className="h-16 bg-white border-b border-gray-100 flex items-center justify-between px-4 md:px-8 shrink-0 z-10 sticky top-0 print:hidden">
             {/* Left: Business Branding & Store Selector */}
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3 md:gap-6 min-w-0">
+                {/* Mobile menu trigger — desktop uses the persistent sidebar */}
+                <button
+                    onClick={onMenuClick}
+                    aria-label="Open navigation menu"
+                    className="md:hidden p-2 -ml-1 rounded-xl text-charcoal hover:bg-surface-muted transition-colors shrink-0"
+                >
+                    <Menu size={22} />
+                </button>
                 <div className="flex items-center gap-3">
                     {user?.tenantLogo && !imgError ? (
                         // eslint-disable-next-line @next/next/no-img-element

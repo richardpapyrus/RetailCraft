@@ -8,6 +8,7 @@ import { Sidebar } from '@/components/Sidebar';
 import { toast } from 'react-hot-toast';
 import { FileText } from 'lucide-react';
 import { TillReport } from '@/components/tills/TillReport';
+import { confirmDialog, promptDialog } from '@/lib/dialog';
 
 export default function TillsPage() {
     const router = useRouter();
@@ -168,12 +169,12 @@ export default function TillsPage() {
                                     <td className="p-4">
                                         <div className="flex items-center gap-1.5 flex-wrap">
                                             <button onClick={() => fetchHistory(till)} className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-gray-500 hover:text-charcoal hover:bg-surface-muted transition-colors">History</button>
-                                            <button onClick={() => {
-                                                const name = prompt('New name:', till.name);
-                                                if (name) api.tills.update(till.id, { name }).then(fetchTills);
+                                            <button onClick={async () => {
+                                                const name = await promptDialog({ title: 'Rename Till', message: 'Enter a new name for this till.', defaultValue: till.name, placeholder: 'Till name' });
+                                                if (name && name.trim()) api.tills.update(till.id, { name: name.trim() }).then(fetchTills);
                                             }} className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-brand-600 hover:bg-brand-50 transition-colors">Edit</button>
                                             <button onClick={async () => {
-                                                if (confirm('Delete this till?')) {
+                                                if (await confirmDialog({ title: 'Delete Till', message: `Delete "${till.name}"? This cannot be undone.`, destructive: true })) {
                                                     try {
                                                         await api.tills.delete(till.id);
                                                         fetchTills();
@@ -186,10 +187,17 @@ export default function TillsPage() {
                                             {till.status === 'OPEN' && till.sessions?.[0] && (
                                                 <button
                                                     onClick={async () => {
-                                                        const cashStr = prompt('Enter Closing Cash Count:');
+                                                        const cashStr = await promptDialog({
+                                                            title: 'Close Session',
+                                                            message: 'Count the cash in the drawer and enter the closing total.',
+                                                            inputType: 'number',
+                                                            placeholder: '0.00',
+                                                            prefix: user?.currency || '',
+                                                            confirmLabel: 'Close Session',
+                                                        });
                                                         if (cashStr === null) return;
                                                         const closingCash = parseFloat(cashStr);
-                                                        if (isNaN(closingCash)) return toast.error('Invalid amount');
+                                                        if (isNaN(closingCash)) return toast.error('Please enter a valid amount');
 
                                                         try {
                                                             await api.tills.closeSession(till.sessions[0].id, { closingCash });

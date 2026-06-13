@@ -91,12 +91,25 @@ export default function DashboardPage() {
         // Initial Load
         fetchData();
 
-        // 5-Second Auto-Refresh (Simulates Real-time)
+        // Auto-refresh on an interval, but only while the tab is visible — avoids
+        // hammering the API/DB with the heavy stats query when the dashboard is
+        // sitting in a background tab.
         const intervalId = setInterval(() => {
-            fetchData(true);
-        }, 5000);
+            if (document.visibilityState === 'visible') {
+                fetchData(true);
+            }
+        }, 15000);
 
-        return () => clearInterval(intervalId);
+        // Refresh immediately when the user returns to the tab so data isn't stale.
+        const onVisible = () => {
+            if (document.visibilityState === 'visible') fetchData(true);
+        };
+        document.addEventListener('visibilitychange', onVisible);
+
+        return () => {
+            clearInterval(intervalId);
+            document.removeEventListener('visibilitychange', onVisible);
+        };
     }, [dateRange, selectedStoreId, token, isHydrated]);
 
     if (!isHydrated) return null;

@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import { confirmDialog } from "@/lib/dialog";
 import { api, Role } from '@/lib/api';
 import { useAuth } from '@/lib/useAuth';
 import { toast } from 'react-hot-toast';
@@ -103,7 +104,7 @@ export default function TeamSettings() {
     };
 
     const handleDelete = async (userId: string) => {
-        if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
+        if (!(await confirmDialog({ title: 'Delete User', message: 'Are you sure you want to delete this user? This action cannot be undone.', destructive: true }))) return;
         try {
             await api.users.delete(userId);
             fetchData();

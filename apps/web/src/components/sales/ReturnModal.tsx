@@ -67,7 +67,6 @@ export function ReturnModal({ isOpen, onClose, sale, onSuccess }: ReturnModalPro
                 restock: restockMap[productId] ?? true
             }));
 
-        console.log('Returning Items Payload:', itemsToReturn);
 
         if (itemsToReturn.length === 0) {
             setError("Please select at least one item to return.");

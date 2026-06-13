@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { confirmDialog } from "@/lib/dialog";
 import { useAuth } from '@/lib/useAuth';
 import { api, API_URL } from '@/lib/api';
 import { toast } from 'react-hot-toast';
@@ -208,7 +209,7 @@ export default function GeneralSettings() {
                                         </div>
                                         <button
                                             onClick={async () => {
-                                                if (!confirm('Remove logo?')) return;
+                                                if (!(await confirmDialog({ title: 'Remove Logo', message: 'Remove your business logo?', confirmLabel: 'Remove', destructive: true }))) return;
                                                 if (user?.tenantId) {
                                                     await api.tenants.deleteLogo(user.tenantId);
                                                     setLogoUrl('');

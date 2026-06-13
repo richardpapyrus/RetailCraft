@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth, formatCurrency } from '@/lib/useAuth';
 import { api } from '@/lib/api';
+import { toast } from "react-hot-toast";
 import { Award, Gift, TrendingUp, Users, ArrowRight, Settings } from 'lucide-react';
 import Link from 'next/link';
 
@@ -74,7 +75,7 @@ export default function LoyaltyPage() {
             // Ideally trigger a profile refresh here
         } catch (e) {
             console.error(e);
-            alert('Failed to save settings');
+            toast.error('Failed to save settings');
         }
     };
 

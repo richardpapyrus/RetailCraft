@@ -55,14 +55,12 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
             if (pending.length === 0) return;
 
             setIsSyncing(true);
-            console.log(`[Sync] Found ${pending.length} items to sync...`);
 
             for (const req of pending) {
                 try {
                     // Replay Request
                     if (req.url === '/sales' && req.method === 'POST') {
                         await api.sales.create(req.body);
-                        console.log(`[Sync] Synced Sale ${req.id}`);
                         await db.syncQueue.delete(req.id!);
                     }
 
@@ -84,7 +82,6 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
                             await db.customers.bulkDelete(offlineRecords.map(c => c.id));
                         }
 
-                        console.log(`[Sync] Synced Customer ${newCustomer.name}`);
                         await db.syncQueue.delete(req.id!);
                     }
                 } catch (err) {
@@ -133,6 +130,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
                             </div>
                             <button
                                 onClick={() => setIsDismissed(true)}
+                                aria-label="Dismiss sync notification"
                                 className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1 rounded-lg transition-colors"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">

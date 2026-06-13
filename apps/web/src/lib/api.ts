@@ -69,10 +69,18 @@ export async function fetchClient(endpoint: string, options: RequestInit = {}) {
         delete headers['Content-Type'];
     }
 
+    // Abort the request if the network stalls so the UI never hangs indefinitely.
+    // Allow a longer window for file exports (CSV/blob) which can be slow.
+    const isExport = endpoint.includes('export') || endpoint.includes('download');
+    const timeoutMs = isExport ? 60000 : 20000;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
     try {
         const response = await fetch(`${API_URL}${endpoint}`, {
             ...options,
             headers,
+            signal: controller.signal,
         });
 
         if (!response.ok) {
@@ -101,8 +109,14 @@ export async function fetchClient(endpoint: string, options: RequestInit = {}) {
 
         return response.json();
     } catch (e: any) {
+        if (e?.name === 'AbortError') {
+            console.error(`[API Client] Request timed out after ${timeoutMs}ms: ${endpoint}`);
+            throw new Error('Request timed out. Please check your connection and try again.');
+        }
         console.error(`[API Client] Network/Fetch Error:`, e);
         throw e;
+    } finally {
+        clearTimeout(timeoutId);
     }
 }
 

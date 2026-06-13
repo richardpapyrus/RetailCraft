@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from 'react';
+import { confirmDialog } from "@/lib/dialog";
 import { api, Product, API_URL } from '@/lib/api';
 import { DataService } from '@/lib/db-service';
 import { useAuth, formatCurrency } from '@/lib/useAuth';
@@ -323,7 +324,12 @@ export default function ProductsPage() {
     // Archive Action
     const handleArchiveToggle = async (product: Product, e: React.MouseEvent) => {
         e.stopPropagation();
-        if (!confirm(product.isArchived ? `Restore ${product.name}?` : `Archive ${product.name}?`)) return;
+        if (!(await confirmDialog({
+            title: product.isArchived ? 'Restore Product' : 'Archive Product',
+            message: product.isArchived ? `Restore "${product.name}" to your active catalogue?` : `Archive "${product.name}"? It will be hidden from sales but its history is kept.`,
+            confirmLabel: product.isArchived ? 'Restore' : 'Archive',
+            destructive: !product.isArchived,
+        }))) return;
 
         try {
             if (product.isArchived) {
@@ -364,8 +370,8 @@ export default function ProductsPage() {
                     </div>
                     <div className="flex gap-2">
                         <button
-                            onClick={() => {
-                                if (confirm("This will clear local cache and reload from server. Continue?")) {
+                            onClick={async () => {
+                                if (await confirmDialog({ title: 'Refresh Data', message: 'This will clear the local cache and reload everything from the server. Continue?', confirmLabel: 'Refresh' })) {
                                     DataService.clearCache().then(() => window.location.reload());
                                 }
                             }}

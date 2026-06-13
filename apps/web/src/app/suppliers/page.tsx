@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import { confirmDialog } from "@/lib/dialog";
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/useAuth';
 import { useRouter } from 'next/navigation';
@@ -89,7 +90,7 @@ export default function SuppliersPage() {
     };
 
     const handleDelete = async (id: string) => {
-        if (confirm('Are you sure you want to delete this supplier?')) {
+        if (await confirmDialog({ title: 'Delete Supplier', message: 'Are you sure you want to delete this supplier?', destructive: true })) {
             try {
                 await api.suppliers.delete(id);
                 loadSuppliers();

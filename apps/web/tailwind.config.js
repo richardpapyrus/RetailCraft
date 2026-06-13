@@ -59,11 +59,16 @@ module.exports = {
                     '0%': { opacity: '0', transform: 'translateX(24px)' },
                     '100%': { opacity: '1', transform: 'translateX(0)' },
                 },
+                'slide-in-left': {
+                    '0%': { transform: 'translateX(-100%)' },
+                    '100%': { transform: 'translateX(0)' },
+                },
             },
             animation: {
                 'fade-in-up': 'fade-in-up 0.3s ease-out both',
                 'fade-in': 'fade-in 0.2s ease-out both',
                 'slide-in-right': 'slide-in-right 0.28s cubic-bezier(0.25, 0.1, 0.25, 1) both',
+                'slide-in-left': 'slide-in-left 0.28s cubic-bezier(0.25, 0.1, 0.25, 1) both',
             },
             backgroundImage: {
                 'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
