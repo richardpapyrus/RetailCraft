@@ -196,6 +196,18 @@ export default function DashboardPage() {
                             // Trim trailing ".00" for an executive-friendly dashboard read
                             const compact = (s: string) => s.replace(/([.,]00)(?=\s|$)/, '');
 
+                            // The API compares against the immediately preceding equal-length
+                            // window (and, for "today", up to the same time yesterday). Label it
+                            // to match so the card states exactly what the delta is measured against.
+                            const todayStr = new Date().toISOString().split('T')[0];
+                            const isSingleDay = dateRange.from === dateRange.to;
+                            const isTodayView = isSingleDay && dateRange.from === todayStr;
+                            const comparisonLabel = isTodayView
+                                ? 'vs same time yesterday'
+                                : isSingleDay
+                                    ? 'vs previous day'
+                                    : 'vs previous period';
+
                             return (
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
                                     <StatsCard
@@ -203,8 +215,8 @@ export default function DashboardPage() {
                                         value={compact(formatCurrency(revenue, user?.currency, user?.locale))}
                                         icon={<DollarSign size={20} className="text-brand-600" />}
                                         bgColor="bg-brand-50"
-                                        subtext={revenueDelta === null ? 'Selected Period' : undefined}
-                                        trend={revenueDelta !== null ? { value: revenueDelta, label: 'vs previous period' } : undefined}
+                                        subtext={revenueDelta === null ? `No sales ${comparisonLabel.replace('vs ', '')}` : undefined}
+                                        trend={revenueDelta !== null ? { value: revenueDelta, label: comparisonLabel } : undefined}
                                     />
                                     <StatsCard
                                         title="Profit"
