@@ -54,7 +54,7 @@ export default function SalesHistoryPage() {
     const [page, setPage] = useState(1);
     const [searchTerm, setSearchTerm] = useState('');
     const debouncedSearch = useDebounce(searchTerm, 500);
-    const limit = 50;
+    const limit = 20;
 
     // Daily Summary State
     const [activeTab, setActiveTab] = useState<'receipts' | 'summary'>('receipts');
@@ -324,22 +324,22 @@ export default function SalesHistoryPage() {
                             </table>
                         </div>
                         {/* Pagination Controls */}
-                        <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-                            <div className="text-sm text-gray-500">
+                        <div className="bg-white px-6 py-4 border-t border-gray-100 flex items-center justify-between">
+                            <div className="text-sm font-medium text-mid-grey">
                                 Page {page} of {Math.max(1, totalPages)}
                             </div>
                             <div className="flex gap-2">
                                 <button
                                     onClick={() => setPage(p => Math.max(1, p - 1))}
                                     disabled={page === 1 || loading}
-                                    className="px-4 py-2 border rounded-md bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="px-4 py-2 border border-cool-grey rounded-xl bg-white text-sm font-semibold text-charcoal hover:bg-surface-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                 >
                                     Previous
                                 </button>
                                 <button
                                     onClick={() => setPage(p => p + 1)}
                                     disabled={page >= totalPages || loading}
-                                    className="px-4 py-2 border rounded-md bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="px-4 py-2 border border-cool-grey rounded-xl bg-white text-sm font-semibold text-charcoal hover:bg-surface-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                 >
                                     Next
                                 </button>
