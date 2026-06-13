@@ -31,16 +31,16 @@ export default function BestSellersWidget({ from, to, storeId }: { from?: string
         <div className="flex flex-col h-full">
             <div className="flex justify-end items-center mb-3">
 
-                <div className="bg-gray-100 p-1 rounded-lg flex text-xs font-bold">
+                <div className="bg-gray-100 p-1 rounded-lg flex text-xs font-semibold">
                     <button
                         onClick={() => setSortBy('value')}
-                        className={`px-3 py-1.5 rounded-md transition-all ${sortBy === 'value' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                        className={`px-3 py-1.5 rounded-md transition-all ${sortBy === 'value' ? 'bg-white text-brand-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
                     >
                         Value
                     </button>
                     <button
                         onClick={() => setSortBy('count')}
-                        className={`px-3 py-1.5 rounded-md transition-all ${sortBy === 'count' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                        className={`px-3 py-1.5 rounded-md transition-all ${sortBy === 'count' ? 'bg-white text-brand-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
                     >
                         Qty
                     </button>
@@ -55,16 +55,16 @@ export default function BestSellersWidget({ from, to, storeId }: { from?: string
                         {products.map((p, idx) => (
                             <div key={p.productId} className="flex items-center justify-between group">
                                 <div className="flex items-center gap-3">
-                                    <span className={`w-8 h-8 flex items-center justify-center text-xs font-bold rounded-full shrink-0 ${idx < 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-50 text-gray-500'}`}>
+                                    <span className={`w-8 h-8 flex items-center justify-center text-xs font-semibold rounded-full shrink-0 ${idx < 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-50 text-gray-500'}`}>
                                         {idx + 1}
                                     </span>
                                     <div>
-                                        <div className="font-bold text-gray-900 text-sm mb-0.5">{p.name}</div>
-                                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">{p.sku}</div>
+                                        <div className="font-semibold text-gray-900 text-sm mb-0.5">{p.name}</div>
+                                        <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">{p.sku}</div>
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <div className="font-bold text-gray-900 text-base">
+                                    <div className="font-semibold text-gray-900 text-base">
                                         {sortBy === 'value' ? formatCurrency(p.value, user?.currency) : p.quantity}
                                     </div>
                                     <div className="text-[10px] font-medium text-gray-400">
@@ -83,7 +83,7 @@ export default function BestSellersWidget({ from, to, storeId }: { from?: string
             <div className="mt-4 pt-4 border-t border-gray-50 text-center">
                 <Link
                     href={`/reports/top-products${storeId ? `?storeId=${storeId}` : ''}`}
-                    className="text-sm font-bold text-indigo-600 hover:text-indigo-800 transition-colors"
+                    className="text-sm font-semibold text-brand-600 hover:text-brand-800 transition-colors"
                 >
                     View Full Report
                 </Link>

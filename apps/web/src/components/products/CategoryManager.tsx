@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { confirmDialog } from "@/lib/dialog";
 import { api } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 
@@ -46,7 +47,7 @@ export default function CategoryManager({ isOpen, onClose, onUpdate }: CategoryM
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Are you sure? Products in this category will not be deleted but logic may break if not handled.')) return;
+        if (!(await confirmDialog({ title: 'Delete Category', message: 'Products in this category will not be deleted, but they will become uncategorised. Continue?', destructive: true }))) return;
         try {
             await api.categories.delete(id);
             toast.success('Category deleted');
@@ -60,10 +61,10 @@ export default function CategoryManager({ isOpen, onClose, onUpdate }: CategoryM
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
             <div className="bg-white rounded-xl shadow-xl w-full max-w-md flex flex-col max-h-[80vh]">
                 <div className="p-4 border-b flex justify-between items-center">
-                    <h2 className="text-xl font-bold">Manage Categories</h2>
+                    <h2 className="text-xl font-semibold">Manage Categories</h2>
                     <button onClick={onClose} className="text-gray-500 hover:text-gray-700">✕</button>
                 </div>
 
@@ -75,7 +76,7 @@ export default function CategoryManager({ isOpen, onClose, onUpdate }: CategoryM
                             value={newCategory}
                             onChange={e => setNewCategory(e.target.value)}
                         />
-                        <button type="submit" className="bg-indigo-600 text-white px-4 py-2 rounded font-medium hover:bg-indigo-700">
+                        <button type="submit" className="bg-brand-600 text-white px-4 py-2 rounded font-medium hover:bg-brand-700">
                             Add
                         </button>
                     </form>
@@ -85,7 +86,7 @@ export default function CategoryManager({ isOpen, onClose, onUpdate }: CategoryM
                     {loading ? <p className="text-center text-gray-500">Loading...</p> : (
                         categories.length === 0 ? <p className="text-center text-gray-500 italic">No categories found.</p> :
                             categories.map(cat => (
-                                <div key={cat.id} className="flex justify-between items-center p-3 bg-white border rounded hover:border-indigo-300 group">
+                                <div key={cat.id} className="flex justify-between items-center p-3 bg-white border rounded hover:border-brand-300 group">
                                     <span className="font-medium">{cat.name}</span>
                                     <div className="flex items-center gap-3">
                                         <span className="text-xs text-gray-400">{cat._count?.products || 0} products</span>

@@ -6,6 +6,7 @@ import { SyncProvider } from '@/components/SyncProvider'
 
 import { AppLayout } from '@/components/AppLayout'
 import { ToastProvider } from '@/components/ToastProvider'
+import { DialogHost } from '@/components/DialogHost'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -23,6 +24,7 @@ export default function RootLayout({
         <html lang="en">
             <body className={inter.className}>
                 <ToastProvider />
+                <DialogHost />
                 <SessionProvider>
                     <SyncProvider>
                         <AppLayout>

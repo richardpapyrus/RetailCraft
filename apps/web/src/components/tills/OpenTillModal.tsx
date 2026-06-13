@@ -71,13 +71,13 @@ export default function OpenTillModal({ isOpen, onClose, onSuccess }: OpenTillMo
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[100] backdrop-blur-sm">
-            <div className="bg-white p-8 rounded-2xl shadow-2xl w-96 transform transition-all scale-100">
+            <div className="bg-white p-8 rounded-2xl shadow-lifted w-96 transform transition-all scale-100">
                 <div className="mb-6 flex justify-between items-start">
                     <div>
-                        <h3 className="text-2xl font-bold">Open Till Session</h3>
+                        <h3 className="text-2xl font-semibold">Open Till Session</h3>
                         <p className="text-gray-500 text-sm">You must open a till to start selling.</p>
                     </div>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 font-bold p-1">✕</button>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 font-semibold p-1">✕</button>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
@@ -88,7 +88,7 @@ export default function OpenTillModal({ isOpen, onClose, onSuccess }: OpenTillMo
                     )}
 
                     <div className="space-y-2">
-                        <label className="text-sm font-bold text-gray-700">Select Till</label>
+                        <label className="text-sm font-semibold text-gray-700">Select Till</label>
                         <select
                             className="w-full p-3 border rounded-xl bg-gray-50"
                             value={selectedTillId}
@@ -107,7 +107,7 @@ export default function OpenTillModal({ isOpen, onClose, onSuccess }: OpenTillMo
                                         key={till.id}
                                         value={till.id}
                                         disabled={isBusy}
-                                        className={isBusy ? 'text-gray-400 bg-gray-100' : 'font-bold'}
+                                        className={isBusy ? 'text-gray-400 bg-gray-100' : 'font-semibold'}
                                     >
                                         {till.name} {isBusy ? '(In Use)' : '(Available)'}
                                     </option>
@@ -127,7 +127,7 @@ export default function OpenTillModal({ isOpen, onClose, onSuccess }: OpenTillMo
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-bold text-gray-700">Opening Float</label>
+                        <label className="text-sm font-semibold text-gray-700">Opening Float</label>
                         <div className="relative">
                             <span className="absolute left-4 top-3 text-gray-400">{user?.currency === 'NGN' ? '₦' : '$'}</span>
                             <input
@@ -146,7 +146,7 @@ export default function OpenTillModal({ isOpen, onClose, onSuccess }: OpenTillMo
                     <button
                         type="submit"
                         disabled={loading || availableTills.length === 0}
-                        className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 disabled:opacity-50 mt-4"
+                        className="w-full bg-brand-600 text-white py-3 rounded-xl font-semibold hover:bg-brand-700 disabled:opacity-50 mt-4"
                     >
                         {loading ? 'Opening...' : 'Start Session'}
                     </button>

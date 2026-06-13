@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { confirmDialog } from "@/lib/dialog";
 import { api, Role, PermissionGroup } from '@/lib/api';
 import { Plus, Edit2, Trash2, X, Shield, Users } from 'lucide-react';
 import { toast } from 'react-hot-toast';
@@ -63,7 +64,7 @@ export default function RolesSettings() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this role?')) return;
+        if (!(await confirmDialog({ title: 'Delete Role', message: 'Are you sure you want to delete this role?', destructive: true }))) return;
         try {
             await api.roles.delete(id);
             loadData();
@@ -86,12 +87,12 @@ export default function RolesSettings() {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <div>
-                    <h2 className="text-xl font-bold text-gray-800">Roles</h2>
+                    <h2 className="text-xl font-semibold text-gray-800">Roles</h2>
                     <p className="text-gray-500">Manage roles and their access privileges.</p>
                 </div>
                 <button
                     onClick={startCreate}
-                    className="bg-indigo-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-indigo-700 transition"
+                    className="bg-brand-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-brand-700 transition"
                 >
                     <Plus size={20} />
                     Create Role
@@ -105,19 +106,19 @@ export default function RolesSettings() {
                     {roles.map(role => (
                         <div key={role.id} className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition border border-gray-100 relative group">
                             <div className="flex justify-between items-start mb-4">
-                                <div className="bg-indigo-50 p-2 rounded-lg text-indigo-600">
+                                <div className="bg-brand-50 p-2 rounded-lg text-brand-600">
                                     <Shield size={24} />
                                 </div>
                                 {role.isSystem ? (
                                     <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full font-medium">System</span>
                                 ) : (
                                     <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition">
-                                        <button onClick={() => startEdit(role)} className="p-1 hover:bg-gray-100 rounded text-indigo-600"><Edit2 size={18} /></button>
+                                        <button onClick={() => startEdit(role)} className="p-1 hover:bg-gray-100 rounded text-brand-600"><Edit2 size={18} /></button>
                                         <button onClick={() => handleDelete(role.id)} className="p-1 hover:bg-gray-100 rounded text-red-600"><Trash2 size={18} /></button>
                                     </div>
                                 )}
                             </div>
-                            <h3 className="text-lg font-bold text-gray-800">{role.name}</h3>
+                            <h3 className="text-lg font-semibold text-gray-800">{role.name}</h3>
                             <p className="text-sm text-gray-500 mb-4 h-10 line-clamp-2">{role.description || 'No description provided.'}</p>
 
                             <div className="flex items-center gap-2 text-sm text-gray-600 mb-4 bg-gray-50 p-2 rounded">
@@ -131,7 +132,7 @@ export default function RolesSettings() {
                                     {role.permissions.includes('*') ? (
                                         <span className="bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded">Full Access</span>
                                     ) : (
-                                        <span className="bg-indigo-50 text-indigo-600 text-xs px-2 py-1 rounded">
+                                        <span className="bg-brand-50 text-brand-600 text-xs px-2 py-1 rounded">
                                             {role.permissions.length} Permissions
                                         </span>
                                     )}
@@ -147,7 +148,7 @@ export default function RolesSettings() {
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
                         <div className="p-6 border-b sticky top-0 bg-white z-10 flex justify-between items-center">
-                            <h2 className="text-xl font-bold">{isEditing ? 'Edit Role' : 'Create Role'}</h2>
+                            <h2 className="text-xl font-semibold">{isEditing ? 'Edit Role' : 'Create Role'}</h2>
                             <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600"><X /></button>
                         </div>
 
@@ -159,7 +160,7 @@ export default function RolesSettings() {
                                         required
                                         value={currentRole.name}
                                         onChange={e => setCurrentRole({ ...currentRole, name: e.target.value })}
-                                        className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                                        className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-brand-500 outline-none"
                                         placeholder="e.g. Sales Associate"
                                     />
                                 </div>
@@ -168,7 +169,7 @@ export default function RolesSettings() {
                                     <input
                                         value={currentRole.description || ''}
                                         onChange={e => setCurrentRole({ ...currentRole, description: e.target.value })}
-                                        className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                                        className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-brand-500 outline-none"
                                         placeholder="Role responsibilities..."
                                     />
                                 </div>
@@ -187,7 +188,7 @@ export default function RolesSettings() {
                                                             type="checkbox"
                                                             checked={currentRole.permissions?.includes(permCode)}
                                                             onChange={() => togglePermission(permCode)}
-                                                            className="mt-1 w-4 h-4 text-indigo-600 rounded"
+                                                            className="mt-1 w-4 h-4 text-brand-600 rounded"
                                                         />
                                                         <div>
                                                             <span className="text-sm font-medium text-gray-700 block">{permCode}</span>
@@ -202,7 +203,7 @@ export default function RolesSettings() {
 
                             <div className="flex justify-end gap-3 pt-4 border-t">
                                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
-                                <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Save Role</button>
+                                <button type="submit" className="px-4 py-2 bg-brand-500 text-white rounded-xl hover:bg-brand-600">Save Role</button>
                             </div>
                         </form>
                     </div>

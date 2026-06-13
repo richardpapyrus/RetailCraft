@@ -69,7 +69,7 @@ export default function PODetailPage() {
                             <ArrowLeft className="w-5 h-5" />
                         </button>
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-900">{po.poNumber}</h1>
+                            <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">{po.poNumber}</h1>
                             <p className="text-sm text-gray-500">
                                 {po.supplier?.name} • {new Date(po.createdAt).toLocaleDateString()}
                             </p>
@@ -87,12 +87,12 @@ export default function PODetailPage() {
                         {isReceivable && (
                             <button
                                 onClick={() => router.push(`/inventory/purchase-orders/${id}/receive`)}
-                                className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 font-medium"
+                                className="flex items-center px-4 py-2 bg-brand-500 text-white rounded-xl hover:bg-brand-600 font-medium"
                             >
                                 <Truck className="w-5 h-5 mr-2" /> Receive Goods
                             </button>
                         )}
-                        <span className="px-4 py-2 bg-gray-200 rounded font-bold text-gray-700">
+                        <span className="px-4 py-2 bg-gray-200 rounded font-semibold text-gray-700">
                             {po.status.replace('_', ' ')}
                         </span>
                     </div>
@@ -102,8 +102,8 @@ export default function PODetailPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                     {/* Supplier Info */}
                     <div className="bg-white p-6 rounded shadow">
-                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Supplier Details</h3>
-                        <div className="font-bold text-lg mb-1">{po.supplier?.name}</div>
+                        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Supplier Details</h3>
+                        <div className="font-semibold text-lg mb-1">{po.supplier?.name}</div>
                         <div className="text-sm text-gray-600 space-y-1">
                             <div>{po.supplier?.contact}</div>
                             <div>{po.supplier?.email}</div>
@@ -113,10 +113,10 @@ export default function PODetailPage() {
 
                     {/* Order Summary */}
                     <div className="bg-white p-6 rounded shadow">
-                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Financials</h3>
+                        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Financials</h3>
                         <div className="flex justify-between mb-2">
                             <span className="text-gray-600">Total Amount</span>
-                            <span className="font-bold text-lg">{formatCurrency(po.totalAmount, po.supplier?.currency || user?.currency, user?.locale)}</span>
+                            <span className="font-semibold text-lg">{formatCurrency(po.totalAmount, po.supplier?.currency || user?.currency, user?.locale)}</span>
                         </div>
                         <div className="flex justify-between">
                             <span className="text-gray-600">Items</span>
@@ -126,7 +126,7 @@ export default function PODetailPage() {
 
                     {/* Progress */}
                     <div className="bg-white p-6 rounded shadow">
-                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Receiving Progress</h3>
+                        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Receiving Progress</h3>
                         {/* Simple Progress Bar logic */}
                         {(() => {
                             const totalOrdered = po.items.reduce((s: number, i: any) => s + i.quantityOrdered, 0);
@@ -135,12 +135,12 @@ export default function PODetailPage() {
 
                             return (
                                 <div>
-                                    <div className="flex justify-between mb-2 font-bold">
+                                    <div className="flex justify-between mb-2 font-semibold">
                                         <span>{pct}% Received</span>
                                         <span>{totalReceived} / {totalOrdered}</span>
                                     </div>
                                     <div className="w-full bg-gray-200 rounded-full h-2.5">
-                                        <div className="bg-indigo-600 h-2.5 rounded-full" style={{ width: `${pct}%` }}></div>
+                                        <div className="bg-brand-600 h-2.5 rounded-full" style={{ width: `${pct}%` }}></div>
                                     </div>
                                 </div>
                             );
@@ -165,18 +165,18 @@ export default function PODetailPage() {
                             {po.items.map((item: any) => (
                                 <tr key={item.id} className="hover:bg-gray-50">
                                     <td className="p-4">
-                                        <div className="font-bold">{item.product.name}</div>
+                                        <div className="font-semibold">{item.product.name}</div>
                                         <div className="text-xs text-gray-500">{item.product.sku}</div>
                                     </td>
                                     <td className="p-4 text-center font-medium">{item.quantityOrdered}</td>
-                                    <td className="p-4 text-center text-green-600 font-bold">{item.quantityReceived}</td>
-                                    <td className="p-4 text-center text-red-500 font-bold">
+                                    <td className="p-4 text-center text-green-600 font-semibold">{item.quantityReceived}</td>
+                                    <td className="p-4 text-center text-red-500 font-semibold">
                                         {Math.max(0, item.quantityOrdered - item.quantityReceived)}
                                     </td>
                                     <td className="p-4 text-right font-mono">
                                         {formatCurrency(item.unitCost, po.supplier?.currency || user?.currency, user?.locale)}
                                     </td>
-                                    <td className="p-4 text-right font-mono font-bold">
+                                    <td className="p-4 text-right font-mono font-semibold">
                                         {formatCurrency(Number(item.unitCost) * item.quantityOrdered, po.supplier?.currency || user?.currency, user?.locale)}
                                     </td>
                                 </tr>
@@ -188,12 +188,12 @@ export default function PODetailPage() {
                 {/* GRN History Section (If any) */}
                 {po.grns && po.grns.length > 0 && (
                     <div className="mt-8">
-                        <h2 className="text-xl font-bold mb-4">Receipt History (GRNs)</h2>
+                        <h2 className="text-xl font-semibold mb-4">Receipt History (GRNs)</h2>
                         <div className="space-y-4">
                             {po.grns.map((grn: any) => (
-                                <div key={grn.id} className="bg-white p-4 rounded shadow border-l-4 border-indigo-500">
+                                <div key={grn.id} className="bg-white p-4 rounded shadow border-l-4 border-brand-500">
                                     <div className="flex justify-between">
-                                        <div className="font-bold">{grn.grnNumber}</div>
+                                        <div className="font-semibold">{grn.grnNumber}</div>
                                         <div className="text-sm text-gray-500">{new Date(grn.receivedDate).toLocaleString()}</div>
                                     </div>
                                     <div className="text-sm text-gray-600 mt-2">
@@ -208,9 +208,9 @@ export default function PODetailPage() {
 
             {/* Confirmation Modal */}
             {confirmAction && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
                     <div className="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full mx-4">
-                        <h3 className="text-lg font-bold mb-4">Confirm Action</h3>
+                        <h3 className="text-lg font-semibold mb-4">Confirm Action</h3>
                         <p className="text-gray-600 mb-6">
                             Are you sure you want to mark this PO as <strong>{confirmAction}</strong>?
                             {confirmAction === 'SENT' && " This will verify stock availability."}
@@ -224,7 +224,7 @@ export default function PODetailPage() {
                             </button>
                             <button
                                 onClick={executeStatusUpdate}
-                                className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 font-bold"
+                                className="px-4 py-2 bg-brand-500 text-white rounded-xl hover:bg-brand-600 font-semibold"
                             >
                                 Confirm
                             </button>

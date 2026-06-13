@@ -8,25 +8,138 @@
   }
 }
 
+/* ---------------------------------------------------------------- */
+/* RetailCraft Design Tokens — premium minimalist hospitality theme */
+/* ---------------------------------------------------------------- */
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
-}
+  /* Brand accent (teal/mint) — key actions, active states, metrics */
+  --rc-brand: #38C3B5;
+  --rc-brand-strong: #27A89B;
+  --rc-brand-soft: #D9F4F1;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
+  /* Neutral surfaces — white-dominant, calm */
+  --rc-canvas: #FAFAFA;
+  --rc-surface: #FFFFFF;
+  --rc-surface-muted: #F3F3F3;
+  --rc-border: #ECEFEF;
+  --rc-cool-grey: #DCE3E3;
+
+  /* Text */
+  --rc-text: #2E3232;
+  --rc-text-secondary: #4A4A4A;
+  --rc-text-muted: #A9B0B0;
+
+  /* Motion */
+  --rc-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --rc-duration: 220ms;
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))) rgb(var(--background-start-rgb));
+  color: var(--rc-text);
+  background: var(--rc-canvas);
+  font-feature-settings: 'cv11', 'ss01';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Calm, near-invisible scrollbars */
+.custom-scrollbar::-webkit-scrollbar,
+.overflow-y-auto::-webkit-scrollbar,
+.overflow-x-auto::-webkit-scrollbar,
+.overflow-auto::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track,
+.overflow-y-auto::-webkit-scrollbar-track,
+.overflow-x-auto::-webkit-scrollbar-track,
+.overflow-auto::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb,
+.overflow-y-auto::-webkit-scrollbar-thumb,
+.overflow-x-auto::-webkit-scrollbar-thumb,
+.overflow-auto::-webkit-scrollbar-thumb {
+  background: var(--rc-cool-grey);
+  border-radius: 9999px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover,
+.overflow-y-auto::-webkit-scrollbar-thumb:hover,
+.overflow-x-auto::-webkit-scrollbar-thumb:hover,
+.overflow-auto::-webkit-scrollbar-thumb:hover {
+  background: var(--rc-text-muted);
+}
+
+/* Accessible, branded focus states */
+*:focus-visible {
+  outline: 2px solid var(--rc-brand);
+  outline-offset: 2px;
+}
+
+/* Subtle global motion — quality, not attention */
+button,
+a,
+input,
+select,
+textarea {
+  transition: background-color var(--rc-duration) var(--rc-ease),
+    border-color var(--rc-duration) var(--rc-ease),
+    color var(--rc-duration) var(--rc-ease),
+    box-shadow var(--rc-duration) var(--rc-ease),
+    opacity var(--rc-duration) var(--rc-ease);
+}
+
+@layer components {
+
+  /* Primary action — teal, reserved for the key action on a screen */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white shadow-soft hover:bg-brand-600 active:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Secondary action — quiet neutral */
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-charcoal border border-cool-grey hover:bg-surface-muted hover:border-mid-grey disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Tertiary / ghost action */
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-gray-500 hover:text-brand-600 hover:bg-brand-50;
+  }
+
+  /* Card surface — soft elevation, generous internal spacing */
+  .card {
+    @apply bg-white rounded-2xl shadow-card border border-gray-100/80 p-6;
+  }
+
+  /* Form input — spacious, minimal noise, strong focus */
+  .input-field {
+    @apply block w-full rounded-xl border border-cool-grey bg-white px-4 py-3 text-sm text-charcoal placeholder:text-mid-grey focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none;
+  }
+
+  /* Skeleton loading shimmer */
+  .skeleton {
+    @apply relative overflow-hidden rounded-xl bg-surface-muted;
+  }
+
+  .skeleton::after {
+    content: '';
+    @apply absolute inset-0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.7), transparent);
+    animation: rc-shimmer 1.6s infinite;
+  }
+}
+
+@keyframes rc-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 /* --- THERMAL RECEIPT PRINTING STYLES --- */

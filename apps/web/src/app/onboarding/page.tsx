@@ -70,7 +70,7 @@ export default function OnboardingWizard() {
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
             <div className="sm:mx-auto sm:w-full sm:max-w-md">
-                <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                <h2 className="mt-6 text-center text-3xl font-semibold text-gray-900">
                     Setup your Store
                 </h2>
                 <p className="mt-2 text-center text-sm text-gray-600">
@@ -93,7 +93,7 @@ export default function OnboardingWizard() {
                                 <label className="block text-sm font-medium text-gray-700">Business Name</label>
                                 <input
                                     type="text" required
-                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-500 focus:border-brand-500 sm:text-sm"
                                     value={business.name}
                                     onChange={e => setBusiness({ ...business, name: e.target.value })}
                                 />
@@ -102,7 +102,7 @@ export default function OnboardingWizard() {
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">Currency</label>
                                     <select
-                                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-500 focus:border-brand-500 sm:text-sm"
                                         value={business.currency}
                                         onChange={e => setBusiness({ ...business, currency: e.target.value })}
                                     >
@@ -114,7 +114,7 @@ export default function OnboardingWizard() {
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">Locale</label>
                                     <select
-                                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-500 focus:border-brand-500 sm:text-sm"
                                         value={business.locale}
                                         onChange={e => setBusiness({ ...business, locale: e.target.value })}
                                     >
@@ -126,7 +126,7 @@ export default function OnboardingWizard() {
                             </div>
                             <button
                                 type="submit" disabled={loading}
-                                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-brand-500 hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500"
                             >
                                 Next
                             </button>
@@ -143,7 +143,7 @@ export default function OnboardingWizard() {
                                 <label className="block text-sm font-medium text-gray-700">Store Name</label>
                                 <input
                                     type="text" required
-                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-500 focus:border-brand-500 sm:text-sm"
                                     value={store.name || ''}
                                     onChange={e => setStore({ ...store, name: e.target.value })}
                                 />
@@ -153,7 +153,7 @@ export default function OnboardingWizard() {
                                 <label className="block text-sm font-medium text-gray-700">Address</label>
                                 <textarea
                                     required rows={3}
-                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-500 focus:border-brand-500 sm:text-sm"
                                     value={store.address}
                                     onChange={e => setStore({ ...store, address: e.target.value })}
                                 />
@@ -162,14 +162,14 @@ export default function OnboardingWizard() {
                                 <label className="block text-sm font-medium text-gray-700">Phone</label>
                                 <input
                                     type="tel" required
-                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-500 focus:border-brand-500 sm:text-sm"
                                     value={store.phone}
                                     onChange={e => setStore({ ...store, phone: e.target.value })}
                                 />
                             </div>
                             <button
                                 type="submit" disabled={loading}
-                                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-brand-500 hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500"
                             >
                                 Next
                             </button>
@@ -183,7 +183,7 @@ export default function OnboardingWizard() {
                                 <label className="block text-sm font-medium text-gray-700">Tax Name (e.g. VAT, Sales Tax)</label>
                                 <input
                                     type="text" required
-                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-500 focus:border-brand-500 sm:text-sm"
                                     value={tax.name}
                                     onChange={e => setTax({ ...tax, name: e.target.value })}
                                 />
@@ -192,14 +192,14 @@ export default function OnboardingWizard() {
                                 <label className="block text-sm font-medium text-gray-700">Rate (Decimal, e.g. 0.05 for 5%)</label>
                                 <input
                                     type="number" step="0.01" min="0" max="1" required
-                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-500 focus:border-brand-500 sm:text-sm"
                                     value={tax.rate}
                                     onChange={e => setTax({ ...tax, rate: e.target.value })}
                                 />
                             </div>
                             <button
                                 type="submit" disabled={loading}
-                                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-brand-500 hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500"
                             >
                                 Next
                             </button>
@@ -222,7 +222,7 @@ export default function OnboardingWizard() {
                             <button
                                 onClick={handleComplete}
                                 disabled={loading}
-                                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-brand-500 hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500"
                             >
                                 {loading ? 'Finalizing...' : 'Go to Dashboard'}
                             </button>

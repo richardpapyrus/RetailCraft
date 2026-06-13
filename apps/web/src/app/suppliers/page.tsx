@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import { confirmDialog } from "@/lib/dialog";
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/useAuth';
 import { useRouter } from 'next/navigation';
@@ -89,7 +90,7 @@ export default function SuppliersPage() {
     };
 
     const handleDelete = async (id: string) => {
-        if (confirm('Are you sure you want to delete this supplier?')) {
+        if (await confirmDialog({ title: 'Delete Supplier', message: 'Are you sure you want to delete this supplier?', destructive: true })) {
             try {
                 await api.suppliers.delete(id);
                 loadSuppliers();
@@ -113,7 +114,7 @@ export default function SuppliersPage() {
             <div className="flex-1 p-8 overflow-auto">
                 <div className="max-w-4xl mx-auto">
                     <div className="flex justify-between items-center mb-6">
-                        <h1 className="text-2xl font-bold text-gray-800">Suppliers</h1>
+                        <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">Suppliers</h1>
                         <div className="flex items-center gap-4">
                             <input
                                 type="text"
@@ -130,7 +131,7 @@ export default function SuppliersPage() {
                                     }
                                     openCreate();
                                 }}
-                                className={`px-4 py-2 rounded transition shadow-sm ${!selectedStoreId ? 'bg-gray-300 cursor-not-allowed text-gray-500' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+                                className={`px-4 py-2 rounded transition shadow-sm ${!selectedStoreId ? 'bg-gray-300 cursor-not-allowed text-gray-500' : 'bg-brand-600 text-white hover:bg-brand-700'}`}
                             >
                                 + Add Supplier
                             </button>
@@ -158,7 +159,7 @@ export default function SuppliersPage() {
                                 ) : (
                                     suppliers.map(s => (
                                         <tr key={s.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => router.push(`/suppliers/${s.id}`)}>
-                                            <td className="p-3 font-bold text-indigo-600">{s.name}</td>
+                                            <td className="p-3 font-semibold text-brand-600">{s.name}</td>
                                             <td className="p-3">{s.contact || '-'}</td>
                                             <td className="p-3">{s.phone || '-'}</td>
                                             <td className="p-3 text-gray-600">{s.email || '-'}</td>
@@ -179,9 +180,9 @@ export default function SuppliersPage() {
 
             {/* Modal */}
             {isModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
                     <div className="bg-white p-6 rounded-lg shadow-xl w-96">
-                        <h2 className="text-xl font-bold mb-4">{isEditing ? 'Edit Supplier' : 'New Supplier'}</h2>
+                        <h2 className="text-xl font-semibold mb-4">{isEditing ? 'Edit Supplier' : 'New Supplier'}</h2>
                         <form onSubmit={handleSubmit}>
                             <div className="mb-4">
                                 <label className="block text-sm font-medium mb-1">Name</label>
@@ -228,7 +229,7 @@ export default function SuppliersPage() {
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                                    className="px-4 py-2 bg-brand-500 text-white rounded-xl hover:bg-brand-600"
                                 >
                                     Save
                                 </button>

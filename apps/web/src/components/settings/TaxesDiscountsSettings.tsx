@@ -101,13 +101,13 @@ export default function TaxesDiscountsSettings() {
             <div className="flex gap-4 mb-6 border-b border-gray-200 pb-2">
                 <button
                     onClick={() => setActiveSection('taxes')}
-                    className={`pb-2 px-1 font-medium ${activeSection === 'taxes' ? 'border-b-2 border-indigo-500 text-indigo-600' : 'text-gray-500'}`}
+                    className={`pb-2 px-1 font-medium ${activeSection === 'taxes' ? 'border-b-2 border-brand-500 text-brand-600' : 'text-gray-500'}`}
                 >
                     Taxes
                 </button>
                 <button
                     onClick={() => setActiveSection('discounts')}
-                    className={`pb-2 px-1 font-medium ${activeSection === 'discounts' ? 'border-b-2 border-indigo-500 text-indigo-600' : 'text-gray-500'}`}
+                    className={`pb-2 px-1 font-medium ${activeSection === 'discounts' ? 'border-b-2 border-brand-500 text-brand-600' : 'text-gray-500'}`}
                 >
                     Discounts
                 </button>
@@ -190,7 +190,7 @@ export default function TaxesDiscountsSettings() {
                                 </select>
                             </div>
                             <div className="col-span-2">
-                                <button onClick={handleCreateDiscount} className="w-full bg-green-600 text-white py-2 rounded-lg font-bold">Add</button>
+                                <button onClick={handleCreateDiscount} className="w-full bg-green-600 text-white py-2 rounded-lg font-semibold">Add</button>
                             </div>
                         </div>
 
@@ -208,7 +208,7 @@ export default function TaxesDiscountsSettings() {
                         {/* Target Selection UI */}
                         {targetType === 'PRODUCT' && (
                             <div className="mb-4 p-3 bg-white border rounded">
-                                <label className="text-xs font-bold text-gray-500 block mb-2">Select Products:</label>
+                                <label className="text-xs font-semibold text-gray-500 block mb-2">Select Products:</label>
                                 <div className="max-h-32 overflow-y-auto grid grid-cols-2 gap-2">
                                     {allProducts.map(p => (
                                         <label key={p.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-50 p-1 rounded">
@@ -229,7 +229,7 @@ export default function TaxesDiscountsSettings() {
 
                         {targetType === 'CATEGORY' && (
                             <div className="mb-4 p-3 bg-white border rounded">
-                                <label className="text-xs font-bold text-gray-500 block mb-2">Select Categories:</label>
+                                <label className="text-xs font-semibold text-gray-500 block mb-2">Select Categories:</label>
                                 {allCategories.length === 0 ? <p className="text-sm text-gray-400">No categories found.</p> : (
                                     <div className="max-h-32 overflow-y-auto grid grid-cols-2 gap-2">
                                         {allCategories.map(c => (

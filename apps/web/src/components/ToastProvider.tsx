@@ -12,13 +12,14 @@ export function ToastProvider() {
             toastOptions={{
                 duration: 8000,
                 style: {
-                    background: '#363636',
-                    color: '#fff',
+                    background: '#FFFFFF',
+                    color: '#2E3232',
                     padding: '16px',
-                    borderRadius: '12px',
+                    borderRadius: '16px',
+                    border: '1px solid #ECEFEF',
                     fontSize: '14px',
                     maxWidth: '400px',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                    boxShadow: '0 8px 30px rgba(16, 42, 39, 0.08)',
                     fontWeight: 500,
                 },
                 success: {

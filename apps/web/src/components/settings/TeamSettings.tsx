@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import { confirmDialog } from "@/lib/dialog";
 import { api, Role } from '@/lib/api';
 import { useAuth } from '@/lib/useAuth';
 import { toast } from 'react-hot-toast';
@@ -103,7 +104,7 @@ export default function TeamSettings() {
     };
 
     const handleDelete = async (userId: string) => {
-        if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
+        if (!(await confirmDialog({ title: 'Delete User', message: 'Are you sure you want to delete this user? This action cannot be undone.', destructive: true }))) return;
         try {
             await api.users.delete(userId);
             fetchData();
@@ -116,11 +117,11 @@ export default function TeamSettings() {
     return (
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
             <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-gray-800">Team Members</h2>
+                <h2 className="text-xl font-semibold text-gray-800">Team Members</h2>
                 {!isCreating && (
                     <button
                         onClick={() => { setIsCreating(true); setEditingUserId(null); }}
-                        className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+                        className="bg-brand-600 text-white px-4 py-2 rounded-lg hover:bg-brand-700 transition-colors"
                     >
                         + Add User
                     </button>
@@ -217,7 +218,7 @@ export default function TeamSettings() {
                                         <div className="flex justify-end gap-2">
                                             <button
                                                 onClick={() => handleEdit(user)}
-                                                className="text-indigo-600 hover:text-indigo-800 hover:underline text-sm font-medium"
+                                                className="text-brand-600 hover:text-brand-800 hover:underline text-sm font-medium"
                                             >
                                                 Edit
                                             </button>

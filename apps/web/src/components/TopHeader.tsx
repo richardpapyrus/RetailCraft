@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/useAuth';
 import { api, API_URL } from '@/lib/api';
+import { ChevronDown, Menu } from 'lucide-react';
 
-export function TopHeader() {
+export function TopHeader({ onMenuClick }: { onMenuClick?: () => void } = {}) {
     const { user, selectedStoreId, setSelectedStoreId } = useAuth();
     const [stores, setStores] = useState<any[]>([]);
     const [error, setError] = useState<string | null>(null);
@@ -53,9 +54,17 @@ export function TopHeader() {
     const currentStore = stores.find(s => s.id === selectedStoreId);
 
     return (
-        <header className="h-16 bg-white border-b border-gray-100 flex items-center justify-between px-6 shrink-0 z-10 sticky top-0 shadow-sm print:hidden">
+        <header className="h-16 bg-white border-b border-gray-100 flex items-center justify-between px-4 md:px-8 shrink-0 z-10 sticky top-0 print:hidden">
             {/* Left: Business Branding & Store Selector */}
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3 md:gap-6 min-w-0">
+                {/* Mobile menu trigger — desktop uses the persistent sidebar */}
+                <button
+                    onClick={onMenuClick}
+                    aria-label="Open navigation menu"
+                    className="md:hidden p-2 -ml-1 rounded-xl text-charcoal hover:bg-surface-muted transition-colors shrink-0"
+                >
+                    <Menu size={22} />
+                </button>
                 <div className="flex items-center gap-3">
                     {user?.tenantLogo && !imgError ? (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -66,58 +75,41 @@ export function TopHeader() {
                             onError={() => setImgError(true)}
                         />
                     ) : (
-                        <div className="h-10 w-10 bg-gray-100 rounded-md flex items-center justify-center text-gray-400 font-bold text-xl uppercase">
+                        <div className="h-10 w-10 bg-gray-100 rounded-md flex items-center justify-center text-gray-400 font-semibold text-xl uppercase">
                             {user?.tenantName?.[0] || 'B'}
                         </div>
                     )}
 
                     <div className="flex flex-col">
                         <h1
-                            className="font-bold text-lg leading-tight truncate max-w-[200px]"
-                            style={{ color: user?.tenantBrandColor || '#111827' }}
+                            className="font-semibold text-lg leading-tight truncate max-w-[200px] tracking-tight"
+                            style={{ color: user?.tenantBrandColor || '#2E3232' }}
                         >
                             {user?.tenantName || 'Business Name'}
                         </h1>
                         <div className="flex items-center gap-1 mt-0.5">
                             <div className="relative group">
                                 <select
-                                    className="appearance-none bg-transparent text-[10px] font-bold uppercase tracking-widest text-indigo-600 hover:text-indigo-800 cursor-pointer outline-none w-full pr-4"
+                                    className="appearance-none bg-transparent text-[10px] font-semibold uppercase tracking-widest text-brand-600 hover:text-brand-700 cursor-pointer outline-none w-full pr-4"
                                     value={selectedStoreId || ''}
                                     onChange={handleStoreChange}
                                 >
-                                    <option value="">📍 Organization HQ (Global)</option>
+                                    <option value="">Organization HQ (Global)</option>
                                     {stores.map(s => (
-                                        <option key={s.id} value={s.id}>📍 {s.name}</option>
+                                        <option key={s.id} value={s.id}>{s.name}</option>
                                     ))}
                                 </select>
-                                <span className="absolute right-0 top-0.5 pointer-events-none text-[8px] text-gray-400">▼</span>
+                                <ChevronDown size={10} className="absolute right-0 top-0.5 pointer-events-none text-gray-400" />
                             </div>
-                            {error && <span className="text-[10px] text-red-500 font-bold ml-2">⚠️ {error}</span>}
+                            {error && <span className="text-[10px] text-red-500 font-semibold ml-2">⚠️ {error}</span>}
                         </div>
                     </div>
                 </div>
 
-                <div className="h-8 w-px bg-gray-200 hidden md:block"></div>
-
-                {/* Quick Info (Optional) */}
-                {selectedStoreId && (
-                    <div className="hidden lg:flex flex-col">
-                        <span className="text-[10px] text-gray-400 font-bold uppercase">Current Store</span>
-                        <span className="text-sm font-bold text-gray-700">{currentStore?.name}</span>
-                    </div>
-                )}
             </div>
 
-            {/* Right: User / Logout usually goes here but for now just powered by */}
-            <div className="flex items-center gap-4">
-                {/* ... existing right content ... */}
-                <div className="flex items-center gap-2 opacity-50 hover:opacity-100 transition-opacity">
-                    <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Powered by</span>
-                    <span className="font-bold text-gray-600 text-sm tracking-tight flex items-center gap-1">
-                        RetailCraft
-                    </span>
-                </div>
-            </div>
+            {/* Right: reserved for page-level actions */}
+            <div className="flex items-center gap-4"></div>
         </header>
     );
 }

@@ -55,14 +55,12 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
             if (pending.length === 0) return;
 
             setIsSyncing(true);
-            console.log(`[Sync] Found ${pending.length} items to sync...`);
 
             for (const req of pending) {
                 try {
                     // Replay Request
                     if (req.url === '/sales' && req.method === 'POST') {
                         await api.sales.create(req.body);
-                        console.log(`[Sync] Synced Sale ${req.id}`);
                         await db.syncQueue.delete(req.id!);
                     }
 
@@ -84,7 +82,6 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
                             await db.customers.bulkDelete(offlineRecords.map(c => c.id));
                         }
 
-                        console.log(`[Sync] Synced Customer ${newCustomer.name}`);
                         await db.syncQueue.delete(req.id!);
                     }
                 } catch (err) {
@@ -118,7 +115,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
             {children}
             {pendingCount > 0 && !isDismissed && (
                 <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-2 fade-in duration-300">
-                    <div className="bg-white border border-gray-200 shadow-2xl rounded-2xl p-4 w-80 flex flex-col gap-3">
+                    <div className="bg-white border border-gray-200 shadow-lifted rounded-2xl p-4 w-80 flex flex-col gap-3">
                         <div className="flex justify-between items-start">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center border border-amber-100">
@@ -127,12 +124,13 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
                                     </svg>
                                 </div>
                                 <div>
-                                    <h4 className="font-bold text-gray-900 text-sm">Sync Required</h4>
+                                    <h4 className="font-semibold text-gray-900 text-sm">Sync Required</h4>
                                     <p className="text-xs text-gray-500 font-medium">{pendingCount} unsaved item{pendingCount !== 1 ? 's' : ''}</p>
                                 </div>
                             </div>
                             <button
                                 onClick={() => setIsDismissed(true)}
+                                aria-label="Dismiss sync notification"
                                 className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1 rounded-lg transition-colors"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -145,7 +143,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
                             <button
                                 onClick={syncData}
                                 disabled={isSyncing}
-                                className="flex-1 bg-gray-900 hover:bg-black text-white py-2 px-3 rounded-xl text-xs font-bold transition-all active:scale-95 disabled:opacity-70 disabled:active:scale-100 flex items-center justify-center gap-2"
+                                className="flex-1 bg-brand-500 hover:bg-brand-600 text-white py-2 px-3 rounded-xl text-xs font-semibold transition-all active:scale-95 disabled:opacity-70 disabled:active:scale-100 flex items-center justify-center gap-2"
                             >
                                 {isSyncing ? (
                                     <>

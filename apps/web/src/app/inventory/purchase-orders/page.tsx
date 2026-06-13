@@ -58,13 +58,13 @@ export default function PurchaseOrdersPage() {
             <div className="max-w-6xl mx-auto w-full">
                 <div className="flex justify-between items-center mb-6">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Purchase Orders</h1>
+                        <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">Purchase Orders</h1>
                         <p className="text-sm text-gray-500">Manage procurement and stock replenishment</p>
                     </div>
                     {hasPermission('RAISE_PURCHASE_ORDER') && (
                         <button
                             onClick={() => router.push('/inventory/purchase-orders/new')}
-                            className="flex items-center bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
+                            className="flex items-center bg-brand-500 text-white px-4 py-2 rounded-xl hover:bg-brand-600"
                         >
                             <Plus className="w-5 h-5 mr-2" /> New Order
                         </button>
@@ -93,11 +93,11 @@ export default function PurchaseOrdersPage() {
                             ) : (
                                 paginatedOrders.map(po => (
                                     <tr key={po.id} className="hover:bg-gray-50">
-                                        <td className="p-4 font-mono font-medium text-indigo-600">{po.poNumber}</td>
+                                        <td className="p-4 font-mono font-medium text-brand-600">{po.poNumber}</td>
                                         <td className="p-4">{po.supplier?.name}</td>
                                         <td className="p-4 text-gray-600">{new Date(po.createdAt).toLocaleDateString()}</td>
                                         <td className="p-4">
-                                            <span className={`px-2 py-1 rounded text-xs font-bold ${getStatusColor(po.status)}`}>
+                                            <span className={`px-2 py-1 rounded text-xs font-semibold ${getStatusColor(po.status)}`}>
                                                 {po.status.replace('_', ' ')}
                                             </span>
                                         </td>
@@ -107,7 +107,7 @@ export default function PurchaseOrdersPage() {
                                         <td className="p-4 text-right space-x-2">
                                             <button
                                                 onClick={() => router.push(`/inventory/purchase-orders/${po.id}`)}
-                                                className="text-gray-600 hover:text-indigo-600 p-1"
+                                                className="text-gray-600 hover:text-brand-600 p-1"
                                                 title="View Details"
                                             >
                                                 <Eye className="w-5 h-5" />
@@ -115,7 +115,7 @@ export default function PurchaseOrdersPage() {
                                             {['SENT', 'PARTIALLY_RECEIVED'].includes(po.status) && hasPermission('RECEIVE_GOODS') && (
                                                 <button
                                                     onClick={() => router.push(`/inventory/purchase-orders/${po.id}/receive`)}
-                                                    className="text-indigo-600 hover:text-indigo-800 p-1"
+                                                    className="text-brand-600 hover:text-brand-800 p-1"
                                                     title="Receive Goods (GRN)"
                                                 >
                                                     <Truck className="w-5 h-5" />

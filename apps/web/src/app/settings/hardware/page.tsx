@@ -45,9 +45,9 @@ export default function HardwareSettings() {
 
     return (
         <div className="p-8">
-            <h1 className="text-2xl font-bold mb-6">Hardware Settings</h1>
+            <h1 className="text-3xl font-semibold text-gray-900 tracking-tight mb-6">Hardware Settings</h1>
             <div className="bg-white rounded-2xl shadow-sm p-6 max-w-2xl">
-                <h2 className="text-xl font-bold mb-6">Receipt Printer</h2>
+                <h2 className="text-xl font-semibold mb-6">Receipt Printer</h2>
 
                 <div className="space-y-6">
                     <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
@@ -62,7 +62,7 @@ export default function HardwareSettings() {
                                 <>
                                     <button
                                         onClick={handleTestPrint}
-                                        className="px-4 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100"
+                                        className="px-4 py-2 text-sm font-medium text-brand-600 bg-brand-50 rounded-lg hover:bg-brand-100"
                                     >
                                         Test Print
                                     </button>

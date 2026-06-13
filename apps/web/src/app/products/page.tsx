@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState, useRef } from 'react';
+import { confirmDialog } from "@/lib/dialog";
 import { api, Product, API_URL } from '@/lib/api';
 import { DataService } from '@/lib/db-service';
 import { useAuth, formatCurrency } from '@/lib/useAuth';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import CategoryManager from '@/components/products/CategoryManager';
+import { RefreshCw, ClipboardList, SlidersHorizontal, ArrowDownToLine, Pencil, Archive, ArchiveRestore, X } from 'lucide-react';
 
 export default function ProductsPage() {
     const { user, token, isHydrated, hasPermission, selectedStoreId } = useAuth();
@@ -322,7 +324,12 @@ export default function ProductsPage() {
     // Archive Action
     const handleArchiveToggle = async (product: Product, e: React.MouseEvent) => {
         e.stopPropagation();
-        if (!confirm(product.isArchived ? `Restore ${product.name}?` : `Archive ${product.name}?`)) return;
+        if (!(await confirmDialog({
+            title: product.isArchived ? 'Restore Product' : 'Archive Product',
+            message: product.isArchived ? `Restore "${product.name}" to your active catalogue?` : `Archive "${product.name}"? It will be hidden from sales but its history is kept.`,
+            confirmLabel: product.isArchived ? 'Restore' : 'Archive',
+            destructive: !product.isArchived,
+        }))) return;
 
         try {
             if (product.isArchived) {
@@ -347,41 +354,44 @@ export default function ProductsPage() {
     }
 
     return (
-        <div className="h-full bg-gray-50 overflow-y-auto relative">
-            <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div className="h-full bg-canvas overflow-y-auto relative">
+            <div className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-10 animate-fade-in-up">
                 {error && (
                     <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded shadow-sm">
-                        <p className="font-bold">Error loading data</p>
+                        <p className="font-semibold">Error loading data</p>
                         <p>{error}</p>
                     </div>
                 )}
                 {/* Header */}
-                <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Product Inventory</h1>
+                <div className="flex flex-wrap justify-between items-center mb-10 gap-4">
+                    <div className="flex flex-col gap-1">
+                        <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">Products</h1>
+                        <span className="text-sm font-medium text-mid-grey">Inventory across your catalogue</span>
+                    </div>
                     <div className="flex gap-2">
                         <button
-                            onClick={() => {
-                                if (confirm("This will clear local cache and reload from server. Continue?")) {
+                            onClick={async () => {
+                                if (await confirmDialog({ title: 'Refresh Data', message: 'This will clear the local cache and reload everything from the server. Continue?', confirmLabel: 'Refresh' })) {
                                     DataService.clearCache().then(() => window.location.reload());
                                 }
                             }}
-                            className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition shadow-sm"
+                            className="bg-white border border-cool-grey text-charcoal text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-surface-muted transition flex items-center gap-2"
                         >
-                            ↻ Refresh
+                            <RefreshCw size={15} /> Refresh
                         </button>
                         {(hasPermission('MANAGE_PRODUCTS') || hasPermission('RAISE_PURCHASE_ORDER')) && (
                             <button
                                 onClick={() => router.push('/inventory/purchase-orders')}
-                                className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition shadow-sm flex items-center gap-2"
+                                className="bg-white border border-cool-grey text-charcoal text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-surface-muted transition flex items-center gap-2"
                             >
-                                <span className="text-lg leading-none">📋</span> Purchase Orders
+                                <ClipboardList size={15} /> Purchase Orders
                             </button>
                         )}
                         {hasPermission('MANAGE_PRODUCTS') && (
                             <>
                                 <button
                                     onClick={() => setShowCategoryManager(true)}
-                                    className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition shadow-sm"
+                                    className="bg-white border border-cool-grey text-charcoal text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-surface-muted transition"
                                 >
                                     Manage Categories
                                 </button>
@@ -393,7 +403,7 @@ export default function ProductsPage() {
                                         }
                                         setIsImportModalOpen(true);
                                     }}
-                                    className={`border border-gray-300 px-4 py-2 rounded-lg transition shadow-sm ${!selectedStoreId ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+                                    className={`border border-cool-grey text-sm font-semibold px-4 py-2.5 rounded-xl transition ${!selectedStoreId ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-charcoal hover:bg-surface-muted'}`}
                                 >
                                     Import CSV
                                 </button>
@@ -405,7 +415,7 @@ export default function ProductsPage() {
                                         }
                                         setShowCreate(true);
                                     }}
-                                    className={`px-4 py-2 rounded-lg transition shadow-sm ${!selectedStoreId ? 'bg-gray-300 cursor-not-allowed text-gray-500' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+                                    className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition shadow-soft ${!selectedStoreId ? 'bg-gray-300 cursor-not-allowed text-gray-500 shadow-none' : 'bg-brand-500 text-white hover:bg-brand-600'}`}
                                 >
                                     + Add Product
                                 </button>
@@ -416,18 +426,18 @@ export default function ProductsPage() {
 
                 {/* Stats Cards */}
                 {stats && (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                            <h3 className="text-gray-500 text-sm font-medium">Total Products</h3>
-                            <p className="text-3xl font-bold text-gray-900 mt-2">{stats.totalProducts}</p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                        <div className="bg-white p-6 rounded-2xl shadow-card border border-gray-100/80">
+                            <h3 className="text-[11px] font-semibold text-mid-grey uppercase tracking-widest">Total Products</h3>
+                            <p className="text-3xl font-semibold text-gray-900 tracking-tight mt-3">{stats.totalProducts}</p>
                         </div>
-                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                            <h3 className="text-gray-500 text-sm font-medium">Inventory Value</h3>
-                            <p className="text-3xl font-bold text-gray-900 mt-2">{formatCurrency(stats.inventoryValue, user?.currency)}</p>
+                        <div className="bg-white p-6 rounded-2xl shadow-card border border-gray-100/80">
+                            <h3 className="text-[11px] font-semibold text-mid-grey uppercase tracking-widest">Inventory Value</h3>
+                            <p className="text-3xl font-semibold text-gray-900 tracking-tight mt-3">{formatCurrency(stats.inventoryValue, user?.currency)}</p>
                         </div>
-                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                            <h3 className="text-gray-500 text-sm font-medium">Low Stock Items</h3>
-                            <p className={`text-3xl font-bold mt-2 ${stats.lowStockCount > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                        <div className="bg-white p-6 rounded-2xl shadow-card border border-gray-100/80">
+                            <h3 className="text-[11px] font-semibold text-mid-grey uppercase tracking-widest">Low Stock Items</h3>
+                            <p className={`text-3xl font-semibold tracking-tight mt-3 ${stats.lowStockCount > 0 ? 'text-red-500' : 'text-gray-900'}`}>
                                 {stats.lowStockCount}
                             </p>
                         </div>
@@ -435,7 +445,7 @@ export default function ProductsPage() {
                 )}
 
                 {/* Filters */}
-                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 flex flex-wrap gap-4 items-center">
+                <div className="bg-white p-5 rounded-2xl shadow-card border border-gray-100/80 mb-8 flex flex-wrap gap-4 items-center">
                     <div className="flex-1 min-w-[200px]">
                         <input
                             ref={searchInputRef}
@@ -445,14 +455,14 @@ export default function ProductsPage() {
                             placeholder="Search products (Name, SKU, Barcode)..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 outline-none"
                         />
                     </div>
                     <div className="w-[200px]">
                         <select
                             value={category}
                             onChange={(e) => setCategory(e.target.value)}
-                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 outline-none"
                         >
                             <option value="">All Categories</option>
                             {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -464,7 +474,7 @@ export default function ProductsPage() {
                             id="lowStock"
                             checked={showLowStock}
                             onChange={(e) => setShowLowStock(e.target.checked)}
-                            className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500"
+                            className="w-5 h-5 text-brand-600 rounded focus:ring-brand-500"
                         />
                         <label htmlFor="lowStock" className="text-gray-700 font-medium cursor-pointer">Low Stock Only</label>
                     </div>
@@ -484,11 +494,11 @@ export default function ProductsPage() {
 
                 {/* Create Modal */}
                 {showCreate && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
                         <form onSubmit={handleCreate} className="bg-white p-6 rounded-xl shadow-xl max-w-lg w-full">
                             <div className="flex justify-between items-center mb-6">
-                                <h2 className="text-xl font-bold">{editingId ? 'Edit Product' : 'New Product'}</h2>
-                                <button type="button" onClick={() => setShowCreate(false)} className="text-gray-500 hover:text-gray-700">✕</button>
+                                <h2 className="text-xl font-semibold">{editingId ? 'Edit Product' : 'New Product'}</h2>
+                                <button type="button" onClick={() => setShowCreate(false)} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors"><X size={18} /></button>
                             </div>
                             <div className="space-y-4 max-h-[80vh] overflow-y-auto">
                                 <input
@@ -510,7 +520,7 @@ export default function ProductsPage() {
                                     <button
                                         type="button"
                                         onClick={() => setShowCategoryManager(true)}
-                                        className="text-indigo-600 font-medium text-sm hover:underline"
+                                        className="text-brand-600 font-medium text-sm hover:underline"
                                     >
                                         Manage
                                     </button>
@@ -576,7 +586,7 @@ export default function ProductsPage() {
                                 </div>
                                 <div className="flex justify-end gap-3 mt-6">
                                     <button type="button" onClick={() => setShowCreate(false)} className="px-4 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
-                                    <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                                    <button type="submit" className="px-4 py-2 bg-brand-500 text-white rounded-xl hover:bg-brand-600">
                                         {editingId ? 'Update Product' : 'Save Product'}
                                     </button>
                                 </div>
@@ -587,9 +597,9 @@ export default function ProductsPage() {
 
                 {/* Adjust Modal */}
                 {adjustModalOpen && selectedProduct && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                        <div className="bg-white rounded-xl p-6 max-w-sm w-full shadow-2xl">
-                            <h3 className="text-lg font-bold mb-4">Adjust Stock: {selectedProduct.name}</h3>
+                    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                        <div className="bg-white rounded-xl p-6 max-w-sm w-full shadow-lifted">
+                            <h3 className="text-lg font-semibold mb-4">Adjust Stock: {selectedProduct.name}</h3>
                             <form onSubmit={handleAdjustSubmit}>
                                 <div className="mb-4">
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Quantity Adjustment</label>
@@ -614,7 +624,7 @@ export default function ProductsPage() {
                                     </button>
                                     <button
                                         type="submit"
-                                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                                        className="px-4 py-2 bg-brand-500 text-white rounded-xl hover:bg-brand-600"
                                     >
                                         Save Adjustment
                                     </button>
@@ -626,9 +636,9 @@ export default function ProductsPage() {
 
                 {/* Receive Modal */}
                 {receiveModalOpen && selectedProduct && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                        <div className="bg-white rounded-xl p-6 max-w-sm w-full shadow-2xl">
-                            <h3 className="text-xl font-bold mb-4">Receive Stock: {selectedProduct.name}</h3>
+                    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                        <div className="bg-white rounded-xl p-6 max-w-sm w-full shadow-lifted">
+                            <h3 className="text-xl font-semibold mb-4">Receive Stock: {selectedProduct.name}</h3>
                             <form onSubmit={handleReceiveSubmit}>
                                 <div className="space-y-4 mb-6">
                                     <div>
@@ -687,7 +697,7 @@ export default function ProductsPage() {
                                     </button>
                                     <button
                                         type="submit"
-                                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold"
+                                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
                                     >
                                         Receive Stock
                                     </button>
@@ -699,9 +709,9 @@ export default function ProductsPage() {
 
                 {/* Import Modal */}
                 {isImportModalOpen && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                        <div className="bg-white rounded-xl p-6 max-w-sm w-full shadow-2xl">
-                            <h3 className="text-xl font-bold mb-4">Import Products</h3>
+                    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                        <div className="bg-white rounded-xl p-6 max-w-sm w-full shadow-lifted">
+                            <h3 className="text-xl font-semibold mb-4">Import Products</h3>
                             <form onSubmit={handleImport}>
                                 <div className="mb-6 space-y-4">
                                     <div className="p-4 bg-gray-50 rounded border border-dashed border-gray-300 text-center">
@@ -713,8 +723,8 @@ export default function ProductsPage() {
                                                 file:mr-4 file:py-2 file:px-4
                                                 file:rounded-full file:border-0
                                                 file:text-sm file:font-semibold
-                                                file:bg-indigo-50 file:text-indigo-700
-                                                hover:file:bg-indigo-100
+                                                file:bg-brand-50 file:text-brand-700
+                                                hover:file:bg-brand-100
                                             "
                                             required
                                         />
@@ -735,7 +745,7 @@ export default function ProductsPage() {
                                             link.click();
                                             document.body.removeChild(link);
                                         }}
-                                        className="block w-full text-center text-sm text-indigo-600 hover:underline bg-transparent border-0 cursor-pointer"
+                                        className="block w-full text-center text-sm text-brand-600 hover:underline bg-transparent border-0 cursor-pointer"
                                     >
                                         Download Template
                                     </button>
@@ -751,7 +761,7 @@ export default function ProductsPage() {
                                     <button
                                         type="submit"
                                         disabled={!importFile}
-                                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                                        className="px-4 py-2 bg-brand-500 text-white rounded-xl hover:bg-brand-600 disabled:opacity-50"
                                     >
                                         Upload & Import
                                     </button>
@@ -762,21 +772,21 @@ export default function ProductsPage() {
                 )}
 
                 {/* Table */}
-                <div className="bg-white shadow-sm rounded-xl overflow-hidden border border-gray-100">
-                    <table className="w-full divide-y divide-gray-200 table-fixed">
-                        <thead className="bg-gray-50">
+                <div className="bg-white shadow-card rounded-2xl overflow-hidden border border-gray-100/80">
+                    <table className="w-full divide-y divide-gray-100 table-fixed">
+                        <thead className="bg-white border-b border-gray-100">
                             <tr>
-                                <th className="w-[20%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                <th className="w-[15%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU / Barcode</th>
-                                <th className="w-[10%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price (Sell)</th>
-                                <th className="w-[12%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                                <th className="w-[10%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cost (Buy)</th>
-                                <th className="w-[13%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Supplier</th>
-                                <th className="w-[10%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Stock</th>
-                                {selectedStoreId && <th className="w-[10%] px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>}
+                                <th className="w-[20%] px-4 py-4 text-left text-[11px] font-semibold text-mid-grey uppercase tracking-widest">Name</th>
+                                <th className="w-[15%] px-4 py-4 text-left text-[11px] font-semibold text-mid-grey uppercase tracking-widest">SKU / Barcode</th>
+                                <th className="w-[10%] px-4 py-4 text-left text-[11px] font-semibold text-mid-grey uppercase tracking-widest">Price (Sell)</th>
+                                <th className="w-[12%] px-4 py-4 text-left text-[11px] font-semibold text-mid-grey uppercase tracking-widest">Category</th>
+                                <th className="w-[10%] px-4 py-4 text-left text-[11px] font-semibold text-mid-grey uppercase tracking-widest">Cost (Buy)</th>
+                                <th className="w-[13%] px-4 py-4 text-left text-[11px] font-semibold text-mid-grey uppercase tracking-widest">Supplier</th>
+                                <th className="w-[10%] px-4 py-4 text-left text-[11px] font-semibold text-mid-grey uppercase tracking-widest">Current Stock</th>
+                                {selectedStoreId && <th className="w-[10%] px-4 py-4 text-right text-[11px] font-semibold text-mid-grey uppercase tracking-widest">Actions</th>}
                             </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
+                        <tbody className="bg-white divide-y divide-gray-100">
                             {products.length === 0 ? (
                                 <tr>
                                     <td colSpan={selectedStoreId ? 8 : 7} className="px-6 py-8 text-center text-gray-500">
@@ -788,36 +798,36 @@ export default function ProductsPage() {
                                     const stock = p.inventory?.reduce((acc, curr) => acc + curr.quantity, 0) || 0;
                                     const isLowStock = stock <= (p.minStockLevel || 0);
                                     return (
-                                        <tr key={p.id} className={`hover:bg-gray-50 cursor-pointer ${isLowStock ? 'bg-red-50' : ''} ${p.isArchived ? 'opacity-60 bg-gray-100' : ''}`} onClick={() => router.push(`/products/${p.id}`)}>
-                                            <td className="px-3 py-4 truncate" title={p.name}>
+                                        <tr key={p.id} className={`hover:bg-gray-50 cursor-pointer ${p.isArchived ? 'opacity-60 bg-gray-100' : ''}`} onClick={() => router.push(`/products/${p.id}`)}>
+                                            <td className="px-4 py-4 truncate" title={p.name}>
                                                 <div className="text-sm font-medium text-gray-900 truncate">
                                                     {p.name} {p.isArchived && <span className="ml-2 text-xs bg-gray-500 text-white px-2 py-0.5 rounded">Archived</span>}
                                                 </div>
                                             </td>
-                                            <td className="px-3 py-4 truncate">
+                                            <td className="px-4 py-4 truncate">
                                                 <div className="text-sm text-gray-500 truncate" title={p.sku}>{p.sku}</div>
                                                 <div className="text-xs text-gray-400 truncate" title={p.barcode || ''}>{p.barcode}</div>
                                             </td>
-                                            <td className="px-3 py-4 text-sm text-gray-500 truncate">
+                                            <td className="px-4 py-4 text-sm text-gray-500 truncate">
                                                 {formatCurrency(p.price, user?.currency)}
                                             </td>
-                                            <td className="px-3 py-4 text-sm text-gray-500 truncate" title={p.category?.name || (p as any).category}>
+                                            <td className="px-4 py-4 text-sm text-gray-500 truncate" title={p.category?.name || (p as any).category}>
                                                 {p.category?.name || (p as any).category || '-'}
                                             </td>
-                                            <td className="px-3 py-4 text-sm text-gray-500 truncate">
+                                            <td className="px-4 py-4 text-sm text-gray-500 truncate">
                                                 {p.costPrice ? formatCurrency(p.costPrice, user?.currency) : '-'}
                                             </td>
-                                            <td className="px-3 py-4 text-sm text-gray-500 truncate" title={p.supplier?.name}>
+                                            <td className="px-4 py-4 text-sm text-gray-500 truncate" title={p.supplier?.name}>
                                                 {p.supplier ? (
-                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 truncate max-w-full">
+                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-surface-muted text-charcoal truncate max-w-full">
                                                         {p.supplier.name}
                                                     </span>
                                                 ) : (
                                                     <span className="text-gray-400 italic">None</span>
                                                 )}
                                             </td>
-                                            <td className="px-3 py-4 text-sm text-gray-500 truncate">
-                                                <span className={`font-bold ${stock > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                            <td className="px-4 py-4 text-sm text-gray-500 truncate">
+                                                <span className={`font-semibold ${stock > 0 ? 'text-green-600' : 'text-red-600'}`}>
                                                     {stock}
                                                 </span>
                                                 {isLowStock && (
@@ -827,7 +837,7 @@ export default function ProductsPage() {
                                                 )}
                                             </td>
                                             {selectedStoreId && (
-                                                <td className="px-3 py-4 text-right text-sm font-medium w-[10%]">
+                                                <td className="px-4 py-4 text-right text-sm font-medium w-[10%]">
                                                     <div className="flex justify-end gap-2">
                                                         {hasPermission('MANAGE_INVENTORY') && (
                                                             <>
@@ -836,20 +846,20 @@ export default function ProductsPage() {
                                                                         e.stopPropagation();
                                                                         openAdjustModal(p);
                                                                     }}
-                                                                    className="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded transition"
+                                                                    className="text-brand-600 hover:text-brand-700 bg-brand-50 hover:bg-brand-100 p-2 rounded-lg transition"
                                                                     title="Adjust Stock"
                                                                 >
-                                                                    ±
+                                                                    <SlidersHorizontal size={14} />
                                                                 </button>
                                                                 <button
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
                                                                         openReceiveModal(p);
                                                                     }}
-                                                                    className="text-green-600 hover:text-green-900 bg-green-50 hover:bg-green-100 px-2 py-1 rounded transition"
+                                                                    className="text-green-600 hover:text-green-700 bg-green-50 hover:bg-green-100 p-2 rounded-lg transition"
                                                                     title="Receive Stock"
                                                                 >
-                                                                    ↓
+                                                                    <ArrowDownToLine size={14} />
                                                                 </button>
                                                             </>
                                                         )}
@@ -860,18 +870,18 @@ export default function ProductsPage() {
                                                                         e.stopPropagation();
                                                                         startEdit(p);
                                                                     }}
-                                                                    className="text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded transition"
+                                                                    className="text-charcoal hover:text-gray-900 bg-surface-muted hover:bg-cool-grey p-2 rounded-lg transition"
                                                                     title="Edit Product"
                                                                 >
-                                                                    ✎
+                                                                    <Pencil size={14} />
                                                                 </button>
                                                                 {(hasPermission('MANAGE_PRODUCTS') || hasPermission('admin')) && (
                                                                     <button
                                                                         onClick={(e) => handleArchiveToggle(p, e)}
-                                                                        className={`${p.isArchived ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'} hover:bg-opacity-80 px-2 py-1 rounded transition`}
+                                                                        className={`${p.isArchived ? 'text-green-600 bg-green-50' : 'text-red-500 bg-red-50'} hover:bg-opacity-80 p-2 rounded-lg transition`}
                                                                         title={p.isArchived ? "Restore" : "Archive"}
                                                                     >
-                                                                        {p.isArchived ? '⟲' : '✕'}
+                                                                        {p.isArchived ? <ArchiveRestore size={14} /> : <Archive size={14} />}
                                                                     </button>
                                                                 )}
                                                             </>

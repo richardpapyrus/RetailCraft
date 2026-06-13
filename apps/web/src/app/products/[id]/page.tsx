@@ -187,15 +187,15 @@ export default function ProductDetailPage() {
     const currentStock = product.inventory?.reduce((acc, curr) => acc + curr.quantity, 0) || 0;
 
     return (
-        <div className="h-full bg-gray-50 overflow-y-auto">
-            <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div className="h-full bg-canvas overflow-y-auto">
+            <div className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-10">
                 {/* Header */}
                 <div className="mb-6">
                     <button onClick={() => router.back()} className="text-sm text-gray-500 hover:text-gray-700 mb-2">← Back to Products</button>
                     <div className="bg-white p-6 rounded-lg shadow">
                         <div className="flex justify-between items-start">
                             <div>
-                                <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
+                                <h1 className="text-3xl font-semibold text-gray-900">{product.name}</h1>
                                 <div className="flex gap-4 mt-2 text-sm text-gray-500">
                                     <span className="font-mono bg-gray-100 px-2 py-1 rounded">SKU: {product.sku}</span>
                                     {product.barcode && <span className="font-mono bg-gray-100 px-2 py-1 rounded">Bar: {product.barcode}</span>}
@@ -207,7 +207,7 @@ export default function ProductDetailPage() {
                             </div>
                             <div className="text-right">
                                 <div className="text-sm text-gray-500">Current Stock</div>
-                                <div className={`text-4xl font-bold ${currentStock > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                <div className={`text-4xl font-semibold ${currentStock > 0 ? 'text-green-600' : 'text-red-600'}`}>
                                     {currentStock}
                                 </div>
                                 <div className="mt-2 text-sm text-gray-400">Min Level: {product.minStockLevel || 0}</div>
@@ -218,15 +218,15 @@ export default function ProductDetailPage() {
                         <div className="mt-6 pt-6 border-t flex flex-wrap justify-between items-center gap-4">
                             <div className="flex gap-8">
                                 <div>
-                                    <span className="text-gray-500 text-xs uppercase font-bold block mb-1">Selling Price</span>
-                                    <span className="text-2xl font-bold text-gray-900">${Number(product.price).toFixed(2)}</span>
+                                    <span className="text-gray-500 text-xs uppercase font-semibold block mb-1">Selling Price</span>
+                                    <span className="text-2xl font-semibold text-gray-900">${Number(product.price).toFixed(2)}</span>
                                 </div>
                                 <div>
-                                    <span className="text-gray-500 text-xs uppercase font-bold block mb-1">Cost Price</span>
+                                    <span className="text-gray-500 text-xs uppercase font-semibold block mb-1">Cost Price</span>
                                     <span className="text-xl font-medium text-gray-600">${Number(product.costPrice || 0).toFixed(2)}</span>
                                 </div>
                                 <div>
-                                    <span className="text-gray-500 text-xs uppercase font-bold block mb-1">Margin</span>
+                                    <span className="text-gray-500 text-xs uppercase font-semibold block mb-1">Margin</span>
                                     <span className="text-xl font-medium text-green-600">
                                         {product.price && product.costPrice
                                             ? `${((Number(product.price) - Number(product.costPrice)) / Number(product.price) * 100).toFixed(1)}%`
@@ -241,7 +241,7 @@ export default function ProductDetailPage() {
                                         <button onClick={() => setShowAdjust(true)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium">
                                             Adjust Stock
                                         </button>
-                                        <button onClick={openReceive} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold shadow-sm">
+                                        <button onClick={openReceive} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold shadow-sm">
                                             Receive Stock
                                         </button>
                                     </>
@@ -257,31 +257,31 @@ export default function ProductDetailPage() {
                 </div>
 
                 {/* Stock History Table */}
-                <h2 className="text-xl font-bold mb-4">Stock History</h2>
-                <div className="bg-white shadow rounded-lg overflow-hidden flex flex-col">
+                <h2 className="text-xl font-semibold mb-4">Stock History</h2>
+                <div className="bg-white shadow-card border border-gray-100/80 rounded-2xl overflow-hidden flex flex-col">
                     <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
+                        <table className="min-w-full divide-y divide-gray-100">
+                            <thead className="bg-white border-b border-gray-100">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Supplier / Reason</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Qty Change</th>
+                                    <th className="px-6 py-4 text-left text-[11px] font-semibold text-mid-grey uppercase tracking-widest">Date</th>
+                                    <th className="px-6 py-4 text-left text-[11px] font-semibold text-mid-grey uppercase tracking-widest">Type</th>
+                                    <th className="px-6 py-4 text-left text-[11px] font-semibold text-mid-grey uppercase tracking-widest">Supplier / Reason</th>
+                                    <th className="px-6 py-4 text-left text-[11px] font-semibold text-mid-grey uppercase tracking-widest">User</th>
+                                    <th className="px-6 py-4 text-right text-[11px] font-semibold text-mid-grey uppercase tracking-widest">Qty Change</th>
                                 </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
+                            <tbody className="bg-white divide-y divide-gray-100">
                                 {events.map((event) => (
                                     <tr key={event.id} className="hover:bg-gray-50">
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {new Date(event.createdAt).toLocaleString()}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-700">
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-700">
                                             {event.type}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                             {event.supplier ? (
-                                                <span className="text-indigo-600 font-medium">{event.supplier.name}</span>
+                                                <span className="text-brand-600 font-medium">{event.supplier.name}</span>
                                             ) : (
                                                 <span>{event.reason || '-'}</span>
                                             )}
@@ -289,7 +289,7 @@ export default function ProductDetailPage() {
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {event.user?.email || 'System'}
                                         </td>
-                                        <td className={`px-6 py-4 whitespace-nowrap text-right text-sm font-bold ${event.quantity > 0 ? 'text-green-600' : 'text-red-600'
+                                        <td className={`px-6 py-4 whitespace-nowrap text-right text-sm font-semibold ${event.quantity > 0 ? 'text-green-600' : 'text-red-600'
                                             }`}>
                                             {event.quantity > 0 ? '+' : ''}{event.quantity}
                                         </td>
@@ -311,7 +311,7 @@ export default function ProductDetailPage() {
                             <button
                                 onClick={loadMoreEvents}
                                 disabled={loadingMore}
-                                className="px-4 py-2 bg-white border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                                className="px-4 py-2 bg-white border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 disabled:opacity-50"
                             >
                                 {loadingMore ? 'Loading...' : 'Load More History'}
                             </button>
@@ -325,7 +325,7 @@ export default function ProductDetailPage() {
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
                         <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-xl font-bold">Edit Product</h2>
+                            <h2 className="text-xl font-semibold">Edit Product</h2>
                             <button onClick={() => setShowEdit(false)} className="text-gray-400 hover:text-black">✕</button>
                         </div>
                         <form onSubmit={handleEditSubmit} className="space-y-4">
@@ -383,7 +383,7 @@ export default function ProductDetailPage() {
                             </div>
                             <div className="flex justify-end gap-3 mt-6">
                                 <button type="button" onClick={() => setShowEdit(false)} className="px-4 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
-                                <button type="submit" className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold">Save Changes</button>
+                                <button type="submit" className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold">Save Changes</button>
                             </div>
                         </form>
                     </div>
@@ -394,7 +394,7 @@ export default function ProductDetailPage() {
             {showReceive && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-                        <h2 className="text-xl font-bold mb-4">Receive Stock</h2>
+                        <h2 className="text-xl font-semibold mb-4">Receive Stock</h2>
                         <form onSubmit={handleReceiveSubmit} className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium mb-1">Quantity Received</label>
@@ -414,7 +414,7 @@ export default function ProductDetailPage() {
                             </div>
                             <div className="flex justify-end gap-3 mt-6">
                                 <button type="button" onClick={() => setShowReceive(false)} className="px-4 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
-                                <button type="submit" className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold">Receive Stock</button>
+                                <button type="submit" className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold">Receive Stock</button>
                             </div>
                         </form>
                     </div>
@@ -425,7 +425,7 @@ export default function ProductDetailPage() {
             {showAdjust && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6">
-                        <h2 className="text-xl font-bold mb-4">Adjust Stock</h2>
+                        <h2 className="text-xl font-semibold mb-4">Adjust Stock</h2>
                         <form onSubmit={handleAdjustSubmit} className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium mb-1">Quantity Adjustment</label>
@@ -438,7 +438,7 @@ export default function ProductDetailPage() {
                             </div>
                             <div className="flex justify-end gap-3 mt-6">
                                 <button type="button" onClick={() => setShowAdjust(false)} className="px-4 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
-                                <button type="submit" className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-bold">Save</button>
+                                <button type="submit" className="px-6 py-2 bg-brand-500 text-white rounded-xl hover:bg-brand-600 font-semibold">Save</button>
                             </div>
                         </form>
                     </div>

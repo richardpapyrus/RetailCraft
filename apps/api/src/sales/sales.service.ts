@@ -439,10 +439,29 @@ export class SalesService {
       endOfPrev = new Date(startOfPrev.getTime() + elapsedToday);
     }
 
+    // Page through a findMany query in fixed batches so large periods are not
+    // silently truncated (previously capped at 5000 rows, which under-reported
+    // revenue/profit for high-volume stores). Memory stays bounded per batch.
+    const fetchAll = async <T>(
+      query: (skip: number, take: number) => Promise<T[]>,
+      batchSize = 2000,
+    ): Promise<T[]> => {
+      const all: T[] = [];
+      let skip = 0;
+      // Hard ceiling as a final safety net against runaway loops.
+      while (skip < 200000) {
+        const batch = await query(skip, batchSize);
+        all.push(...batch);
+        if (batch.length < batchSize) break;
+        skip += batchSize;
+      }
+      return all;
+    };
+
     const getAggregates = async (start: Date, end: Date) => {
       // 1. Fetch Sales (GROSS) - FETCH ALL, FILTER IN JS
       // This eliminates any Prisma query ambiguity or status case sensitivity issues.
-      const salesRaw = await prisma.sale.findMany({
+      const salesRaw = await fetchAll((skip, take) => prisma.sale.findMany({
         where: {
           tenantId,
           storeId: storeId || undefined,
@@ -450,8 +469,10 @@ export class SalesService {
           createdAt: { gte: start, lte: end },
         },
         include: { items: true, payments: true },
-        take: 5000 // Safety limit for memory
-      });
+        orderBy: { createdAt: 'asc' },
+        skip,
+        take,
+      }));
 
       const sales = salesRaw.filter(s => {
         const status = (s.status || '').toUpperCase();
@@ -463,7 +484,7 @@ export class SalesService {
       });
 
       // 2. Fetch Returns (Regardless of when sale happened, but RETURN happened in period)
-      const returnsRaw = await prisma.salesReturn.findMany({
+      const returnsRaw = await fetchAll((skip, take) => prisma.salesReturn.findMany({
         where: {
           tenantId,
           storeId: storeId || undefined,
@@ -479,8 +500,10 @@ export class SalesService {
             }
           }
         },
-        take: 5000
-      });
+        orderBy: { createdAt: 'asc' },
+        skip,
+        take,
+      }));
 
       // Filter Returns in JS
       const returns = returnsRaw.filter(r => {

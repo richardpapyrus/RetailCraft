@@ -24,12 +24,16 @@ import { useState, useEffect } from 'react';
 import { StoreSelector } from './StoreSelector';
 
 
-export function Sidebar() {
+export function Sidebar({ mobile = false, onNavigate }: { mobile?: boolean; onNavigate?: () => void } = {}) {
     const pathname = usePathname();
     const router = useRouter();
     const { logout, user, hasPermission, selectedStoreId } = useAuth();
     const [mounted, setMounted] = useState(false);
     const [isPinned, setIsPinned] = useState(false);
+
+    // In the mobile drawer the sidebar is always fully expanded (labels shown);
+    // on desktop it expands when pinned or hovered.
+    const expanded = isPinned || mobile;
 
     useEffect(() => setMounted(true), []);
 
@@ -72,29 +76,29 @@ export function Sidebar() {
 
     return (
         <div className={`
-            bg-white flex flex-col items-center py-6 h-full shrink-0 transition-all duration-300 z-20 shadow-xl border-r border-gray-100 print:hidden group
-            ${isPinned ? 'w-72' : 'w-24 hover:w-72'}
+            bg-white flex flex-col items-center py-6 h-full shrink-0 transition-all duration-300 z-20 shadow-soft border-r border-gray-100 print:hidden group
+            ${mobile ? 'w-72' : isPinned ? 'w-72' : 'w-24 hover:w-72'}
         `}>
             {/* Logo Area */}
             {/* Branding Header */}
             <div className="mb-2 flex flex-col w-full pt-4 relative">
 
                 {/* Product Branding (Persistent) */}
-                <div className={`flex items-center justify-center w-full mb-6 transition-all duration-300 ${isPinned ? 'px-4 justify-start' : 'group-hover:px-4 group-hover:justify-start'}`}>
-                    <div className="w-20 h-20 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-md shadow-indigo-200 shrink-0 z-20 relative overflow-hidden p-1">
+                <div className={`flex items-center justify-center w-full mb-6 transition-all duration-300 ${expanded ? 'px-4 justify-start' : 'group-hover:px-4 group-hover:justify-start'}`}>
+                    <div className="w-14 h-14 bg-brand-500 rounded-2xl flex items-center justify-center shadow-soft shrink-0 z-20 relative overflow-hidden p-1">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src="/logo.jpg" alt="RC" className="w-full h-full object-cover rounded-xl bg-white" />
                     </div>
 
                     {/* Product Name (Slide out) */}
                     <div className={`
-                        ml-3 overflow-hidden transition-all duration-300 
-                        ${isPinned
+                        ml-3 overflow-hidden transition-all duration-300
+                        ${expanded
                             ? 'opacity-100 w-auto'
                             : 'opacity-0 w-0 group-hover:opacity-100 group-hover:w-auto'
                         }
                     `}>
-                        <span className="font-extrabold text-xl text-gray-900 tracking-tight whitespace-nowrap">
+                        <span className="font-semibold text-xl text-gray-900 tracking-tight whitespace-nowrap">
                             RetailCraft
                         </span>
                     </div>
@@ -102,14 +106,14 @@ export function Sidebar() {
 
                 {/* Business Branding (Expanded Only) */}
                 <div className={`
-                    w-full px-3 mb-2 transition-all duration-300 
-                    ${isPinned
+                    w-full px-3 mb-2 transition-all duration-300
+                    ${expanded
                         ? 'opacity-100 block'
                         : 'opacity-0 hidden group-hover:opacity-100 group-hover:block'
                     }
                 `}>
                     <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 group/biz">
-                        <span className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mb-1 block">
+                        <span className="text-[9px] text-gray-400 font-semibold uppercase tracking-widest mb-1 block">
                             Organization
                         </span>
 
@@ -117,7 +121,7 @@ export function Sidebar() {
                             {displayUser?.tenantLogo && (
                                 <img src={displayUser.tenantLogo.startsWith('http') ? displayUser.tenantLogo : `${API_URL}${displayUser.tenantLogo}`} alt="Biz" className="w-6 h-6 object-contain rounded-sm" />
                             )}
-                            <h3 className="font-bold text-sm leading-tight truncate"
+                            <h3 className="font-semibold text-sm leading-tight truncate"
                                 style={{ color: displayUser?.tenantBrandColor || '#1f2937' }}>
                                 {displayUser?.tenantName || 'My Business'}
                             </h3>
@@ -128,12 +132,12 @@ export function Sidebar() {
                 {/* Store Context (Expanded Only) */}
                 <div className={`
                     w-full px-3 transition-all duration-300
-                    ${isPinned
+                    ${expanded
                         ? 'opacity-100 block'
                         : 'opacity-0 hidden group-hover:opacity-100 group-hover:block'
                     }
                 `}>
-                    <span className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mb-1 block px-1">
+                    <span className="text-[9px] text-gray-400 font-semibold uppercase tracking-widest mb-1 block px-1">
                         Location
                     </span>
                     <StoreSelector />
@@ -161,7 +165,7 @@ export function Sidebar() {
                                 </span>
                                 <span className={`
                                     ml-3 font-medium whitespace-nowrap overflow-hidden transition-all duration-300
-                                    ${isPinned
+                                    ${expanded
                                         ? 'opacity-100 relative left-0'
                                         : 'opacity-0 absolute left-12 group-hover:opacity-100 group-hover:relative group-hover:left-0'
                                     }
@@ -177,9 +181,10 @@ export function Sidebar() {
                             <a
                                 key={item.name}
                                 href={item.href}
+                                onClick={onNavigate}
                                 className={`
                                     flex items-center px-3 py-3 rounded-xl transition-all duration-200
-                                    text-gray-400 hover:bg-indigo-50 hover:text-indigo-600
+                                    text-gray-400 hover:bg-brand-50 hover:text-brand-600
                                     group/item relative overflow-hidden
                                 `}
                             >
@@ -189,7 +194,7 @@ export function Sidebar() {
 
                                 <span className={`
                                     ml-3 font-medium whitespace-nowrap overflow-hidden transition-all duration-300
-                                    ${isPinned
+                                    ${expanded
                                         ? 'opacity-100 relative left-0'
                                         : 'opacity-0 absolute left-12 group-hover:opacity-100 group-hover:relative group-hover:left-0'
                                     }
@@ -204,11 +209,12 @@ export function Sidebar() {
                         <Link
                             key={item.name}
                             href={item.href}
+                            onClick={onNavigate}
                             className={`
                                 flex items-center px-3 py-3 rounded-xl transition-all duration-200
                                 ${isActive
-                                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
-                                    : 'text-gray-400 hover:bg-indigo-50 hover:text-indigo-600'
+                                    ? 'bg-brand-500 text-white shadow-soft'
+                                    : 'text-gray-500 hover:bg-brand-50 hover:text-brand-700'
                                 }
                                 group/item relative overflow-hidden
                             `}
@@ -219,7 +225,7 @@ export function Sidebar() {
 
                             <span className={`
                                 ml-3 font-medium whitespace-nowrap overflow-hidden transition-all duration-300
-                                ${isPinned
+                                ${expanded
                                     ? 'opacity-100 relative left-0'
                                     : 'opacity-0 absolute left-12 group-hover:opacity-100 group-hover:relative group-hover:left-0'
                                 }
@@ -233,18 +239,18 @@ export function Sidebar() {
 
             {/* User Profile Info */}
             <div className="mt-auto px-3 w-full mb-2">
-                <div className="flex items-center px-1 py-2 rounded-xl border border-transparent hover:bg-indigo-50/50 transition-colors overflow-hidden">
-                    <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold shrink-0 border-2 border-white shadow-sm">
+                <div className="flex items-center px-1 py-2 rounded-xl border border-transparent hover:bg-brand-50/50 transition-colors overflow-hidden">
+                    <div className="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 font-semibold shrink-0 border-2 border-white shadow-sm">
                         {displayUser?.name?.[0]?.toUpperCase() || 'U'}
                     </div>
                     <div className={`
                         ml-3 overflow-hidden transition-opacity duration-300 flex flex-col justify-center
-                        ${isPinned
+                        ${expanded
                             ? 'opacity-100'
                             : 'opacity-0 group-hover:opacity-100'
                         }
                     `}>
-                        <p className="text-sm font-bold text-gray-900 truncate leading-none">{displayUser?.name || 'User'}</p>
+                        <p className="text-sm font-semibold text-gray-900 truncate leading-none">{displayUser?.name || 'User'}</p>
                         <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mt-0.5">{displayUser?.role || 'Staff'}</p>
                     </div>
                 </div>
@@ -252,28 +258,30 @@ export function Sidebar() {
 
             {/* Bottom Actions */}
             <div className="px-3 w-full space-y-2 mb-4">
-                {/* Pin Toggle */}
-                <button
-                    onClick={togglePin}
-                    className={`
-                        flex items-center px-3 py-2 w-full rounded-xl transition-colors group/pin
-                        ${isPinned ? 'text-indigo-600 bg-indigo-50' : 'text-gray-400 hover:text-indigo-600 hover:bg-indigo-50'}
-                    `}
-                    title={isPinned ? "Unpin Sidebar" : "Pin Sidebar"}
-                >
-                    <span className="w-6 h-6 flex items-center justify-center shrink-0">
-                        {isPinned ? <PinOff size={20} /> : <Pin size={20} />}
-                    </span>
-                    <span className={`
-                        ml-3 font-medium whitespace-nowrap overflow-hidden transition-all duration-300
-                        ${isPinned
-                            ? 'opacity-100'
-                            : 'opacity-0 group-hover:opacity-100'
-                        }
-                    `}>
-                        {isPinned ? 'Unpin Sidebar' : 'Pin Sidebar'}
-                    </span>
-                </button>
+                {/* Pin Toggle — desktop only (the mobile drawer is always expanded) */}
+                {!mobile && (
+                    <button
+                        onClick={togglePin}
+                        className={`
+                            flex items-center px-3 py-2 w-full rounded-xl transition-colors group/pin
+                            ${isPinned ? 'text-brand-600 bg-brand-50' : 'text-gray-400 hover:text-brand-600 hover:bg-brand-50'}
+                        `}
+                        title={isPinned ? "Unpin Sidebar" : "Pin Sidebar"}
+                    >
+                        <span className="w-6 h-6 flex items-center justify-center shrink-0">
+                            {isPinned ? <PinOff size={20} /> : <Pin size={20} />}
+                        </span>
+                        <span className={`
+                            ml-3 font-medium whitespace-nowrap overflow-hidden transition-all duration-300
+                            ${expanded
+                                ? 'opacity-100'
+                                : 'opacity-0 group-hover:opacity-100'
+                            }
+                        `}>
+                            {isPinned ? 'Unpin Sidebar' : 'Pin Sidebar'}
+                        </span>
+                    </button>
+                )}
 
                 <button onClick={handleLogout} className="flex items-center px-3 py-3 w-full rounded-xl text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors group/logout">
                     <span className="w-6 h-6 flex items-center justify-center shrink-0">
@@ -281,7 +289,7 @@ export function Sidebar() {
                     </span>
                     <span className={`
                         ml-3 font-medium whitespace-nowrap overflow-hidden transition-all duration-300
-                        ${isPinned
+                        ${expanded
                             ? 'opacity-100'
                             : 'opacity-0 group-hover:opacity-100'
                         }
