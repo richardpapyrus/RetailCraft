@@ -12,10 +12,10 @@
 /* RetailCraft Design Tokens — premium minimalist hospitality theme */
 /* ---------------------------------------------------------------- */
 :root {
-  /* Brand accent (teal/mint) — key actions, active states, metrics */
-  --rc-brand: #38C3B5;
-  --rc-brand-strong: #27A89B;
-  --rc-brand-soft: #D9F4F1;
+  /* Brand accent (deep forest green) — key actions, active states, metrics */
+  --rc-brand: #0B2B26;
+  --rc-brand-strong: #09231F;
+  --rc-brand-soft: #D9EDEA;
 
   /* Neutral surfaces — white-dominant, calm */
   --rc-canvas: #FAFAFA;

@@ -8,21 +8,21 @@ module.exports = {
     theme: {
         extend: {
             colors: {
-                // Brand accent — teal/mint. Reserved for key actions,
+                // Brand accent — deep forest green. Reserved for key actions,
                 // active states and important metrics only.
                 brand: {
-                    50: '#F0FAF9',
-                    100: '#D9F4F1',
-                    200: '#B5E9E3',
-                    300: '#86DAD1',
-                    400: '#5CCFC3',
-                    500: '#38C3B5',
-                    600: '#27A89B',
-                    700: '#1F8A80',
-                    800: '#1C6E67',
-                    900: '#1A5A55',
+                    50: '#EEF6F5',
+                    100: '#D9EDEA',
+                    200: '#B0DDD6',
+                    300: '#7BCCBF',
+                    400: '#39AC9A',
+                    500: '#0B2B26',
+                    600: '#09231F',
+                    700: '#071B18',
+                    800: '#051412',
+                    900: '#030E0C',
                 },
-                primary: "#38C3B5",
+                primary: "#0B2B26",
                 // Calm neutral surfaces (white-dominant backgrounds)
                 canvas: "#FAFAFA",
                 surface: "#FFFFFF",
