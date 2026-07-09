@@ -280,8 +280,8 @@ export default function DashboardPage() {
                                             <AreaChart data={stats?.trendChartData || []} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                                                 <defs>
                                                     <linearGradient id="colorCurrent" x1="0" y1="0" x2="0" y2="1">
-                                                        <stop offset="5%" stopColor="#0B2B26" stopOpacity={0.2} />
-                                                        <stop offset="95%" stopColor="#0B2B26" stopOpacity={0} />
+                                                        <stop offset="5%" stopColor="#235347" stopOpacity={0.2} />
+                                                        <stop offset="95%" stopColor="#235347" stopOpacity={0} />
                                                     </linearGradient>
                                                 </defs>
                                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -310,7 +310,7 @@ export default function DashboardPage() {
                                                 <Area
                                                     type="monotone"
                                                     dataKey="current"
-                                                    stroke="#0B2B26"
+                                                    stroke="#235347"
                                                     strokeWidth={3}
                                                     fillOpacity={1}
                                                     fill="url(#colorCurrent)"
