@@ -230,7 +230,7 @@ export default function GeneralSettings() {
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Brand Color</label>
                             <div className="flex items-center gap-1.5 mb-2">
-                                {['#0B2B26', '#2E3232', '#3664A6', '#7C5CBF', '#C75D4F', '#C99A2E'].map(preset => (
+                                {['#235347', '#2E3232', '#3664A6', '#7C5CBF', '#C75D4F', '#C99A2E'].map(preset => (
                                     <button
                                         key={preset}
                                         type="button"
