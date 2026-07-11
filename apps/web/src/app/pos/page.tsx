@@ -7,17 +7,36 @@ import { useAuth, formatCurrency } from '@/lib/useAuth';
 import { api, Product, API_URL } from '@/lib/api'; // Import API_URL
 import { printerService, PrinterService } from '@/lib/printer-service';
 import { DataService } from '@/lib/db-service';
-import { Customer } from '@/lib/db';
+import { Customer, db } from '@/lib/db';
 import OpenTillModal from '@/components/tills/OpenTillModal';
 import CloseTillModal from '@/components/tills/CloseTillModal';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
-import { Package, AlertCircle, Award, User, Phone } from 'lucide-react';
+import { Package, AlertCircle, Award, User, Phone, Banknote, CreditCard, Landmark, Scissors, X, PauseCircle, PlayCircle, Trash2, Keyboard, Wifi, WifiOff } from 'lucide-react';
 import ReceiptTemplate from '@/components/pos/ReceiptTemplate';
 import { TillReport } from '@/components/tills/TillReport';
+import { confirmDialog } from '@/lib/dialog';
 
 interface CartItem extends Product {
     cartQty: number;
+}
+
+interface ParkedTicket {
+    id: string;
+    label: string;
+    parkedAt: Date;
+    cart: CartItem[];
+    selectedCustomer: Customer | null;
+    appliedDiscount: {
+        id?: string,
+        name: string,
+        type: 'PERCENTAGE' | 'FIXED' | 'MANUAL',
+        value: number,
+        targetType?: 'ALL' | 'PRODUCT' | 'CATEGORY',
+        targetValues?: string[]
+    } | null;
+    usePoints: boolean;
+    pointsToRedeem: number;
 }
 
 
@@ -29,6 +48,8 @@ export default function POSPage() {
     const [cart, setCart] = useState<CartItem[]>([]);
     const [search, setSearch] = useState('');
     const debouncedSearch = useDebounce(search, 500);
+    const [categories, setCategories] = useState<{ id: string, name: string }[]>([]);
+    const [selectedCategory, setSelectedCategory] = useState<string>('');
     const [loading, setLoading] = useState(true);
     const [loadingMoreProducts, setLoadingMoreProducts] = useState(false);
     const [hasMoreProducts, setHasMoreProducts] = useState(true);
@@ -105,6 +126,10 @@ export default function POSPage() {
     const cartEndRef = useRef<HTMLDivElement>(null);
     const prevCartLength = useRef(0);
 
+    // Keyboard Shortcuts
+    const searchInputRef = useRef<HTMLInputElement>(null);
+    const [shortcutsHelpOpen, setShortcutsHelpOpen] = useState(false);
+
     // Effect: Auto-scroll to bottom only when NEW items are added
     useEffect(() => {
         if (cart.length > prevCartLength.current) {
@@ -141,22 +166,27 @@ export default function POSPage() {
             setCart([]);
             setAppliedDiscount(null);
             setSelectedCustomer(null);
+            // Parked tickets hold product IDs from the previous store context —
+            // resuming them across stores must never be possible.
+            setParkedTickets([]);
+            setParkedPanelOpen(false);
 
             // Need to wait for selectedStoreId to be ready? It comes from useAuth which hydrates.
             // If selectedStoreId changes, we reload.
             loadProducts(true);
             loadCustomers(true);
             loadTaxesAndDiscounts();
+            loadCategories();
             checkTillSession();
         }
     }, [token, router, isHydrated, selectedStoreId]);
 
-    // Search Effect
+    // Search / Category Filter Effect
     useEffect(() => {
         if (isHydrated && token) {
             loadProducts(true);
         }
-    }, [debouncedSearch]);
+    }, [debouncedSearch, selectedCategory]);
 
     const checkTillSession = async () => {
         // If Admin is using POS, `req.user.storeId` is null.
@@ -213,13 +243,22 @@ export default function POSPage() {
         setLoadingMoreCustomers(false);
     };
 
+    const loadCategories = async () => {
+        try {
+            const cats = await api.categories.list();
+            setCategories(Array.isArray(cats) ? cats : []);
+        } catch (e) {
+            console.error('Failed to load categories', e);
+        }
+    };
+
     const loadProducts = async (reset = false) => {
         try {
             if (reset) setLoading(true);
             else setLoadingMoreProducts(true);
 
             const skip = reset ? 0 : products.length;
-            const { data, total } = await DataService.getProducts(skip, 50, { search: debouncedSearch }, selectedStoreId || undefined);
+            const { data, total } = await DataService.getProducts(skip, 50, { search: debouncedSearch, category: selectedCategory || undefined }, selectedStoreId || undefined);
 
             if (reset) setProducts(data);
             else setProducts(prev => [...prev, ...data]);
@@ -256,6 +295,109 @@ export default function POSPage() {
     const removeFromCart = (productId: string) => {
         setCart(prev => prev.filter(p => p.id !== productId));
     };
+
+    // Hold / Park Sale — purely local UI state, nothing is persisted or sent to
+    // the server until the ticket is resumed and actually checked out.
+    const [parkedTickets, setParkedTickets] = useState<ParkedTicket[]>([]);
+    const [parkedPanelOpen, setParkedPanelOpen] = useState(false);
+
+    const parkSale = () => {
+        if (cart.length === 0) {
+            toast.error('Cart is empty — nothing to park.');
+            return;
+        }
+        const ticket: ParkedTicket = {
+            id: crypto.randomUUID(),
+            label: selectedCustomer ? selectedCustomer.name : `Ticket ${parkedTickets.length + 1}`,
+            parkedAt: new Date(),
+            cart,
+            selectedCustomer,
+            appliedDiscount,
+            usePoints,
+            pointsToRedeem,
+        };
+        setParkedTickets(prev => [...prev, ticket]);
+        setCart([]);
+        setAppliedDiscount(null);
+        setSelectedCustomer(null);
+        setUsePoints(false);
+        setPointsToRedeem(0);
+        toast.success('Sale parked. Resume it anytime from Parked Sales.');
+    };
+
+    const resumeTicket = (id: string) => {
+        if (cart.length > 0) {
+            toast.error('Park or complete the current sale before resuming another.');
+            return;
+        }
+        const ticket = parkedTickets.find(t => t.id === id);
+        if (!ticket) return;
+        setCart(ticket.cart);
+        setSelectedCustomer(ticket.selectedCustomer);
+        setAppliedDiscount(ticket.appliedDiscount);
+        setUsePoints(ticket.usePoints);
+        setPointsToRedeem(ticket.pointsToRedeem);
+        setParkedTickets(prev => prev.filter(t => t.id !== id));
+        setParkedPanelOpen(false);
+    };
+
+    const discardTicket = async (id: string) => {
+        const ok = await confirmDialog({
+            title: 'Discard parked sale?',
+            message: 'This removes the parked cart. This cannot be undone.',
+            destructive: true,
+            confirmLabel: 'Discard',
+        });
+        if (!ok) return;
+        setParkedTickets(prev => prev.filter(t => t.id !== id));
+    };
+
+    // Keyboard shortcuts — mouse-and-keyboard counter workflow, layered on top
+    // of the barcode-scanner keystroke listener without conflicting with it.
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => {
+            const target = e.target as HTMLElement | null;
+            const isTyping = !!target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
+
+            if (e.key === 'Escape') {
+                if (shortcutsHelpOpen) { setShortcutsHelpOpen(false); return; }
+                if (parkedPanelOpen) { setParkedPanelOpen(false); return; }
+                if (receiptModalOpen) { setReceiptModalOpen(false); return; }
+                if (splitModalOpen) { setSplitModalOpen(false); return; }
+                if (checkoutModalOpen) { setCheckoutModalOpen(false); return; }
+                if (discountModalOpen) {
+                    setDiscountModalOpen(false);
+                    setSupervisorMode(false);
+                    setManualDiscountInput('');
+                    setSupervisorCreds({ email: '', password: '' });
+                    return;
+                }
+                return;
+            }
+
+            if (isTyping) return; // Let '/', '?', etc. pass through into normal typing
+
+            if (e.key === '/') {
+                e.preventDefault();
+                setActiveTab('products');
+                searchInputRef.current?.focus();
+            } else if (e.key === 'F2') {
+                e.preventDefault();
+                if (cart.length > 0 && !checkoutModalOpen) {
+                    setCheckoutModalOpen(true);
+                    setSelectedPaymentMethod('CASH');
+                }
+            } else if (e.key === 'F4') {
+                e.preventDefault();
+                if (cart.length > 0 && !checkoutModalOpen) setDiscountModalOpen(true);
+            } else if (e.key === '?') {
+                e.preventDefault();
+                setShortcutsHelpOpen(o => !o);
+            }
+        };
+        window.addEventListener('keydown', handler);
+        return () => window.removeEventListener('keydown', handler);
+    }, [cart.length, checkoutModalOpen, splitModalOpen, discountModalOpen, receiptModalOpen, parkedPanelOpen, shortcutsHelpOpen]);
 
     const updateQty = (productId: string, delta: number) => {
         setCart(prev => prev.map(p => {
@@ -451,7 +593,7 @@ export default function POSPage() {
     if (isHydrated && !selectedStoreId) {
         return (
             <div className="h-full w-full flex items-center justify-center bg-gray-50">
-                <div className="text-center p-8 bg-white rounded-2xl shadow-xl max-w-md">
+                <div className="text-center p-8 bg-white rounded-2xl shadow-lifted max-w-md">
                     <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2-2H7" /></svg>
                     </div>
@@ -530,6 +672,65 @@ export default function POSPage() {
                                     </svg>
                                     {printerConnected ? 'Printer Ready' : 'Connect Printer'}
                                 </button>
+
+                                {/* PARKED SALES */}
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setParkedPanelOpen(o => !o)}
+                                        className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold transition-colors ${parkedTickets.length > 0
+                                            ? 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200'
+                                            : 'bg-white text-gray-400 hover:bg-gray-100 border border-gray-200'
+                                            }`}
+                                    >
+                                        <PauseCircle className="h-3 w-3" />
+                                        Parked Sales{parkedTickets.length > 0 ? ` (${parkedTickets.length})` : ''}
+                                    </button>
+                                    {parkedPanelOpen && (
+                                        <div className="absolute left-0 top-full mt-2 w-72 bg-white rounded-xl shadow-lifted border border-gray-100/80 z-20 overflow-hidden">
+                                            <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                                                <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Parked Sales</span>
+                                                <button onClick={() => setParkedPanelOpen(false)} className="text-gray-400 hover:text-gray-600"><X className="w-3.5 h-3.5" /></button>
+                                            </div>
+                                            <div className="max-h-72 overflow-y-auto custom-scrollbar">
+                                                {parkedTickets.length === 0 ? (
+                                                    <div className="px-4 py-8 text-center text-xs text-gray-400">No parked sales</div>
+                                                ) : (
+                                                    parkedTickets.map(ticket => {
+                                                        const ticketTotal = ticket.cart.reduce((sum, i) => sum + Number(i.price) * i.cartQty, 0);
+                                                        return (
+                                                            <div key={ticket.id} className="px-4 py-3 border-b border-gray-50 last:border-0 hover:bg-gray-50/70 transition-colors">
+                                                                <div className="flex items-center justify-between gap-2 mb-1">
+                                                                    <span className="font-semibold text-gray-800 text-sm truncate">{ticket.label}</span>
+                                                                    <span className="font-semibold text-gray-900 text-sm shrink-0">{formatCurrency(ticketTotal, user?.currency, user?.locale)}</span>
+                                                                </div>
+                                                                <div className="flex items-center justify-between gap-2">
+                                                                    <span className="text-[10px] text-gray-400">{ticket.cart.reduce((a, b) => a + b.cartQty, 0)} item(s) · {ticket.parkedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                                    <div className="flex items-center gap-2 shrink-0">
+                                                                        <button onClick={() => resumeTicket(ticket.id)} className="text-brand-600 hover:text-brand-800" title="Resume"><PlayCircle className="w-4 h-4" /></button>
+                                                                        <button onClick={() => discardTicket(ticket.id)} className="text-gray-300 hover:text-red-500" title="Discard"><Trash2 className="w-4 h-4" /></button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* KEYBOARD SHORTCUTS */}
+                                <button
+                                    onClick={() => setShortcutsHelpOpen(true)}
+                                    title="Keyboard shortcuts (?)"
+                                    className="flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-white text-gray-400 hover:bg-gray-100 border border-gray-200 transition-colors"
+                                >
+                                    <Keyboard className="h-3 w-3" />
+                                    Shortcuts
+                                </button>
+
+                                {/* CONNECTION / SYNC STATUS */}
+                                <ConnectionPill />
                             </div>
                             <div className="flex items-center gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
@@ -642,19 +843,30 @@ export default function POSPage() {
                             </div>
                         </div>
 
-                        <button
-                            onClick={() => {
-                                setCheckoutModalOpen(true);
-                                setSelectedPaymentMethod('CASH');
-                            }}
-                            disabled={cart.length === 0}
-                            className="group w-full bg-brand-500 hover:bg-brand-600 text-white py-3.5 rounded-xl font-semibold text-base shadow-soft disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3"
-                        >
-                            <span>Proceed to Payment</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 transform group-hover:translate-x-1 transition-transform" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
-                            </svg>
-                        </button>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={parkSale}
+                                disabled={cart.length === 0}
+                                title="Park this sale to serve another customer"
+                                className="shrink-0 px-4 py-3.5 rounded-xl font-semibold text-sm bg-white border border-gray-200 text-charcoal hover:bg-surface-muted disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                            >
+                                <PauseCircle className="w-4 h-4" />
+                                Park
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setCheckoutModalOpen(true);
+                                    setSelectedPaymentMethod('CASH');
+                                }}
+                                disabled={cart.length === 0}
+                                className="group flex-1 bg-brand-500 hover:bg-brand-600 text-white py-3.5 rounded-xl font-semibold text-base shadow-soft disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3"
+                            >
+                                <span>Proceed to Payment</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 transform group-hover:translate-x-1 transition-transform" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
 
                         {!activeSession && (
                             <button onClick={() => setCloseTillModalOpen(true)} className="w-full mt-4 text-xs font-semibold text-gray-400 hover:text-gray-600 uppercase tracking-widest">
@@ -696,6 +908,7 @@ export default function POSPage() {
                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                                         </span>
                                         <input
+                                            ref={searchInputRef}
                                             className="w-full bg-gray-50 border border-transparent focus:bg-white focus:border-brand-100 rounded-xl py-3 pl-11 pr-4 text-gray-800 placeholder-gray-400 focus:ring-4 focus:ring-brand-500/10 transition-all font-medium"
                                             placeholder="Search by Name, SKU..."
                                             value={search}
@@ -703,6 +916,25 @@ export default function POSPage() {
                                             autoFocus
                                         />
                                     </div>
+                                    {categories.length > 0 && (
+                                        <div className="flex items-center gap-1.5 mt-3 overflow-x-auto custom-scrollbar pb-1">
+                                            <button
+                                                onClick={() => setSelectedCategory('')}
+                                                className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${!selectedCategory ? 'bg-brand-500 text-white' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}
+                                            >
+                                                All
+                                            </button>
+                                            {categories.map(cat => (
+                                                <button
+                                                    key={cat.id}
+                                                    onClick={() => setSelectedCategory(cat.id)}
+                                                    className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${selectedCategory === cat.id ? 'bg-brand-500 text-white' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}
+                                                >
+                                                    {cat.name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="flex-1 overflow-y-auto px-2 space-y-1 pb-2">
                                     {filteredProducts.map(product => {
@@ -828,7 +1060,7 @@ export default function POSPage() {
                         <div className="bg-white p-8 rounded-2xl shadow-lifted w-96 transform transition-all scale-100">
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="text-2xl font-semibold">Payment Method</h3>
-                                <button onClick={() => setCheckoutModalOpen(false)} className="text-gray-400 hover:text-gray-600 bg-gray-100 w-8 h-8 rounded-full">✕</button>
+                                <button onClick={() => setCheckoutModalOpen(false)} className="text-gray-400 hover:text-gray-600 bg-gray-100 w-8 h-8 rounded-full flex items-center justify-center"><X className="w-4 h-4" /></button>
                             </div>
 
                             <div className="text-center mb-8">
@@ -844,27 +1076,27 @@ export default function POSPage() {
                                     onClick={() => setSelectedPaymentMethod('CASH')}
                                     className={`p-4 border-2 rounded-2xl flex flex-col items-center relative transition-all ${selectedPaymentMethod === 'CASH' ? 'border-brand-600 bg-brand-50' : 'border-gray-100 hover:border-brand-200'}`}>
                                     {selectedPaymentMethod === 'CASH' && <div className="absolute -top-3 bg-brand-600 text-white text-[10px] px-2 py-0.5 rounded-full font-semibold">SELECTED</div>}
-                                    <div className="text-3xl mb-2">💵</div>
+                                    <Banknote className={`w-7 h-7 mb-2 ${selectedPaymentMethod === 'CASH' ? 'text-brand-700' : 'text-gray-400'}`} strokeWidth={1.75} />
                                     <span className={`font-semibold ${selectedPaymentMethod === 'CASH' ? 'text-brand-800' : 'text-gray-600'}`}>Cash</span>
                                 </button>
                                 <button
                                     onClick={() => setSelectedPaymentMethod('CARD')}
                                     className={`p-4 border-2 rounded-2xl flex flex-col items-center relative transition-all ${selectedPaymentMethod === 'CARD' ? 'border-brand-600 bg-brand-50' : 'border-gray-100 hover:border-brand-200'}`}>
                                     {selectedPaymentMethod === 'CARD' && <div className="absolute -top-3 bg-brand-600 text-white text-[10px] px-2 py-0.5 rounded-full font-semibold">SELECTED</div>}
-                                    <div className="text-3xl mb-2">💳</div>
+                                    <CreditCard className={`w-7 h-7 mb-2 ${selectedPaymentMethod === 'CARD' ? 'text-brand-700' : 'text-gray-400'}`} strokeWidth={1.75} />
                                     <span className={`font-semibold ${selectedPaymentMethod === 'CARD' ? 'text-brand-800' : 'text-gray-600'}`}>Card</span>
                                 </button>
                                 <button
                                     onClick={() => setSelectedPaymentMethod('BANK_TRANSFER')}
                                     className={`p-4 border-2 rounded-2xl flex flex-col items-center relative transition-all ${selectedPaymentMethod === 'BANK_TRANSFER' ? 'border-brand-600 bg-brand-50' : 'border-gray-100 hover:border-brand-200'}`}>
                                     {selectedPaymentMethod === 'BANK_TRANSFER' && <div className="absolute -top-3 bg-brand-600 text-white text-[10px] px-2 py-0.5 rounded-full font-semibold">SELECTED</div>}
-                                    <div className="text-3xl mb-2">🏦</div>
+                                    <Landmark className={`w-7 h-7 mb-2 ${selectedPaymentMethod === 'BANK_TRANSFER' ? 'text-brand-700' : 'text-gray-400'}`} strokeWidth={1.75} />
                                     <span className={`font-semibold ${selectedPaymentMethod === 'BANK_TRANSFER' ? 'text-brand-800' : 'text-gray-600'}`}>Transfer</span>
                                 </button>
                                 <button
                                     onClick={() => setSplitModalOpen(true)}
                                     className={`p-4 border-2 rounded-2xl flex flex-col items-center relative transition-all border-dashed border-brand-300 hover:bg-brand-50`}>
-                                    <div className="text-3xl mb-2">✂️</div>
+                                    <Scissors className="w-7 h-7 mb-2 text-brand-500" strokeWidth={1.75} />
                                     <span className="font-semibold text-brand-600">Split / Multi</span>
                                 </button>
                             </div>
@@ -1002,39 +1234,39 @@ export default function POSPage() {
 
 
 
-                {/* Split Payment Modal (World-Class Design V2) */}
+                {/* Split Payment Modal */}
                 {splitModalOpen && (
-                    <div className="fixed inset-0 bg-gray-900/80 flex items-center justify-center z-[60] backdrop-blur transition-all duration-300">
-                        <div className="bg-white rounded-2xl shadow-lifted w-[800px] h-[600px] overflow-hidden flex transform scale-100 ring-1 ring-white/10">
+                    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 backdrop-blur-sm">
+                        <div className="bg-white rounded-2xl shadow-lifted border border-gray-100/80 w-[800px] h-[600px] overflow-hidden flex transform scale-100">
 
-                            {/* Left Panel: Summary (Dark) */}
-                            <div className="w-[300px] bg-slate-900 p-8 flex flex-col justify-between text-white relative overflow-hidden">
-                                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-brand-500/10 to-transparent pointer-events-none"></div>
-
+                            {/* Left Panel: Summary */}
+                            <div className="w-[300px] bg-brand-50 border-r border-brand-100 p-8 flex flex-col justify-between relative">
                                 <div>
-                                    <h3 className="text-xl font-semibold tracking-tight mb-8 flex items-center gap-2">
-                                        <div className="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center">✂️</div>
+                                    <h3 className="text-xl font-semibold tracking-tight mb-8 flex items-center gap-2 text-gray-900">
+                                        <div className="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center text-white">
+                                            <Scissors className="w-4 h-4" strokeWidth={1.75} />
+                                        </div>
                                         Split Pay
                                     </h3>
 
                                     <div className="space-y-6">
                                         <div>
-                                            <div className="text-slate-400 text-xs font-semibold uppercase tracking-widest mb-1">Total Amount</div>
-                                            <div className="text-3xl font-mono font-semibold tracking-tight">{formatCurrency(cartTotal, user?.currency, user?.locale)}</div>
+                                            <div className="text-mid-grey text-xs font-semibold uppercase tracking-widest mb-1">Total Amount</div>
+                                            <div className="text-3xl font-mono font-semibold tracking-tight text-gray-900">{formatCurrency(cartTotal, user?.currency, user?.locale)}</div>
                                         </div>
 
-                                        <div className="h-px bg-slate-800"></div>
+                                        <div className="h-px bg-brand-200"></div>
 
                                         <div>
-                                            <div className="text-slate-400 text-xs font-semibold uppercase tracking-widest mb-1">Paid So Far</div>
-                                            <div className="text-2xl font-mono text-green-400 font-semibold">
+                                            <div className="text-mid-grey text-xs font-semibold uppercase tracking-widest mb-1">Paid So Far</div>
+                                            <div className="text-2xl font-mono text-brand-700 font-semibold">
                                                 {formatCurrency(splitPayments.reduce((s, p) => s + p.amount, 0), user?.currency, user?.locale)}
                                             </div>
                                         </div>
 
                                         <div>
-                                            <div className="text-slate-400 text-xs font-semibold uppercase tracking-widest mb-1">Remaining</div>
-                                            <div className={`text-4xl font-mono font-semibold tracking-tighter ${cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0) <= 0.01 ? 'text-green-400' : 'text-orange-400'}`}>
+                                            <div className="text-mid-grey text-xs font-semibold uppercase tracking-widest mb-1">Remaining</div>
+                                            <div className={`text-4xl font-mono font-semibold tracking-tighter ${cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0) <= 0.01 ? 'text-brand-700' : 'text-amber-600'}`}>
                                                 {formatCurrency(Math.max(0, cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0)), user?.currency, user?.locale)}
                                             </div>
                                         </div>
@@ -1042,16 +1274,16 @@ export default function POSPage() {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <div className="text-slate-500 text-xs font-medium">Customer</div>
-                                    <div className="font-semibold text-slate-200">{selectedCustomer ? selectedCustomer.name : 'Walk-in Customer'}</div>
-                                    <div className="text-slate-500 text-xs font-medium mt-4">Transaction ID</div>
-                                    <div className="font-mono text-xs text-slate-400">#{Date.now().toString().slice(-6)}</div>
+                                    <div className="text-mid-grey text-xs font-medium">Customer</div>
+                                    <div className="font-semibold text-gray-800">{selectedCustomer ? selectedCustomer.name : 'Walk-in Customer'}</div>
+                                    <div className="text-mid-grey text-xs font-medium mt-4">Transaction Ref</div>
+                                    <div className="font-mono text-xs text-gray-500">#{Date.now().toString().slice(-6)}</div>
                                 </div>
                             </div>
 
-                            {/* Right Panel: Actions (Light) */}
+                            {/* Right Panel: Actions */}
                             <div className="flex-1 bg-white flex flex-col relative">
-                                <button onClick={() => { setSplitPayments([]); setSplitModalOpen(false); }} className="absolute top-6 right-6 w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-900 transition-colors z-10">✕</button>
+                                <button onClick={() => { setSplitPayments([]); setSplitModalOpen(false); }} className="absolute top-6 right-6 w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-900 transition-colors z-10"><X className="w-4 h-4" /></button>
 
                                 <div className="p-8 pb-0 flex-1 overflow-y-auto custom-scrollbar">
                                     <h4 className="text-gray-900 font-semibold mb-4 flex items-center justify-between">
@@ -1085,10 +1317,10 @@ export default function POSPage() {
                                     {/* Buttons Grid */}
                                     <div className="grid grid-cols-3 gap-3 mb-8">
                                         {([
-                                            { id: 'CASH', icon: '💵', label: 'Cash', color: 'hover:bg-green-50 hover:border-green-200' },
-                                            { id: 'CARD', icon: '💳', label: 'Card', color: 'hover:bg-blue-50 hover:border-blue-200' },
-                                            { id: 'BANK_TRANSFER', icon: '🏦', label: 'Transfer', color: 'hover:bg-purple-50 hover:border-purple-200' }
-                                        ]).map(m => (
+                                            { id: 'CASH', Icon: Banknote, label: 'Cash' },
+                                            { id: 'CARD', Icon: CreditCard, label: 'Card' },
+                                            { id: 'BANK_TRANSFER', Icon: Landmark, label: 'Transfer' }
+                                        ] as const).map(m => (
                                             <button
                                                 key={m.id}
                                                 onClick={() => {
@@ -1101,9 +1333,9 @@ export default function POSPage() {
 
                                                     setSplitPayments([...splitPayments, { id: Date.now().toString(), method: m.id, amount: val }]);
                                                 }}
-                                                className={`flex flex-col items-center justify-center p-3 rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-all active:scale-95 ${m.color}`}
+                                                className="flex flex-col items-center justify-center p-3 rounded-xl border border-gray-200 bg-white hover:bg-brand-50 hover:border-brand-200 shadow-sm hover:shadow-md transition-all active:scale-95"
                                             >
-                                                <div className="text-2xl mb-1">{m.icon}</div>
+                                                <m.Icon className="w-6 h-6 mb-1 text-brand-600" strokeWidth={1.75} />
                                                 <div className="text-xs font-semibold text-gray-600">{m.label}</div>
                                             </button>
                                         ))}
@@ -1113,18 +1345,21 @@ export default function POSPage() {
                                     <div className="flex-1">
                                         <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Allocated Payments</h4>
                                         <div className="space-y-2">
-                                            {splitPayments.map((p, idx) => (
+                                            {splitPayments.map((p, idx) => {
+                                                const PayIcon = p.method === 'CASH' ? Banknote : p.method === 'CARD' ? CreditCard : Landmark;
+                                                return (
                                                 <div key={idx} className="flex justify-between items-center p-3 bg-white border border-gray-100 rounded-lg shadow-sm group hover:border-gray-300 transition-colors">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center text-sm">{p.method === 'CASH' ? '💵' : p.method === 'CARD' ? '💳' : '🏦'}</div>
+                                                        <div className="w-8 h-8 rounded-full bg-brand-50 border border-brand-100 flex items-center justify-center text-brand-600"><PayIcon className="w-4 h-4" strokeWidth={1.75} /></div>
                                                         <span className="font-semibold text-gray-700 text-sm">{p.method}</span>
                                                     </div>
                                                     <div className="flex items-center gap-3">
                                                         <span className="font-mono font-semibold text-gray-900">{formatCurrency(p.amount, user?.currency, user?.locale)}</span>
-                                                        <button onClick={() => setSplitPayments(prev => prev.filter((_, i) => i !== idx))} className="text-gray-300 hover:text-red-500 transition-colors">✕</button>
+                                                        <button onClick={() => setSplitPayments(prev => prev.filter((_, i) => i !== idx))} className="text-gray-300 hover:text-red-500 transition-colors"><X className="w-4 h-4" /></button>
                                                     </div>
                                                 </div>
-                                            ))}
+                                                );
+                                            })}
                                             {splitPayments.length === 0 && (
                                                 <div className="border-2 border-dashed border-gray-100 rounded-xl p-6 text-center">
                                                     <p className="text-gray-400 text-sm">No payments yet</p>
@@ -1135,13 +1370,13 @@ export default function POSPage() {
                                 </div>
 
                                 {/* Footer Action */}
-                                <div className="p-6 bg-gray-50 border-t border-gray-100">
+                                <div className="p-6 bg-canvas border-t border-gray-100">
                                     <button
                                         onClick={() => handleCheckout()}
                                         disabled={Math.max(0, cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0)) > 0.01}
-                                        className={`w-full py-4 rounded-xl font-semibold text-lg shadow-lg transition-all flex justify-center items-center gap-2 ${Math.max(0, cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0)) > 0.01
+                                        className={`w-full py-4 rounded-xl font-semibold text-lg shadow-soft transition-all flex justify-center items-center gap-2 ${Math.max(0, cartTotal - splitPayments.reduce((s, p) => s + p.amount, 0)) > 0.01
                                             ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
-                                            : 'bg-brand-500 hover:bg-brand-600 text-white shadow-brand-200 active:scale-[0.99]'
+                                            : 'bg-brand-500 hover:bg-brand-600 text-white active:scale-[0.99]'
                                             }`}
                                     >
                                         <span>Finalize Sale</span>
@@ -1155,7 +1390,7 @@ export default function POSPage() {
 
                 {/* Discount Modal */}
                 {discountModalOpen && (
-                    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[70] backdrop-blur-sm">
+                    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 backdrop-blur-sm">
                         <div className="bg-white p-6 rounded-2xl shadow-lifted w-96 transform transition-all">
 
                             {/* Header */}
@@ -1168,7 +1403,7 @@ export default function POSPage() {
                                     setSupervisorMode(false);
                                     setManualDiscountInput('');
                                     setSupervisorCreds({ email: '', password: '' });
-                                }} className="text-gray-400 hover:text-gray-600">✕</button>
+                                }} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
                             </div>
 
                             {/* View 1: Supervisor Login */}
@@ -1365,6 +1600,32 @@ export default function POSPage() {
                     </div>
                 )}
 
+                {/* Keyboard Shortcuts Help */}
+                {shortcutsHelpOpen && (
+                    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 backdrop-blur-sm" onClick={() => setShortcutsHelpOpen(false)}>
+                        <div className="bg-white p-6 rounded-2xl shadow-lifted w-80" onClick={e => e.stopPropagation()}>
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-lg font-semibold flex items-center gap-2"><Keyboard className="w-4 h-4 text-brand-600" /> Keyboard Shortcuts</h3>
+                                <button onClick={() => setShortcutsHelpOpen(false)} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
+                            </div>
+                            <div className="space-y-2.5">
+                                {[
+                                    { key: '/', desc: 'Focus product search' },
+                                    { key: 'F2', desc: 'Open payment' },
+                                    { key: 'F4', desc: 'Apply discount' },
+                                    { key: 'Esc', desc: 'Close current dialog' },
+                                    { key: '?', desc: 'Toggle this help' },
+                                ].map(s => (
+                                    <div key={s.key} className="flex items-center justify-between text-sm">
+                                        <span className="text-gray-600">{s.desc}</span>
+                                        <kbd className="px-2 py-1 bg-gray-100 border border-gray-200 rounded-md text-xs font-mono font-semibold text-gray-700">{s.key}</kbd>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Receipt Modal (Success) */}
                 {receiptModalOpen && lastSale && (
                     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 backdrop-blur-sm">
@@ -1448,6 +1709,51 @@ export default function POSPage() {
                     />
                 </div>
             )}
+        </div>
+    );
+}
+
+function ConnectionPill() {
+    const [online, setOnline] = useState(true);
+    const [pending, setPending] = useState(0);
+
+    useEffect(() => {
+        setOnline(typeof navigator !== 'undefined' ? navigator.onLine : true);
+
+        const goOnline = () => setOnline(true);
+        const goOffline = () => setOnline(false);
+        window.addEventListener('online', goOnline);
+        window.addEventListener('offline', goOffline);
+
+        const updateCount = () => {
+            db.syncQueue.count().then(setPending).catch(() => { });
+        };
+        updateCount();
+        const interval = setInterval(updateCount, 5000);
+
+        return () => {
+            window.removeEventListener('online', goOnline);
+            window.removeEventListener('offline', goOffline);
+            clearInterval(interval);
+        };
+    }, []);
+
+    if (online && pending === 0) {
+        return (
+            <div className="flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-green-50 text-green-700 border border-green-100">
+                <Wifi className="h-3 w-3" />
+                Synced
+            </div>
+        );
+    }
+
+    return (
+        <div
+            title={online ? `${pending} sale(s) syncing` : `Offline — ${pending} sale(s) queued locally`}
+            className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold border ${online ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-red-50 text-red-700 border-red-200'}`}
+        >
+            {online ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
+            {online ? `Syncing (${pending})` : `Offline (${pending})`}
         </div>
     );
 }

@@ -1,6 +1,6 @@
 # RetailCraft Design System
 
-**Premium minimalist hospitality identity** — calm, white-dominant, teal-accented.
+**Premium minimalist hospitality identity** — calm, white-dominant, forest-green-accented.
 This document is the single source of truth for UI decisions in `apps/web`.
 
 ---
@@ -15,8 +15,8 @@ Every screen and component must answer:
 - Is the hierarchy clear?
 - Does this feel premium and reduce cognitive load?
 
-**Core rule: white is the dominant color. Teal is earned, not sprayed.**
-Teal appears only on: primary actions, active navigation states, key highlights, and the most important metrics.
+**Core rule: white is the dominant color. Green is earned, not sprayed.**
+Green appears only on: primary actions, active navigation states, key highlights, and the most important metrics.
 
 ---
 
@@ -28,14 +28,18 @@ Defined in [tailwind.config.js](tailwind.config.js) and as CSS variables in [glo
 
 | Token | Hex | Use |
 |---|---|---|
-| `brand-50` | `#F0FAF9` | Soft teal backgrounds, hover tints, icon chips |
-| `brand-100` | `#D9F4F1` | Selected-state backgrounds |
-| `brand-500` | `#38C3B5` | **Primary actions, active nav, key metrics** |
-| `brand-600` | `#27A89B` | Hover state for primary actions, links |
-| `brand-700` | `#1F8A80` | Active/pressed state, link hover |
-| `brand-900` | `#1A5A55` | Teal-on-teal text |
+| `brand-50` | `#EEF6F4` | Soft green backgrounds, hover tints, icon chips |
+| `brand-100` | `#D9EDE8` | Selected-state backgrounds |
+| `brand-200` | `#B0DDD2` | Subtle fills, chart gridlines on brand surfaces |
+| `brand-300` | `#7BCCB7` | Light accents, disabled-state tints |
+| `brand-400` | `#39AC8F` | Secondary accents |
+| `brand-500` | `#235347` | **Primary actions, active nav, key metrics** |
+| `brand-600` | `#1C4339` | Hover state for primary actions, links |
+| `brand-700` | `#15342C` | Active/pressed state, link hover |
+| `brand-800` | `#102621` | Deep accents, dark chips |
+| `brand-900` | `#0B1B17` | Green-on-green text |
 
-`primary` is aliased to `#38C3B5` for legacy class usage.
+`primary` is aliased to `#235347` for legacy class usage.
 
 ### Neutrals
 
@@ -56,7 +60,19 @@ Defined in [tailwind.config.js](tailwind.config.js) and as CSS variables in [glo
 
 ### CSS variables
 
-`--rc-brand`, `--rc-brand-strong`, `--rc-brand-soft`, `--rc-canvas`, `--rc-surface`, `--rc-surface-muted`, `--rc-border`, `--rc-cool-grey`, `--rc-text`, `--rc-text-secondary`, `--rc-text-muted`, `--rc-ease`, `--rc-duration` — for charts, inline styles, and non-Tailwind contexts. Recharts accent stroke/gradient: `#38C3B5`; comparison series: `#cbd5e1` dashed.
+`--rc-brand`, `--rc-brand-strong`, `--rc-brand-soft`, `--rc-canvas`, `--rc-surface`, `--rc-surface-muted`, `--rc-border`, `--rc-cool-grey`, `--rc-text`, `--rc-text-secondary`, `--rc-text-muted`, `--rc-ease`, `--rc-duration` — for charts, inline styles, and non-Tailwind contexts. Recharts accent stroke/gradient: `#235347`; comparison series: `#cbd5e1` dashed.
+
+### Chart palette (multi-series)
+
+Single-series charts (revenue trend) use `brand-500`. Charts with multiple categories (payment mix, category breakdown, staff leaderboard) use a small supporting set so series don't collapse into shades of one green:
+
+| Token | Hex | Use |
+|---|---|---|
+| Green (brand) | `#235347` | Primary/first series |
+| Gold | `#B8843A` | Second series |
+| Clay | `#B3574A` | Third series |
+| Slate blue | `#3F5C8A` | Fourth series |
+| Sage | `#7BA396` | Fifth series / muted comparison |
 
 ---
 
@@ -102,18 +118,18 @@ Reusable classes live in `@layer components` in [globals.css](src/app/globals.cs
 
 | Class | Purpose |
 |---|---|
-| `.btn-primary` | Teal key action — one per view ideally. Large click area, `rounded-xl`. |
+| `.btn-primary` | Green key action — one per view ideally. Large click area, `rounded-xl`. |
 | `.btn-secondary` | Quiet neutral bordered button. |
-| `.btn-ghost` | Tertiary text button with teal hover tint. |
+| `.btn-ghost` | Tertiary text button with green hover tint. |
 | `.card` | White surface, `rounded-2xl`, `shadow-card`, hairline border, `p-6`. |
-| `.input-field` | Spacious input (`px-4 py-3`), `rounded-xl`, teal focus ring. |
+| `.input-field` | Spacious input (`px-4 py-3`), `rounded-xl`, green focus ring. |
 | `.skeleton` | Shimmer loading placeholder. |
 
 ### Patterns
 
-- **Buttons**: `rounded-xl`, `px-5 py-2.5`, `font-semibold text-sm`, visible hover state. Teal = primary only.
+- **Buttons**: `rounded-xl`, `px-5 py-2.5`, `font-semibold text-sm`, visible hover state. Green = primary only.
 - **Cards**: KPI cards put the uppercase label top-left, icon chip top-right (`w-10 h-10 rounded-xl bg-brand-50` with `text-brand-600` icon), large value below, muted subtext last.
-- **Forms**: one column where possible, labels above fields, focus = teal border + `ring-brand-500/20`.
+- **Forms**: one column where possible, labels above fields, focus = green border + `ring-brand-500/20`.
 - **Tables**: generous row padding (`py-4`), hairline `divide-gray-100` separators only, uppercase `mid-grey` column headers, no zebra striping; collapse to cards on mobile.
 
 ---
@@ -129,7 +145,7 @@ Reusable classes live in `@layer components` in [globals.css](src/app/globals.cs
 - Global 220ms ease transitions on buttons, links, and inputs (see `--rc-duration`).
 - Card hover: `shadow-card → shadow-lifted` (no translate jumps).
 - `animate-fade-in-up` for entering content; `.skeleton` for loading.
-- `:focus-visible` = 2px teal outline, offset 2px (accessibility built in).
+- `:focus-visible` = 2px green outline, offset 2px (accessibility built in).
 - Animations communicate quality, never draw attention. Nothing above 300ms.
 
 ## 9. Responsive Rules
@@ -145,13 +161,13 @@ Reusable classes live in `@layer components` in [globals.css](src/app/globals.cs
 
 | Before | After | Why |
 |---|---|---|
-| Indigo `#5048e5` accent used heavily everywhere (407 usages) | Single teal `brand` scale (`#38C3B5`), reserved for actions/active/metrics | One calm accent reads as premium hospitality; reduces visual noise |
-| Rainbow KPI chips (yellow, rose, blue, orange, purple) | Teal chips for key metrics, neutral grey for secondary, red only for refunds | Restrained palette; color now carries meaning instead of decoration |
+| Indigo `#5048e5` accent used heavily everywhere (407 usages) | Single forest-green `brand` scale (`#235347`), reserved for actions/active/metrics | One calm accent reads as premium hospitality; reduces visual noise |
+| Rainbow KPI chips (yellow, rose, blue, orange, purple) | Green chips for key metrics, neutral grey for secondary, red only for refunds | Restrained palette; color now carries meaning instead of decoration |
 | Horizontal icon-beside-number stat cards, `font-extrabold` | Vertical KPI cards: label → large number → trend/subtext | Executive-friendly hierarchy; the number is the hero |
 | Gradient body background + dark-scheme overrides | Flat `#FAFAFA` canvas, white surfaces | Visually calm, consistent across screens |
 | Mixed heavy shadows (`shadow-xl`, ad-hoc rgba shadows) | 3-step soft elevation system (`soft`/`card`/`lifted`) | Predictable depth, softer premium feel |
 | Heavy bolding (`font-bold`/`extrabold`) throughout | `font-semibold` + tracking-tight headings, medium weights for body | Lighter weights with strong size hierarchy feel modern and breathe |
-| Default browser scrollbars and focus outlines | 6px rounded grey scrollbars; teal `:focus-visible` rings | Detail-level polish, accessible by default |
+| Default browser scrollbars and focus outlines | 6px rounded grey scrollbars; green `:focus-visible` rings | Detail-level polish, accessible by default |
 | No shared component vocabulary | `.btn-primary`, `.card`, `.input-field`, `.skeleton` + documented tokens | Consistency and faster future UI work |
 
 ---

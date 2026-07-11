@@ -48,7 +48,8 @@ export function TopHeader({ onMenuClick }: { onMenuClick?: () => void } = {}) {
     const handleStoreChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const val = e.target.value;
         setSelectedStoreId(val === '' ? null : val);
-        window.location.reload(); // Reload to ensure all context refreshes clean
+        // Every store-scoped page re-fetches via a `selectedStoreId` effect
+        // dependency, so a soft state update is enough — no full reload needed.
     };
 
     const currentStore = stores.find(s => s.id === selectedStoreId);

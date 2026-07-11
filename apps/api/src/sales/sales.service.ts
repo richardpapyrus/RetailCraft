@@ -1085,4 +1085,170 @@ export class SalesService {
 
     return result;
   }
+
+  // --- Dashboard widgets (read-only aggregations, additive) ---
+
+  private resolveRange(from?: string, to?: string) {
+    const now = new Date();
+    const start = from
+      ? new Date(from)
+      : new Date(now.getFullYear(), now.getMonth(), 1); // Default This Month
+    let end: Date;
+    if (to) {
+      end = new Date(to);
+      end.setUTCHours(23, 59, 59, 999);
+    } else {
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+    }
+    return { start, end };
+  }
+
+  async getCategoryBreakdown(
+    tenantId: string,
+    from?: string,
+    to?: string,
+    storeId?: string,
+  ) {
+    const { start, end } = this.resolveRange(from, to);
+    const EXCLUDED = ["CANCELED", "CANCELLED", "PENDING", "VOID"];
+
+    const itemsRaw = await prisma.saleItem.findMany({
+      where: {
+        sale: {
+          tenantId,
+          storeId: storeId || undefined,
+          createdAt: { gte: start, lte: end },
+        },
+      },
+      include: {
+        sale: { select: { status: true } },
+        product: { select: { categoryId: true, category: { select: { name: true } } } },
+      },
+    });
+    const items = itemsRaw.filter(i => !EXCLUDED.includes((i.sale?.status || '').toUpperCase()));
+
+    const returnedItemsRaw = await prisma.salesReturnItem.findMany({
+      where: {
+        return: {
+          tenantId,
+          storeId: storeId || undefined,
+          createdAt: { gte: start, lte: end },
+        },
+      },
+      include: {
+        return: { include: { sale: { select: { status: true } } } },
+        product: { select: { categoryId: true, category: { select: { name: true } } } },
+      },
+    });
+    const returnedItems = returnedItemsRaw.filter(ri => !EXCLUDED.includes((ri.return?.sale?.status || '').toUpperCase()));
+
+    const categoryStats = new Map<string, { name: string; revenue: number; quantity: number }>();
+    const bucket = (categoryId: string | null | undefined, categoryName: string | null | undefined) => {
+      const key = categoryId || 'uncategorized';
+      if (!categoryStats.has(key)) {
+        categoryStats.set(key, { name: categoryName || 'Uncategorized', revenue: 0, quantity: 0 });
+      }
+      return categoryStats.get(key)!;
+    };
+
+    items.forEach((item) => {
+      const stats = bucket(item.product?.categoryId, item.product?.category?.name);
+      stats.revenue += Number(item.priceAtSale) * item.quantity;
+      stats.quantity += item.quantity;
+    });
+
+    returnedItems.forEach((ri) => {
+      const stats = bucket(ri.product?.categoryId, ri.product?.category?.name);
+      stats.revenue -= Number(ri.refundAmount) || 0;
+      stats.quantity -= ri.quantity;
+    });
+
+    return Array.from(categoryStats.values())
+      .filter(c => c.revenue !== 0 || c.quantity !== 0)
+      .sort((a, b) => b.revenue - a.revenue);
+  }
+
+  async getHourlyHeatmap(
+    tenantId: string,
+    from?: string,
+    to?: string,
+    storeId?: string,
+  ) {
+    const { start, end } = this.resolveRange(from, to);
+
+    const sales = await prisma.sale.findMany({
+      where: {
+        tenantId,
+        storeId: storeId || undefined,
+        status: "COMPLETED",
+        createdAt: { gte: start, lte: end },
+      },
+      select: { createdAt: true, total: true },
+    });
+
+    const grid: { day: number; hour: number; revenue: number; count: number }[] = [];
+    for (let d = 0; d < 7; d++) {
+      for (let h = 0; h < 24; h++) {
+        grid.push({ day: d, hour: h, revenue: 0, count: 0 });
+      }
+    }
+
+    sales.forEach((s) => {
+      const date = new Date(s.createdAt);
+      const cell = grid[date.getDay() * 24 + date.getHours()];
+      cell.revenue += Number(s.total);
+      cell.count += 1;
+    });
+
+    return grid;
+  }
+
+  async getStaffLeaderboard(
+    tenantId: string,
+    from?: string,
+    to?: string,
+    storeId?: string,
+  ) {
+    const { start, end } = this.resolveRange(from, to);
+
+    const sales = await prisma.sale.findMany({
+      where: {
+        tenantId,
+        storeId: storeId || undefined,
+        status: "COMPLETED",
+        createdAt: { gte: start, lte: end },
+      },
+      select: {
+        userId: true,
+        total: true,
+        discountTotal: true,
+        user: { select: { name: true, email: true } },
+      },
+    });
+
+    const staffStats = new Map<string, { name: string; revenue: number; discount: number; count: number }>();
+    sales.forEach((s) => {
+      const stats = staffStats.get(s.userId) || {
+        name: s.user?.name || s.user?.email || 'Unknown',
+        revenue: 0,
+        discount: 0,
+        count: 0,
+      };
+      stats.revenue += Number(s.total);
+      stats.discount += Number(s.discountTotal) || 0;
+      stats.count += 1;
+      staffStats.set(s.userId, stats);
+    });
+
+    return Array.from(staffStats.entries())
+      .map(([userId, stats]) => ({
+        userId,
+        name: stats.name,
+        revenue: stats.revenue,
+        count: stats.count,
+        avgBasket: stats.count > 0 ? stats.revenue / stats.count : 0,
+        discountRate: stats.revenue > 0 ? stats.discount / (stats.revenue + stats.discount) : 0,
+      }))
+      .sort((a, b) => b.revenue - a.revenue);
+  }
 }
