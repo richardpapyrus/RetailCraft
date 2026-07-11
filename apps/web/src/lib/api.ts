@@ -268,6 +268,27 @@ export const api = {
             if (storeId) query.append('storeId', storeId);
             return fetchClient(`/sales/export?${query.toString()}`);
         },
+        categoryBreakdown: (from?: string, to?: string, storeId?: string) => {
+            const query = new URLSearchParams();
+            if (from) query.append('from', from);
+            if (to) query.append('to', to);
+            if (storeId) query.append('storeId', storeId);
+            return fetchClient(`/sales/category-breakdown?${query.toString()}`).then(res => res as { name: string; revenue: number; quantity: number }[]);
+        },
+        hourlyHeatmap: (from?: string, to?: string, storeId?: string) => {
+            const query = new URLSearchParams();
+            if (from) query.append('from', from);
+            if (to) query.append('to', to);
+            if (storeId) query.append('storeId', storeId);
+            return fetchClient(`/sales/hourly-heatmap?${query.toString()}`).then(res => res as { day: number; hour: number; revenue: number; count: number }[]);
+        },
+        staffLeaderboard: (from?: string, to?: string, storeId?: string) => {
+            const query = new URLSearchParams();
+            if (from) query.append('from', from);
+            if (to) query.append('to', to);
+            if (storeId) query.append('storeId', storeId);
+            return fetchClient(`/sales/staff-leaderboard?${query.toString()}`).then(res => res as { userId: string; name: string; revenue: number; count: number; avgBasket: number; discountRate: number }[]);
+        },
     },
     customers: {
         list: (skip: number = 0, take: number = 50, storeId?: string, search?: string) => {

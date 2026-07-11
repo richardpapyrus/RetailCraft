@@ -24,10 +24,19 @@ import {
     Calendar,
     Percent,
     Tag,
-    RotateCcw
+    RotateCcw,
+    Download,
+    RefreshCw
 } from 'lucide-react';
 import { EODReport } from '@/components/reporting/EODReport';
 import { SaleDetailModal } from '@/components/sales/SaleDetailModal';
+import DateRangePresets from '@/components/dashboard/DateRangePresets';
+import PaymentMixChart from '@/components/dashboard/PaymentMixChart';
+import CategoryBreakdownChart from '@/components/dashboard/CategoryBreakdownChart';
+import HourlyHeatmap from '@/components/dashboard/HourlyHeatmap';
+import StaffLeaderboard from '@/components/dashboard/StaffLeaderboard';
+import LowStockWidget from '@/components/dashboard/LowStockWidget';
+import { downloadEODCsv } from '@/lib/eod-csv';
 
 export default function DashboardPage() {
     const { user, token, isHydrated } = useAuth();
@@ -35,6 +44,9 @@ export default function DashboardPage() {
     const [stats, setStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [selectedSale, setSelectedSale] = useState<any>(null);
+    const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+    const [refreshing, setRefreshing] = useState(false);
+    const [refreshNonce, setRefreshNonce] = useState(0);
 
     // Global Store Filtering
     const { selectedStoreId } = useAuth();
@@ -74,17 +86,20 @@ export default function DashboardPage() {
 
         const fetchData = async (isBackground = false) => {
             if (!isBackground) setLoading(true);
+            setRefreshing(true);
             try {
                 // Determine endpoint (HQ vs Store Level)
                 // Note: We use existing sales.stats method which works for both IF the backend supports filtering
-                // Ideally we'd use separate endpoints but for minimal risk we stick to what works, 
+                // Ideally we'd use separate endpoints but for minimal risk we stick to what works,
                 // just refreshed automatically.
                 const s = await api.sales.stats(dateRange.from, dateRange.to, selectedStoreId || undefined);
                 setStats(s);
+                setLastUpdated(new Date());
             } catch (error) {
                 console.error('Failed to fetch stats', error);
             } finally {
                 if (!isBackground) setLoading(false);
+                setRefreshing(false);
             }
         };
 
@@ -110,56 +125,90 @@ export default function DashboardPage() {
             clearInterval(intervalId);
             document.removeEventListener('visibilitychange', onVisible);
         };
-    }, [dateRange, selectedStoreId, token, isHydrated]);
+    }, [dateRange, selectedStoreId, token, isHydrated, refreshNonce]);
 
     if (!isHydrated) return null;
+
+    const storeName = selectedStoreId
+        ? stores.find(s => s.id === selectedStoreId)?.name
+        : (!isAdmin && user?.store?.name)
+            ? user.store.name
+            : undefined; // Falls back to Tenant Name/All Locations
 
     return (
         <div className="h-full bg-canvas overflow-y-auto font-sans">
             <div className="max-w-[1600px] mx-auto p-8 lg:p-12 animate-fade-in-up">
                 {/* Header */}
-                <div className="flex flex-col md:flex-row justify-between items-center mb-12 gap-6">
-                    <div className="flex flex-col gap-1">
-                        <h1 className="text-3xl lg:text-4xl font-semibold text-gray-900 tracking-tight leading-tight">
-                            Dashboard
-                        </h1>
-                        <span className="text-sm font-medium text-mid-grey tracking-wide">
-                            {selectedStoreId || (!isAdmin && user?.store) ? 'Store performance overview' : 'Organization performance overview'}
-                        </span>
+                <div className="flex flex-col gap-6 mb-12">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                        <div className="flex flex-col gap-1">
+                            <h1 className="text-3xl lg:text-4xl font-semibold text-gray-900 tracking-tight leading-tight">
+                                Dashboard
+                            </h1>
+                            <span className="text-sm font-medium text-mid-grey tracking-wide">
+                                {selectedStoreId || (!isAdmin && user?.store) ? 'Store performance overview' : 'Organization performance overview'}
+                            </span>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-4">
+                            {/* Store Selector Removed - Moved to Sidebar */}
+
+                            {/* EOD Report Buttons */}
+                            <div className="flex items-center gap-1 bg-white p-1 rounded-xl shadow-soft border border-gray-100">
+                                <button
+                                    onClick={() => window.print()}
+                                    className="bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-lg font-semibold text-sm flex items-center"
+                                >
+                                    <FileText size={16} className="mr-2" />
+                                    Print EOD
+                                </button>
+                                <button
+                                    onClick={() => stats && downloadEODCsv({ stats, dateRange, storeName, user })}
+                                    disabled={!stats}
+                                    className="text-charcoal hover:bg-surface-muted px-4 py-2 rounded-lg font-semibold text-sm flex items-center disabled:opacity-40 disabled:cursor-not-allowed"
+                                    title="Download EOD report as CSV"
+                                >
+                                    <Download size={16} className="mr-2" />
+                                    Download
+                                </button>
+                            </div>
+
+                            {/* Date Picker Pill */}
+                            <div className="flex items-center bg-white px-1 py-1 rounded-xl shadow-soft border border-gray-100">
+                                <div className="flex items-center px-4 py-2 border-r border-gray-100">
+                                    <span className="text-xs font-semibold text-mid-grey mr-2 uppercase tracking-wide">From</span>
+                                    <input
+                                        type="date"
+                                        value={dateRange.from}
+                                        className="text-sm font-semibold text-gray-700 bg-transparent border-none focus:ring-0 p-0"
+                                        onChange={e => setDateRange(prev => ({ ...prev, from: e.target.value }))}
+                                    />
+                                </div>
+                                <div className="flex items-center px-4 py-2">
+                                    <span className="text-xs font-semibold text-gray-400 mr-2 uppercase tracking-wide">To</span>
+                                    <input
+                                        type="date"
+                                        value={dateRange.to}
+                                        className="text-sm font-semibold text-gray-700 bg-transparent border-none focus:ring-0 p-0"
+                                        onChange={e => setDateRange(prev => ({ ...prev, to: e.target.value }))}
+                                    />
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-4">
-                        {/* Store Selector Removed - Moved to Sidebar */}
-
-                        {/* EOD Report Button */}
-                        <button
-                            onClick={() => window.print()}
-                            className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-xl font-semibold text-sm flex items-center shadow-soft"
-                        >
-                            <FileText size={16} className="mr-2" />
-                            EOD Report
-                        </button>
-
-                        {/* Date Picker Pill */}
-                        <div className="flex items-center bg-white px-1 py-1 rounded-xl shadow-soft border border-gray-100">
-                            <div className="flex items-center px-4 py-2 border-r border-gray-100">
-                                <span className="text-xs font-semibold text-mid-grey mr-2 uppercase tracking-wide">From</span>
-                                <input
-                                    type="date"
-                                    value={dateRange.from}
-                                    className="text-sm font-semibold text-gray-700 bg-transparent border-none focus:ring-0 p-0"
-                                    onChange={e => setDateRange(prev => ({ ...prev, from: e.target.value }))}
-                                />
-                            </div>
-                            <div className="flex items-center px-4 py-2">
-                                <span className="text-xs font-semibold text-gray-400 mr-2 uppercase tracking-wide">To</span>
-                                <input
-                                    type="date"
-                                    value={dateRange.to}
-                                    className="text-sm font-semibold text-gray-700 bg-transparent border-none focus:ring-0 p-0"
-                                    onChange={e => setDateRange(prev => ({ ...prev, to: e.target.value }))}
-                                />
-                            </div>
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                        <DateRangePresets dateRange={dateRange} onSelect={setDateRange} />
+                        <div className="flex items-center gap-2 text-xs font-medium text-mid-grey">
+                            <SyncStatus lastUpdated={lastUpdated} refreshing={refreshing} />
+                            <button
+                                onClick={() => setRefreshNonce(n => n + 1)}
+                                disabled={refreshing}
+                                className="p-1.5 rounded-lg hover:bg-surface-muted transition-colors disabled:opacity-50"
+                                title="Refresh now"
+                            >
+                                <RefreshCw size={13} className={refreshing ? 'animate-spin' : ''} />
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -230,6 +279,7 @@ export default function DashboardPage() {
                                         bgColor="bg-brand-50"
                                         subtext={revenueDelta === null ? `No sales ${comparisonLabel.replace('vs ', '')}` : undefined}
                                         trend={revenueDelta !== null ? { value: revenueDelta, label: comparisonLabel } : undefined}
+                                        sparkline={stats?.trendChartData?.map((d: any) => Number(d.current) || 0)}
                                     />
                                     <StatsCard
                                         title="Profit"
@@ -330,6 +380,18 @@ export default function DashboardPage() {
                                     </div>
                                 </div>
 
+                                {/* Payment Mix & Category Breakdown */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="bg-white p-8 rounded-2xl shadow-card border border-gray-100/80">
+                                        <h2 className="text-xl font-semibold text-gray-900 tracking-tight mb-6">Payment Mix</h2>
+                                        <PaymentMixChart breakdown={stats?.filtered?.paymentBreakdown} />
+                                    </div>
+                                    <div className="bg-white p-8 rounded-2xl shadow-card border border-gray-100/80">
+                                        <h2 className="text-xl font-semibold text-gray-900 tracking-tight mb-6">Sales by Category</h2>
+                                        <CategoryBreakdownChart from={dateRange.from} to={dateRange.to} storeId={selectedStoreId || undefined} />
+                                    </div>
+                                </div>
+
                                 {/* Discounts & Refunds Row */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <Link href="/sales?filter=discount" className="block cursor-pointer">
@@ -354,12 +416,35 @@ export default function DashboardPage() {
                                     </Link>
                                 </div>
 
-                                {/* Best Sellers */}
-                                <div className="bg-white p-8 rounded-2xl shadow-card border border-gray-100/80 flex-1 flex flex-col">
-                                    <h2 className="text-xl font-semibold text-gray-900 tracking-tight mb-2">Best Sellers</h2>
-                                    <div className="flex-1">
-                                        <BestSellersWidget from={dateRange.from} to={dateRange.to} storeId={selectedStoreId || undefined} />
+                                {/* Low Stock */}
+                                <div className="bg-white p-8 rounded-2xl shadow-card border border-gray-100/80">
+                                    <h2 className="text-xl font-semibold text-gray-900 tracking-tight mb-6">Inventory Health</h2>
+                                    <LowStockWidget storeId={selectedStoreId || undefined} />
+                                </div>
+
+                                {/* Best Sellers & Staff Leaderboard */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                                    <div className="bg-white p-8 rounded-2xl shadow-card border border-gray-100/80 flex flex-col">
+                                        <h2 className="text-xl font-semibold text-gray-900 tracking-tight mb-2">Best Sellers</h2>
+                                        <div className="flex-1">
+                                            <BestSellersWidget from={dateRange.from} to={dateRange.to} storeId={selectedStoreId || undefined} />
+                                        </div>
                                     </div>
+                                    <div className="bg-white p-8 rounded-2xl shadow-card border border-gray-100/80 flex flex-col">
+                                        <h2 className="text-xl font-semibold text-gray-900 tracking-tight mb-2">Staff Leaderboard</h2>
+                                        <div className="flex-1">
+                                            <StaffLeaderboard from={dateRange.from} to={dateRange.to} storeId={selectedStoreId || undefined} />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Hourly Heatmap */}
+                                <div className="bg-white p-8 rounded-2xl shadow-card border border-gray-100/80">
+                                    <div className="mb-6">
+                                        <h2 className="text-xl font-semibold text-gray-900 tracking-tight mb-1">When You're Busy</h2>
+                                        <p className="text-sm text-mid-grey font-medium">Sales density by day of week and hour</p>
+                                    </div>
+                                    <HourlyHeatmap from={dateRange.from} to={dateRange.to} storeId={selectedStoreId || undefined} />
                                 </div>
                             </div>
 
@@ -445,12 +530,7 @@ export default function DashboardPage() {
                         stats={stats}
                         user={user}
                         dateRange={dateRange}
-                        storeName={selectedStoreId
-                            ? stores.find(s => s.id === selectedStoreId)?.name
-                            : (!isAdmin && user?.store?.name)
-                                ? user.store.name
-                                : undefined // Falls back to Tenant Name/All Locations in component
-                        }
+                        storeName={storeName}
                     />
                 )
             }
@@ -458,15 +538,40 @@ export default function DashboardPage() {
     );
 }
 
-function StatsCard({ title, value, icon, bgColor, subtext, trend, isLink }: {
+function SyncStatus({ lastUpdated, refreshing }: { lastUpdated: Date | null, refreshing: boolean }) {
+    const [, setTick] = useState(0);
+
+    useEffect(() => {
+        const id = setInterval(() => setTick(t => t + 1), 1000);
+        return () => clearInterval(id);
+    }, []);
+
+    if (refreshing) return <span>Updating…</span>;
+    if (!lastUpdated) return null;
+
+    const seconds = Math.max(0, Math.floor((Date.now() - lastUpdated.getTime()) / 1000));
+    const label = seconds < 5
+        ? 'Updated just now'
+        : seconds < 60
+            ? `Updated ${seconds}s ago`
+            : `Updated ${Math.floor(seconds / 60)}m ago`;
+
+    return <span>{label}</span>;
+}
+
+function StatsCard({ title, value, icon, bgColor, subtext, trend, isLink, sparkline }: {
     title: string,
     value: string | number,
     icon: React.ReactNode,
     bgColor: string,
     subtext?: string,
     trend?: { value: number, label: string },
-    isLink?: boolean
+    isLink?: boolean,
+    sparkline?: number[]
 }) {
+    const sparkData = (sparkline || []).filter(v => Number.isFinite(v));
+    const gradientId = `spark-${title.replace(/[^a-zA-Z0-9]/g, '')}`;
+
     return (
         <div className={`bg-white rounded-2xl p-6 shadow-card border border-gray-100/80 transition-all duration-300 ${isLink ? 'hover:shadow-lifted hover:-translate-y-0.5' : 'hover:shadow-lifted'}`}>
             <div className="flex items-start justify-between gap-3 mb-5">
@@ -489,6 +594,21 @@ function StatsCard({ title, value, icon, bgColor, subtext, trend, isLink }: {
                 )}
                 {!trend && subtext && (
                     <p className={`text-xs font-medium truncate ${isLink ? 'text-brand-600' : 'text-mid-grey'}`}>{subtext}</p>
+                )}
+                {sparkData.length > 1 && (
+                    <div className="h-8 -mx-1 mt-2">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={sparkData.map(v => ({ v }))} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
+                                <defs>
+                                    <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stopColor="#235347" stopOpacity={0.25} />
+                                        <stop offset="100%" stopColor="#235347" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <Area type="monotone" dataKey="v" stroke="#235347" strokeWidth={1.5} fill={`url(#${gradientId})`} isAnimationActive={false} />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
                 )}
             </div>
         </div>

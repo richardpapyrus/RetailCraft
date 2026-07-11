@@ -167,6 +167,54 @@ export class SalesController {
     );
   }
 
+  @Get("category-breakdown")
+  async getCategoryBreakdown(
+    @Request() req,
+    @Query("from") from?: string,
+    @Query("to") to?: string,
+    @Query("storeId") queryStoreId?: string,
+  ) {
+    let storeId = queryStoreId;
+    const isSystemAdmin = req.user.role === 'Administrator' || req.user.permissions?.includes('*');
+    if (!isSystemAdmin) {
+      if (req.user.storeId) storeId = req.user.storeId;
+      else storeId = 'invalid-store-id';
+    }
+    return this.salesService.getCategoryBreakdown(req.user.tenantId, from, to, storeId);
+  }
+
+  @Get("hourly-heatmap")
+  async getHourlyHeatmap(
+    @Request() req,
+    @Query("from") from?: string,
+    @Query("to") to?: string,
+    @Query("storeId") queryStoreId?: string,
+  ) {
+    let storeId = queryStoreId;
+    const isSystemAdmin = req.user.role === 'Administrator' || req.user.permissions?.includes('*');
+    if (!isSystemAdmin) {
+      if (req.user.storeId) storeId = req.user.storeId;
+      else storeId = 'invalid-store-id';
+    }
+    return this.salesService.getHourlyHeatmap(req.user.tenantId, from, to, storeId);
+  }
+
+  @Get("staff-leaderboard")
+  async getStaffLeaderboard(
+    @Request() req,
+    @Query("from") from?: string,
+    @Query("to") to?: string,
+    @Query("storeId") queryStoreId?: string,
+  ) {
+    let storeId = queryStoreId;
+    const isSystemAdmin = req.user.role === 'Administrator' || req.user.permissions?.includes('*');
+    if (!isSystemAdmin) {
+      if (req.user.storeId) storeId = req.user.storeId;
+      else storeId = 'invalid-store-id';
+    }
+    return this.salesService.getStaffLeaderboard(req.user.tenantId, from, to, storeId);
+  }
+
   @Post()
   async create(
     @Request() req,
