@@ -279,7 +279,7 @@ export default function DashboardPage() {
                                         bgColor="bg-brand-50"
                                         subtext={revenueDelta === null ? `No sales ${comparisonLabel.replace('vs ', '')}` : undefined}
                                         trend={revenueDelta !== null ? { value: revenueDelta, label: comparisonLabel } : undefined}
-                                        sparkline={stats?.trendChartData?.map((d: any) => Number(d.current) || 0)}
+                                        sparkline={stats?.trendChartData?.filter((d: any) => d.current !== null && d.current !== undefined).map((d: any) => Number(d.current) || 0)}
                                     />
                                     <StatsCard
                                         title="Profit"

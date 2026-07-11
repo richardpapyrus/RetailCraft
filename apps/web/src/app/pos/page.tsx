@@ -12,7 +12,7 @@ import OpenTillModal from '@/components/tills/OpenTillModal';
 import CloseTillModal from '@/components/tills/CloseTillModal';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
-import { Package, AlertCircle, Award, User, Phone, Banknote, CreditCard, Landmark, Scissors, X, PauseCircle, PlayCircle, Trash2, Keyboard, Wifi, WifiOff, Tag } from 'lucide-react';
+import { Package, AlertCircle, Award, User, Phone, Banknote, CreditCard, Landmark, Scissors, X, PauseCircle, PlayCircle, Trash2, Keyboard, Wifi, WifiOff } from 'lucide-react';
 import ReceiptTemplate from '@/components/pos/ReceiptTemplate';
 import { TillReport } from '@/components/tills/TillReport';
 import { confirmDialog } from '@/lib/dialog';
@@ -166,6 +166,10 @@ export default function POSPage() {
             setCart([]);
             setAppliedDiscount(null);
             setSelectedCustomer(null);
+            // Parked tickets hold product IDs from the previous store context —
+            // resuming them across stores must never be possible.
+            setParkedTickets([]);
+            setParkedPanelOpen(false);
 
             // Need to wait for selectedStoreId to be ready? It comes from useAuth which hydrates.
             // If selectedStoreId changes, we reload.
