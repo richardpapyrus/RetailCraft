@@ -442,9 +442,9 @@ export default function DashboardPage() {
                                 <div className="bg-white p-8 rounded-2xl shadow-card border border-gray-100/80">
                                     <div className="mb-6">
                                         <h2 className="text-xl font-semibold text-gray-900 tracking-tight mb-1">When You're Busy</h2>
-                                        <p className="text-sm text-mid-grey font-medium">Sales density by day of week and hour</p>
+                                        <p className="text-sm text-mid-grey font-medium">Hourly sales vs the hourly average — last 7 days plus today, live</p>
                                     </div>
-                                    <HourlyHeatmap from={dateRange.from} to={dateRange.to} storeId={selectedStoreId || undefined} />
+                                    <HourlyHeatmap storeId={selectedStoreId || undefined} />
                                 </div>
                             </div>
 
