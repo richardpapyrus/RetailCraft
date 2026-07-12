@@ -47,9 +47,13 @@ module.exports = {
                 'card': '1rem',
             },
             keyframes: {
+                // Final frames must end at transform 'none' (not translate(0)):
+                // with fill-mode 'both' a retained transform turns ancestors into
+                // containing blocks, which breaks position:fixed modals — they
+                // center on the (possibly very long) page instead of the viewport.
                 'fade-in-up': {
                     '0%': { opacity: '0', transform: 'translateY(8px)' },
-                    '100%': { opacity: '1', transform: 'translateY(0)' },
+                    '100%': { opacity: '1', transform: 'none' },
                 },
                 'fade-in': {
                     '0%': { opacity: '0' },
@@ -57,18 +61,23 @@ module.exports = {
                 },
                 'slide-in-right': {
                     '0%': { opacity: '0', transform: 'translateX(24px)' },
-                    '100%': { opacity: '1', transform: 'translateX(0)' },
+                    '100%': { opacity: '1', transform: 'none' },
                 },
                 'slide-in-left': {
                     '0%': { transform: 'translateX(-100%)' },
-                    '100%': { transform: 'translateX(0)' },
+                    '100%': { transform: 'none' },
                 },
             },
             animation: {
-                'fade-in-up': 'fade-in-up 0.3s ease-out both',
-                'fade-in': 'fade-in 0.2s ease-out both',
-                'slide-in-right': 'slide-in-right 0.28s cubic-bezier(0.25, 0.1, 0.25, 1) both',
-                'slide-in-left': 'slide-in-left 0.28s cubic-bezier(0.25, 0.1, 0.25, 1) both',
+                // Fill mode must be 'backwards', never 'both'/'forwards': filling
+                // the final keyframe retains an identity transform MATRIX (not
+                // 'none') on the element forever, which keeps it a containing
+                // block for position:fixed descendants — modals then center on
+                // the full page height instead of the viewport.
+                'fade-in-up': 'fade-in-up 0.3s ease-out backwards',
+                'fade-in': 'fade-in 0.2s ease-out backwards',
+                'slide-in-right': 'slide-in-right 0.28s cubic-bezier(0.25, 0.1, 0.25, 1) backwards',
+                'slide-in-left': 'slide-in-left 0.28s cubic-bezier(0.25, 0.1, 0.25, 1) backwards',
             },
             backgroundImage: {
                 'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
