@@ -8,6 +8,9 @@ export interface SyncRequest {
     body: any;
     createdAt: number;
     retryCount: number;
+    // Message from the most recent failed replay, surfaced in the sync
+    // notification. Non-indexed property — no Dexie version bump required.
+    lastError?: string;
 }
 
 export interface Customer {

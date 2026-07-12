@@ -35,7 +35,6 @@ import CategoryBreakdownChart from '@/components/dashboard/CategoryBreakdownChar
 import HourlyHeatmap from '@/components/dashboard/HourlyHeatmap';
 import StaffLeaderboard from '@/components/dashboard/StaffLeaderboard';
 import LowStockWidget from '@/components/dashboard/LowStockWidget';
-import { downloadEODCsv } from '@/lib/eod-csv';
 
 export default function DashboardPage() {
     const { user, token, isHydrated } = useAuth();
@@ -159,7 +158,7 @@ export default function DashboardPage() {
                                         const q = new URLSearchParams({ from: dateRange.from, to: dateRange.to });
                                         if (selectedStoreId) q.append('storeId', selectedStoreId);
                                         if (storeName) q.append('store', storeName);
-                                        window.open(`/reports/eod?${q.toString()}`, '_blank');
+                                        router.push(`/reports/eod?${q.toString()}`);
                                     }}
                                     className="bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-lg font-semibold text-sm flex items-center"
                                 >
@@ -167,13 +166,18 @@ export default function DashboardPage() {
                                     EOD Report
                                 </button>
                                 <button
-                                    onClick={() => stats && downloadEODCsv({ stats, dateRange, storeName, user })}
+                                    onClick={() => {
+                                        const q = new URLSearchParams({ from: dateRange.from, to: dateRange.to, download: '1' });
+                                        if (selectedStoreId) q.append('storeId', selectedStoreId);
+                                        if (storeName) q.append('store', storeName);
+                                        router.push(`/reports/eod?${q.toString()}`);
+                                    }}
                                     disabled={!stats}
                                     className="text-charcoal hover:bg-surface-muted px-4 py-2 rounded-lg font-semibold text-sm flex items-center disabled:opacity-40 disabled:cursor-not-allowed"
-                                    title="Download EOD report as CSV"
+                                    title="Download the EOD report as a PDF"
                                 >
                                     <Download size={16} className="mr-2" />
-                                    Download
+                                    Download PDF
                                 </button>
                             </div>
 

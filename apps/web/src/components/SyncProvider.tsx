@@ -1,18 +1,24 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { db, SyncRequest } from '@/lib/db';
 import { api } from '@/lib/api';
+import { confirmDialog } from '@/lib/dialog';
+import { formatCurrency, useAuth } from '@/lib/useAuth';
 
 export function SyncProvider({ children }: { children: React.ReactNode }) {
-    const [pendingCount, setPendingCount] = useState(0);
+    const { user } = useAuth();
+    const [pending, setPending] = useState<SyncRequest[]>([]);
     const [isSyncing, setIsSyncing] = useState(false);
+    const [showDetails, setShowDetails] = useState(false);
+    // Ref, not state: syncData is captured once by setInterval, so a state
+    // flag would be a stale closure and never actually guard re-entry.
+    const syncingRef = useRef(false);
+
+    const pendingCount = pending.length;
 
     useEffect(() => {
-        // Initial Count
         updateCount();
-
-        // Initial Sync
         syncData();
 
         const interval = setInterval(() => {
@@ -38,8 +44,8 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
                 console.warn("[Sync] db.syncQueue not initialized yet");
                 return;
             }
-            const count = await db.syncQueue.count();
-            setPendingCount(count);
+            const items = await db.syncQueue.orderBy('createdAt').toArray();
+            setPending(items);
         } catch (e) {
             console.error("[Sync] Error counting syncQueue", e);
         }
@@ -47,24 +53,26 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
 
     const syncData = async () => {
         if (!navigator.onLine) return;
-        if (isSyncing) return;
+        if (syncingRef.current) return;
 
         try {
             if (!db || !db.syncQueue) return;
-            const pending = await db.syncQueue.toArray();
-            if (pending.length === 0) return;
+            const queued = await db.syncQueue.toArray();
+            if (queued.length === 0) {
+                await updateCount();
+                return;
+            }
 
+            syncingRef.current = true;
             setIsSyncing(true);
 
-            for (const req of pending) {
+            for (const req of queued) {
                 try {
                     // Replay Request
                     if (req.url === '/sales' && req.method === 'POST') {
                         await api.sales.create(req.body);
                         await db.syncQueue.delete(req.id!);
-                    }
-
-                    if (req.url === '/customers' && req.method === 'POST') {
+                    } else if (req.url === '/customers' && req.method === 'POST') {
                         // Strip offline-only fields and tenantId (handled by controller with connect)
                         const { id, code, synced, tenantId, ...payload } = req.body;
 
@@ -83,18 +91,61 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
                         }
 
                         await db.syncQueue.delete(req.id!);
+                    } else if (req.url.startsWith('/customers/') && req.method === 'PATCH') {
+                        // Offline customer edits. Previously these were queued by
+                        // DataService.updateCustomer but never replayed, leaving
+                        // them stuck in the queue forever.
+                        const customerId = req.url.slice('/customers/'.length);
+                        if (customerId.startsWith('OFFLINE')) {
+                            // An edit to a customer that itself was created offline:
+                            // the server has no such id. The POST replay above already
+                            // carries the customer's latest local data, so this
+                            // request can never succeed and is safe to drop.
+                            await db.syncQueue.delete(req.id!);
+                        } else {
+                            await api.customers.update(customerId, req.body);
+                            await db.customers.update(customerId, req.body).catch(() => { });
+                            await db.syncQueue.delete(req.id!);
+                        }
+                    } else {
+                        // Unknown request shape — record it so it surfaces in the
+                        // details panel instead of failing silently forever.
+                        await db.syncQueue.update(req.id!, {
+                            retryCount: (req.retryCount || 0) + 1,
+                            lastError: `No sync handler for ${req.method} ${req.url}`,
+                        });
                     }
-                } catch (err) {
+                } catch (err: any) {
                     console.error(`[Sync] Failed to sync item ${req.id}`, err);
-                    // Optional: Exponential backoff or max retries
+                    // Keep the item, but record why it failed so the user can see
+                    // and act on it from the notification's details panel.
+                    await db.syncQueue.update(req.id!, {
+                        retryCount: (req.retryCount || 0) + 1,
+                        lastError: String(err?.message || err || 'Unknown error'),
+                    }).catch(() => { });
                 }
             }
             await updateCount();
         } catch (error) {
             console.error("[Sync] Error during sync process", error);
         } finally {
+            syncingRef.current = false;
             setIsSyncing(false);
         }
+    };
+
+    const discardItem = async (req: SyncRequest) => {
+        const label = describeItem(req, user);
+        const ok = await confirmDialog({
+            title: 'Discard unsynced item?',
+            message: `${label.title}${label.subtitle ? ` — ${label.subtitle}` : ''} will be permanently removed from this device and will NOT reach the server. Only do this if you are sure the record is a duplicate or no longer needed.`,
+            confirmLabel: 'Discard permanently',
+            cancelLabel: 'Keep',
+            destructive: true,
+        });
+        if (!ok) return;
+        await db.syncQueue.delete(req.id!);
+        await updateCount();
     };
 
     const [isDismissed, setIsDismissed] = useState(false);
@@ -107,8 +158,6 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
         }
         setPrevCount(pendingCount);
     }, [pendingCount]);
-
-    // ... existing code ...
 
     return (
         <>
@@ -139,6 +188,36 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
                             </button>
                         </div>
 
+                        {showDetails && (
+                            <div className="flex flex-col gap-2 max-h-56 overflow-y-auto border-t border-gray-100 pt-3">
+                                {pending.map(req => {
+                                    const label = describeItem(req, user);
+                                    return (
+                                        <div key={req.id} className="flex items-start justify-between gap-2 text-xs">
+                                            <div className="min-w-0">
+                                                <div className="font-semibold text-gray-800">{label.title}</div>
+                                                {label.subtitle && <div className="text-gray-500 font-medium">{label.subtitle}</div>}
+                                                <div className="text-gray-400 font-medium">
+                                                    Queued {new Date(req.createdAt).toLocaleString()}
+                                                    {req.retryCount > 0 ? ` · ${req.retryCount} failed attempt${req.retryCount === 1 ? '' : 's'}` : ''}
+                                                </div>
+                                                {req.lastError && (
+                                                    <div className="text-red-600 font-medium break-words">{req.lastError}</div>
+                                                )}
+                                            </div>
+                                            <button
+                                                onClick={() => discardItem(req)}
+                                                className="text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded-lg font-semibold shrink-0 transition-colors"
+                                                title="Permanently discard this unsynced item"
+                                            >
+                                                Discard
+                                            </button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+
                         <div className="flex gap-2">
                             <button
                                 onClick={syncData}
@@ -157,10 +236,34 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
                                     'Sync Now'
                                 )}
                             </button>
+                            <button
+                                onClick={() => setShowDetails(v => !v)}
+                                className="bg-surface-muted hover:bg-cool-grey text-charcoal py-2 px-3 rounded-xl text-xs font-semibold transition-colors"
+                            >
+                                {showDetails ? 'Hide' : 'Details'}
+                            </button>
                         </div>
                     </div>
                 </div>
             )}
         </>
     );
+}
+
+// Human-readable description of a queued request for the details panel.
+function describeItem(req: SyncRequest, user: any): { title: string; subtitle?: string } {
+    if (req.url === '/sales' && req.method === 'POST') {
+        const total = req.body?.total;
+        return {
+            title: 'Sale',
+            subtitle: total !== undefined ? formatCurrency(Number(total), user?.currency, user?.locale) : undefined,
+        };
+    }
+    if (req.url === '/customers' && req.method === 'POST') {
+        return { title: 'New customer', subtitle: req.body?.name };
+    }
+    if (req.url.startsWith('/customers/') && req.method === 'PATCH') {
+        return { title: 'Customer update', subtitle: req.body?.name };
+    }
+    return { title: `${req.method} ${req.url}` };
 }

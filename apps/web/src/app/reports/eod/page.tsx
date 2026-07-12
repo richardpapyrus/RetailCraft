@@ -1,8 +1,9 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Printer, TrendingDown, TrendingUp } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { ArrowLeft, Download, Printer, TrendingDown, TrendingUp } from 'lucide-react';
 import { BarChart, Bar, Cell, PieChart, Pie, Tooltip, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { api, API_URL } from '@/lib/api';
 import { useAuth, formatCurrency } from '@/lib/useAuth';
@@ -28,6 +29,7 @@ function EODReportContent() {
     const to = search.get('to') || from;
     const storeId = search.get('storeId') || undefined;
     const storeName = search.get('store') || undefined;
+    const autoDownload = search.get('download') === '1';
     const isSingleDay = from === to;
 
     const [stats, setStats] = useState<any>(null);
@@ -38,6 +40,35 @@ function EODReportContent() {
     const [loading, setLoading] = useState(true);
     const [generatedAt] = useState(() => new Date());
     const [logoError, setLogoError] = useState(false);
+    const [downloading, setDownloading] = useState(false);
+    const autoDownloadFired = useRef(false);
+
+    const downloadPdf = useCallback(async () => {
+        const el = document.getElementById('eod-report-root');
+        if (!el || downloading) return;
+        setDownloading(true);
+        try {
+            // Client-only library — imported on demand so it never runs during SSR.
+            const html2pdf = (await import('html2pdf.js')).default;
+            const filename = `EOD-Report${storeName ? `-${storeName.replace(/[^\w-]+/g, '_')}` : ''}-${from}${isSingleDay ? '' : `_${to}`}.pdf`;
+            await html2pdf()
+                .set({
+                    margin: [10, 12, 10, 12],
+                    filename,
+                    image: { type: 'jpeg', quality: 0.95 },
+                    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#FFFFFF' },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                    pagebreak: { mode: ['css', 'legacy'], avoid: '.eod-avoid-break' },
+                })
+                .from(el)
+                .save();
+        } catch (err) {
+            console.error('PDF generation failed', err);
+            toast.error('Could not generate the PDF. Use Print and choose "Save as PDF" instead.');
+        } finally {
+            setDownloading(false);
+        }
+    }, [downloading, from, to, isSingleDay, storeName]);
 
     useEffect(() => {
         if (!isHydrated) return;
@@ -73,6 +104,16 @@ function EODReportContent() {
         });
         return () => { cancelled = true; };
     }, [isHydrated, token, from, to, storeId]);
+
+    // Opened via the dashboard's Download button (?download=1): generate the
+    // PDF automatically once the report has rendered, giving charts a moment
+    // to paint first. Fires once per page load.
+    useEffect(() => {
+        if (!autoDownload || loading || !stats || autoDownloadFired.current) return;
+        autoDownloadFired.current = true;
+        const id = setTimeout(() => { downloadPdf(); }, 800);
+        return () => clearTimeout(id);
+    }, [autoDownload, loading, stats, downloadPdf]);
 
     const fmt = (v: number) => formatCurrency(v || 0, user?.currency, user?.locale);
     const fmtDate = (iso: string) => new Date(`${iso}T00:00:00`).toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -133,9 +174,11 @@ function EODReportContent() {
                     <ArrowLeft size={16} /> Back to Dashboard
                 </button>
                 <div className="flex items-center gap-3">
-                    <span className="text-xs text-mid-grey font-medium hidden sm:block">Use “Save as PDF” in the print dialog to download</span>
-                    <button onClick={() => window.print()} className="btn-primary">
-                        <Printer size={16} /> Print / Save as PDF
+                    <button onClick={downloadPdf} disabled={downloading || loading || !stats} className="btn-primary">
+                        <Download size={16} /> {downloading ? 'Generating PDF…' : 'Download PDF'}
+                    </button>
+                    <button onClick={() => window.print()} className="btn-secondary">
+                        <Printer size={16} /> Print
                     </button>
                 </div>
             </div>
