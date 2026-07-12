@@ -158,7 +158,7 @@ export default function DashboardPage() {
                                         const q = new URLSearchParams({ from: dateRange.from, to: dateRange.to });
                                         if (selectedStoreId) q.append('storeId', selectedStoreId);
                                         if (storeName) q.append('store', storeName);
-                                        window.open(`/reports/eod?${q.toString()}`, '_blank');
+                                        router.push(`/reports/eod?${q.toString()}`);
                                     }}
                                     className="bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-lg font-semibold text-sm flex items-center"
                                 >
@@ -170,7 +170,7 @@ export default function DashboardPage() {
                                         const q = new URLSearchParams({ from: dateRange.from, to: dateRange.to, download: '1' });
                                         if (selectedStoreId) q.append('storeId', selectedStoreId);
                                         if (storeName) q.append('store', storeName);
-                                        window.open(`/reports/eod?${q.toString()}`, '_blank');
+                                        router.push(`/reports/eod?${q.toString()}`);
                                     }}
                                     disabled={!stats}
                                     className="text-charcoal hover:bg-surface-muted px-4 py-2 rounded-lg font-semibold text-sm flex items-center disabled:opacity-40 disabled:cursor-not-allowed"
