@@ -69,10 +69,15 @@ module.exports = {
                 },
             },
             animation: {
-                'fade-in-up': 'fade-in-up 0.3s ease-out both',
-                'fade-in': 'fade-in 0.2s ease-out both',
-                'slide-in-right': 'slide-in-right 0.28s cubic-bezier(0.25, 0.1, 0.25, 1) both',
-                'slide-in-left': 'slide-in-left 0.28s cubic-bezier(0.25, 0.1, 0.25, 1) both',
+                // Fill mode must be 'backwards', never 'both'/'forwards': filling
+                // the final keyframe retains an identity transform MATRIX (not
+                // 'none') on the element forever, which keeps it a containing
+                // block for position:fixed descendants — modals then center on
+                // the full page height instead of the viewport.
+                'fade-in-up': 'fade-in-up 0.3s ease-out backwards',
+                'fade-in': 'fade-in 0.2s ease-out backwards',
+                'slide-in-right': 'slide-in-right 0.28s cubic-bezier(0.25, 0.1, 0.25, 1) backwards',
+                'slide-in-left': 'slide-in-left 0.28s cubic-bezier(0.25, 0.1, 0.25, 1) backwards',
             },
             backgroundImage: {
                 'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
