@@ -28,7 +28,6 @@ import {
     Download,
     RefreshCw
 } from 'lucide-react';
-import { EODReport } from '@/components/reporting/EODReport';
 import { SaleDetailModal } from '@/components/sales/SaleDetailModal';
 import DateRangePresets from '@/components/dashboard/DateRangePresets';
 import PaymentMixChart from '@/components/dashboard/PaymentMixChart';
@@ -156,11 +155,16 @@ export default function DashboardPage() {
                             {/* EOD Report Buttons */}
                             <div className="flex items-center gap-1 bg-white p-1 rounded-xl shadow-soft border border-gray-100">
                                 <button
-                                    onClick={() => window.print()}
+                                    onClick={() => {
+                                        const q = new URLSearchParams({ from: dateRange.from, to: dateRange.to });
+                                        if (selectedStoreId) q.append('storeId', selectedStoreId);
+                                        if (storeName) q.append('store', storeName);
+                                        window.open(`/reports/eod?${q.toString()}`, '_blank');
+                                    }}
                                     className="bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-lg font-semibold text-sm flex items-center"
                                 >
                                     <FileText size={16} className="mr-2" />
-                                    Print EOD
+                                    EOD Report
                                 </button>
                                 <button
                                     onClick={() => stats && downloadEODCsv({ stats, dateRange, storeName, user })}
@@ -524,16 +528,6 @@ export default function DashboardPage() {
                     </>
                 )}
             </div>
-            {
-                stats && !selectedSale && (
-                    <EODReport
-                        stats={stats}
-                        user={user}
-                        dateRange={dateRange}
-                        storeName={storeName}
-                    />
-                )
-            }
         </div >
     );
 }
