@@ -47,9 +47,13 @@ module.exports = {
                 'card': '1rem',
             },
             keyframes: {
+                // Final frames must end at transform 'none' (not translate(0)):
+                // with fill-mode 'both' a retained transform turns ancestors into
+                // containing blocks, which breaks position:fixed modals — they
+                // center on the (possibly very long) page instead of the viewport.
                 'fade-in-up': {
                     '0%': { opacity: '0', transform: 'translateY(8px)' },
-                    '100%': { opacity: '1', transform: 'translateY(0)' },
+                    '100%': { opacity: '1', transform: 'none' },
                 },
                 'fade-in': {
                     '0%': { opacity: '0' },
@@ -57,11 +61,11 @@ module.exports = {
                 },
                 'slide-in-right': {
                     '0%': { opacity: '0', transform: 'translateX(24px)' },
-                    '100%': { opacity: '1', transform: 'translateX(0)' },
+                    '100%': { opacity: '1', transform: 'none' },
                 },
                 'slide-in-left': {
                     '0%': { transform: 'translateX(-100%)' },
-                    '100%': { transform: 'translateX(0)' },
+                    '100%': { transform: 'none' },
                 },
             },
             animation: {
