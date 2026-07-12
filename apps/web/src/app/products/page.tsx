@@ -67,8 +67,11 @@ export default function ProductsPage() {
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [importFile, setImportFile] = useState<File | null>(null);
 
-    // Bulk selection & actions
-    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    // Bulk selection & actions. Keyed by product id and persists across
+    // pages/searches/filters so large selections can be accumulated; stores the
+    // full product so the action bar can count and partition items that are no
+    // longer on the visible page. Cleared on apply, explicit Clear, or store switch.
+    const [selectedMap, setSelectedMap] = useState<Map<string, Product>>(new Map());
     const [bulkBusy, setBulkBusy] = useState(false);
     const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
     const [bulkCategoryId, setBulkCategoryId] = useState('');
@@ -193,9 +196,6 @@ export default function ProductsPage() {
 
             setProducts(data);
             setTotalProducts(total);
-            // Any list change (page, filter, store, post-bulk reload) resets the
-            // selection so it never silently spans rows that are no longer visible.
-            setSelectedIds(new Set());
             setError(null);
             setDebugInfo({ productsFetched: data.length, totalFromApi: total, tenantId: user?.tenantId });
 
@@ -209,6 +209,13 @@ export default function ProductsPage() {
 
     // Helper to reload using current state
     const reloadCurrentPage = () => fetchProducts(page, search, category, showLowStock, showArchived);
+
+    // Selection deliberately survives page turns and search/filter changes so
+    // large selections can be built up across pages; a store-context switch is
+    // the one navigation where carrying it over would be confusing.
+    useEffect(() => {
+        setSelectedMap(new Map());
+    }, [selectedStoreId]);
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -359,20 +366,29 @@ export default function ProductsPage() {
     // All bulk operations reuse the same single-product endpoints the Edit
     // form and per-row Archive button already call — one request per product,
     // sequential, with progress and per-item failure reporting.
-    const selectedProducts = products.filter(p => selectedIds.has(p.id));
+    const selectedProducts = Array.from(selectedMap.values());
+    const allOnPageSelected = products.length > 0 && products.every(p => selectedMap.has(p.id));
 
-    const toggleSelect = (id: string) => {
-        setSelectedIds(prev => {
-            const next = new Set(prev);
-            if (next.has(id)) next.delete(id); else next.add(id);
+    const toggleSelect = (product: Product) => {
+        setSelectedMap(prev => {
+            const next = new Map(prev);
+            if (next.has(product.id)) next.delete(product.id); else next.set(product.id, product);
             return next;
         });
     };
 
+    // Header checkbox scopes to the visible page: checking adds this page's
+    // rows to the running selection, unchecking removes only this page's rows.
     const toggleSelectAll = () => {
-        setSelectedIds(prev =>
-            prev.size === products.length ? new Set() : new Set(products.map(p => p.id))
-        );
+        setSelectedMap(prev => {
+            const next = new Map(prev);
+            if (allOnPageSelected) {
+                products.forEach(p => next.delete(p.id));
+            } else {
+                products.forEach(p => next.set(p.id, p));
+            }
+            return next;
+        });
     };
 
     const runBulk = async (label: string, targets: Product[], exec: (p: Product) => Promise<any>) => {
@@ -394,7 +410,7 @@ export default function ProductsPage() {
         } else {
             toast.error(`${label}: ${failures.length} of ${targets.length} failed — ${failures.slice(0, 3).join(', ')}${failures.length > 3 ? '…' : ''}`, { duration: 6000 });
         }
-        setSelectedIds(new Set());
+        setSelectedMap(new Map());
         reloadCurrentPage();
     };
 
@@ -880,14 +896,14 @@ export default function ProductsPage() {
                 )}
 
                 {/* Bulk action bar — appears when rows are selected */}
-                {selectedIds.size > 0 && (
+                {selectedMap.size > 0 && (
                     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 animate-fade-in-up">
                         <div className="bg-white rounded-2xl shadow-lifted border border-gray-100 px-5 py-3 flex items-center gap-3 flex-wrap max-w-[92vw]">
                             <span className="text-sm font-semibold text-gray-900 whitespace-nowrap">
-                                {selectedIds.size} selected
+                                {selectedMap.size} selected{selectedMap.size > products.filter(p => selectedMap.has(p.id)).length ? ' (across pages)' : ''}
                             </span>
                             <button
-                                onClick={() => setSelectedIds(new Set())}
+                                onClick={() => setSelectedMap(new Map())}
                                 disabled={bulkBusy}
                                 className="text-xs font-semibold text-gray-500 hover:text-charcoal px-2 py-1 rounded-lg hover:bg-surface-muted transition-colors"
                             >
@@ -977,7 +993,7 @@ export default function ProductsPage() {
                                     <input
                                         type="checkbox"
                                         aria-label="Select all products on this page"
-                                        checked={products.length > 0 && selectedIds.size === products.length}
+                                        checked={allOnPageSelected}
                                         onChange={toggleSelectAll}
                                         disabled={bulkBusy}
                                         className="w-4 h-4 accent-brand-500 cursor-pointer"
@@ -1005,13 +1021,13 @@ export default function ProductsPage() {
                                     const stock = p.inventory?.reduce((acc, curr) => acc + curr.quantity, 0) || 0;
                                     const isLowStock = stock <= (p.minStockLevel || 0);
                                     return (
-                                        <tr key={p.id} className={`hover:bg-gray-50 cursor-pointer ${p.isArchived ? 'opacity-60 bg-gray-100' : ''} ${selectedIds.has(p.id) ? 'bg-brand-50/60' : ''}`} onClick={() => router.push(`/products/${p.id}`)}>
+                                        <tr key={p.id} className={`hover:bg-gray-50 cursor-pointer ${p.isArchived ? 'opacity-60 bg-gray-100' : ''} ${selectedMap.has(p.id) ? 'bg-brand-50/60' : ''}`} onClick={() => router.push(`/products/${p.id}`)}>
                                             <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
                                                 <input
                                                     type="checkbox"
                                                     aria-label={`Select ${p.name}`}
-                                                    checked={selectedIds.has(p.id)}
-                                                    onChange={() => toggleSelect(p.id)}
+                                                    checked={selectedMap.has(p.id)}
+                                                    onChange={() => toggleSelect(p)}
                                                     disabled={bulkBusy}
                                                     className="w-4 h-4 accent-brand-500 cursor-pointer"
                                                 />
