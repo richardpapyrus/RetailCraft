@@ -8,9 +8,12 @@ import { TopHeader } from './TopHeader';
 export function AppLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const isPublicPage = ['/login', '/register', '/', '/home'].includes(pathname);
+    // Print-oriented document views render without the app shell so the
+    // sidebar/header never appear on screen or in the printed output.
+    const isPrintableReport = pathname?.startsWith('/reports/eod');
     const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
-    if (isPublicPage) {
+    if (isPublicPage || isPrintableReport) {
         return <div className="min-h-screen bg-canvas">{children}</div>;
     }
 
