@@ -67,6 +67,13 @@ export default function ProductsPage() {
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [importFile, setImportFile] = useState<File | null>(null);
 
+    // Bulk selection & actions
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [bulkBusy, setBulkBusy] = useState(false);
+    const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
+    const [bulkCategoryId, setBulkCategoryId] = useState('');
+    const [bulkSupplierId, setBulkSupplierId] = useState('');
+
     // Debounce Search
     // Sync State -> URL
     useEffect(() => {
@@ -186,6 +193,9 @@ export default function ProductsPage() {
 
             setProducts(data);
             setTotalProducts(total);
+            // Any list change (page, filter, store, post-bulk reload) resets the
+            // selection so it never silently spans rows that are no longer visible.
+            setSelectedIds(new Set());
             setError(null);
             setDebugInfo({ productsFetched: data.length, totalFromApi: total, tenantId: user?.tenantId });
 
@@ -343,6 +353,104 @@ export default function ProductsPage() {
         } catch (err: any) {
             toast.error('Operation failed');
         }
+    };
+
+    // ---- Bulk actions ----
+    // All bulk operations reuse the same single-product endpoints the Edit
+    // form and per-row Archive button already call — one request per product,
+    // sequential, with progress and per-item failure reporting.
+    const selectedProducts = products.filter(p => selectedIds.has(p.id));
+
+    const toggleSelect = (id: string) => {
+        setSelectedIds(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id); else next.add(id);
+            return next;
+        });
+    };
+
+    const toggleSelectAll = () => {
+        setSelectedIds(prev =>
+            prev.size === products.length ? new Set() : new Set(products.map(p => p.id))
+        );
+    };
+
+    const runBulk = async (label: string, targets: Product[], exec: (p: Product) => Promise<any>) => {
+        setBulkBusy(true);
+        setBulkProgress({ done: 0, total: targets.length });
+        const failures: string[] = [];
+        for (let i = 0; i < targets.length; i++) {
+            try {
+                await exec(targets[i]);
+            } catch {
+                failures.push(targets[i].name);
+            }
+            setBulkProgress({ done: i + 1, total: targets.length });
+        }
+        setBulkBusy(false);
+        setBulkProgress(null);
+        if (failures.length === 0) {
+            toast.success(`${label}: ${targets.length} product${targets.length === 1 ? '' : 's'} updated`);
+        } else {
+            toast.error(`${label}: ${failures.length} of ${targets.length} failed — ${failures.slice(0, 3).join(', ')}${failures.length > 3 ? '…' : ''}`, { duration: 6000 });
+        }
+        setSelectedIds(new Set());
+        reloadCurrentPage();
+    };
+
+    const applyBulkCategory = async () => {
+        if (!bulkCategoryId || selectedProducts.length === 0) return;
+        const clearing = bulkCategoryId === '__clear__';
+        const catName = categories.find(c => c.id === bulkCategoryId)?.name;
+        if (!(await confirmDialog({
+            title: 'Bulk Category Assignment',
+            message: clearing
+                ? `Remove the category from ${selectedProducts.length} selected product${selectedProducts.length === 1 ? '' : 's'}?`
+                : `Set category "${catName}" on ${selectedProducts.length} selected product${selectedProducts.length === 1 ? '' : 's'}?`,
+            confirmLabel: clearing ? 'Remove Category' : 'Assign Category',
+        }))) return;
+        await runBulk('Category assignment', selectedProducts,
+            p => api.products.update(p.id, { categoryId: clearing ? '' : bulkCategoryId } as any));
+        setBulkCategoryId('');
+    };
+
+    const applyBulkSupplier = async () => {
+        if (!bulkSupplierId || selectedProducts.length === 0) return;
+        const clearing = bulkSupplierId === '__clear__';
+        const supName = suppliers.find(s => s.id === bulkSupplierId)?.name;
+        if (!(await confirmDialog({
+            title: 'Bulk Supplier Assignment',
+            message: clearing
+                ? `Remove the supplier from ${selectedProducts.length} selected product${selectedProducts.length === 1 ? '' : 's'}?`
+                : `Set supplier "${supName}" on ${selectedProducts.length} selected product${selectedProducts.length === 1 ? '' : 's'}?`,
+            confirmLabel: clearing ? 'Remove Supplier' : 'Assign Supplier',
+        }))) return;
+        await runBulk('Supplier assignment', selectedProducts,
+            p => api.products.update(p.id, { supplierId: clearing ? '' : bulkSupplierId } as any));
+        setBulkSupplierId('');
+    };
+
+    const applyBulkArchive = async () => {
+        const targets = selectedProducts.filter(p => !p.isArchived);
+        if (targets.length === 0) return;
+        if (!(await confirmDialog({
+            title: 'Bulk Archive',
+            message: `Archive ${targets.length} product${targets.length === 1 ? '' : 's'}? They will be hidden from sales but their history is kept.`,
+            confirmLabel: 'Archive All',
+            destructive: true,
+        }))) return;
+        await runBulk('Archive', targets, p => api.products.archive(p.id));
+    };
+
+    const applyBulkRestore = async () => {
+        const targets = selectedProducts.filter(p => p.isArchived);
+        if (targets.length === 0) return;
+        if (!(await confirmDialog({
+            title: 'Bulk Restore',
+            message: `Restore ${targets.length} archived product${targets.length === 1 ? '' : 's'} to the active catalogue?`,
+            confirmLabel: 'Restore All',
+        }))) return;
+        await runBulk('Restore', targets, p => api.products.unarchive(p.id));
     };
 
     if (!isHydrated) return <div className="p-8">Loading...</div>;
@@ -771,12 +879,111 @@ export default function ProductsPage() {
                     </div>
                 )}
 
+                {/* Bulk action bar — appears when rows are selected */}
+                {selectedIds.size > 0 && (
+                    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 animate-fade-in-up">
+                        <div className="bg-white rounded-2xl shadow-lifted border border-gray-100 px-5 py-3 flex items-center gap-3 flex-wrap max-w-[92vw]">
+                            <span className="text-sm font-semibold text-gray-900 whitespace-nowrap">
+                                {selectedIds.size} selected
+                            </span>
+                            <button
+                                onClick={() => setSelectedIds(new Set())}
+                                disabled={bulkBusy}
+                                className="text-xs font-semibold text-gray-500 hover:text-charcoal px-2 py-1 rounded-lg hover:bg-surface-muted transition-colors"
+                            >
+                                Clear
+                            </button>
+
+                            <div className="h-6 w-px bg-cool-grey" />
+
+                            {bulkBusy && bulkProgress ? (
+                                <span className="text-sm font-medium text-charcoal flex items-center gap-2">
+                                    <svg className="animate-spin h-4 w-4 text-brand-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                    </svg>
+                                    Updating {bulkProgress.done}/{bulkProgress.total}…
+                                </span>
+                            ) : (
+                                <>
+                                    <div className="flex items-center gap-1.5">
+                                        <select
+                                            value={bulkCategoryId}
+                                            onChange={e => setBulkCategoryId(e.target.value)}
+                                            className="border border-cool-grey rounded-xl px-2.5 py-1.5 text-sm text-charcoal bg-white focus:border-brand-500 outline-none max-w-[180px]"
+                                        >
+                                            <option value="">Category…</option>
+                                            {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                            <option value="__clear__">— Remove category —</option>
+                                        </select>
+                                        <button
+                                            onClick={applyBulkCategory}
+                                            disabled={!bulkCategoryId}
+                                            className="bg-brand-500 hover:bg-brand-600 text-white px-3 py-1.5 rounded-xl text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                        >
+                                            Apply
+                                        </button>
+                                    </div>
+
+                                    <div className="flex items-center gap-1.5">
+                                        <select
+                                            value={bulkSupplierId}
+                                            onChange={e => setBulkSupplierId(e.target.value)}
+                                            className="border border-cool-grey rounded-xl px-2.5 py-1.5 text-sm text-charcoal bg-white focus:border-brand-500 outline-none max-w-[180px]"
+                                        >
+                                            <option value="">Supplier…</option>
+                                            {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                            <option value="__clear__">— Remove supplier —</option>
+                                        </select>
+                                        <button
+                                            onClick={applyBulkSupplier}
+                                            disabled={!bulkSupplierId}
+                                            className="bg-brand-500 hover:bg-brand-600 text-white px-3 py-1.5 rounded-xl text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                        >
+                                            Apply
+                                        </button>
+                                    </div>
+
+                                    <div className="h-6 w-px bg-cool-grey" />
+
+                                    {selectedProducts.some(p => !p.isArchived) && (
+                                        <button
+                                            onClick={applyBulkArchive}
+                                            className="text-red-600 hover:bg-red-50 border border-red-200 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors"
+                                        >
+                                            Archive ({selectedProducts.filter(p => !p.isArchived).length})
+                                        </button>
+                                    )}
+                                    {selectedProducts.some(p => p.isArchived) && (
+                                        <button
+                                            onClick={applyBulkRestore}
+                                            className="text-charcoal hover:bg-surface-muted border border-cool-grey px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors"
+                                        >
+                                            Restore ({selectedProducts.filter(p => p.isArchived).length})
+                                        </button>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    </div>
+                )}
+
                 {/* Table */}
                 <div className="bg-white shadow-card rounded-2xl overflow-hidden border border-gray-100/80">
                     <table className="w-full divide-y divide-gray-100 table-fixed">
                         <thead className="bg-white border-b border-gray-100">
                             <tr>
-                                <th className="w-[20%] px-4 py-4 text-left text-[11px] font-semibold text-mid-grey uppercase tracking-widest">Name</th>
+                                <th className="w-12 px-4 py-4">
+                                    <input
+                                        type="checkbox"
+                                        aria-label="Select all products on this page"
+                                        checked={products.length > 0 && selectedIds.size === products.length}
+                                        onChange={toggleSelectAll}
+                                        disabled={bulkBusy}
+                                        className="w-4 h-4 accent-brand-500 cursor-pointer"
+                                    />
+                                </th>
+                                <th className="w-[18%] px-4 py-4 text-left text-[11px] font-semibold text-mid-grey uppercase tracking-widest">Name</th>
                                 <th className="w-[15%] px-4 py-4 text-left text-[11px] font-semibold text-mid-grey uppercase tracking-widest">SKU / Barcode</th>
                                 <th className="w-[10%] px-4 py-4 text-left text-[11px] font-semibold text-mid-grey uppercase tracking-widest">Price (Sell)</th>
                                 <th className="w-[12%] px-4 py-4 text-left text-[11px] font-semibold text-mid-grey uppercase tracking-widest">Category</th>
@@ -789,7 +996,7 @@ export default function ProductsPage() {
                         <tbody className="bg-white divide-y divide-gray-100">
                             {products.length === 0 ? (
                                 <tr>
-                                    <td colSpan={selectedStoreId ? 8 : 7} className="px-6 py-8 text-center text-gray-500">
+                                    <td colSpan={selectedStoreId ? 9 : 8} className="px-6 py-8 text-center text-gray-500">
                                         No products found matching your filters.
                                     </td>
                                 </tr>
@@ -798,7 +1005,17 @@ export default function ProductsPage() {
                                     const stock = p.inventory?.reduce((acc, curr) => acc + curr.quantity, 0) || 0;
                                     const isLowStock = stock <= (p.minStockLevel || 0);
                                     return (
-                                        <tr key={p.id} className={`hover:bg-gray-50 cursor-pointer ${p.isArchived ? 'opacity-60 bg-gray-100' : ''}`} onClick={() => router.push(`/products/${p.id}`)}>
+                                        <tr key={p.id} className={`hover:bg-gray-50 cursor-pointer ${p.isArchived ? 'opacity-60 bg-gray-100' : ''} ${selectedIds.has(p.id) ? 'bg-brand-50/60' : ''}`} onClick={() => router.push(`/products/${p.id}`)}>
+                                            <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
+                                                <input
+                                                    type="checkbox"
+                                                    aria-label={`Select ${p.name}`}
+                                                    checked={selectedIds.has(p.id)}
+                                                    onChange={() => toggleSelect(p.id)}
+                                                    disabled={bulkBusy}
+                                                    className="w-4 h-4 accent-brand-500 cursor-pointer"
+                                                />
+                                            </td>
                                             <td className="px-4 py-4 truncate" title={p.name}>
                                                 <div className="text-sm font-medium text-gray-900 truncate">
                                                     {p.name} {p.isArchived && <span className="ml-2 text-xs bg-gray-500 text-white px-2 py-0.5 rounded">Archived</span>}
