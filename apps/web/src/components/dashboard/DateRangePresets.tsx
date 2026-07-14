@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 function toISODate(d: Date) {
     return d.toISOString().split('T')[0];
 }
@@ -35,15 +37,31 @@ export default function DateRangePresets({ dateRange, onSelect }: {
     onSelect: (range: { from: string; to: string }) => void
 }) {
     const presets = makePresets();
+    const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
+
+    const matchesRange = (p: { from: string; to: string }) =>
+        dateRange.from === p.from && dateRange.to === p.to;
+
+    // Presets can share an identical range (e.g. "Today" and "This Week" on a
+    // Monday), so range equality alone can't identify the active button. Prefer
+    // the preset the user actually clicked; if the range was set another way
+    // (initial load, manual date inputs), fall back to the first matching preset.
+    const selectedPreset = presets.find(p => p.label === selectedLabel);
+    const activeLabel = selectedPreset && matchesRange(selectedPreset)
+        ? selectedPreset.label
+        : presets.find(matchesRange)?.label;
 
     return (
         <div className="flex items-center gap-1.5 flex-wrap">
             {presets.map(p => {
-                const active = dateRange.from === p.from && dateRange.to === p.to;
+                const active = p.label === activeLabel;
                 return (
                     <button
                         key={p.label}
-                        onClick={() => onSelect({ from: p.from, to: p.to })}
+                        onClick={() => {
+                            setSelectedLabel(p.label);
+                            onSelect({ from: p.from, to: p.to });
+                        }}
                         className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${active
                             ? 'bg-brand-500 text-white'
                             : 'bg-white text-charcoal border border-cool-grey hover:bg-surface-muted'
