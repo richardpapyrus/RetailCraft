@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { api } from '@/lib/api';
+import { api, ExpenseMonthToDate } from '@/lib/api';
 import { useAuth, formatCurrency } from '@/lib/useAuth';
 import { useRouter } from 'next/navigation';
 import {
@@ -26,7 +26,9 @@ import {
     Tag,
     RotateCcw,
     Download,
-    RefreshCw
+    RefreshCw,
+    Wallet,
+    TrendingDown
 } from 'lucide-react';
 import { SaleDetailModal } from '@/components/sales/SaleDetailModal';
 import DateRangePresets from '@/components/dashboard/DateRangePresets';
@@ -37,9 +39,12 @@ import StaffLeaderboard from '@/components/dashboard/StaffLeaderboard';
 import LowStockWidget from '@/components/dashboard/LowStockWidget';
 
 export default function DashboardPage() {
-    const { user, token, isHydrated } = useAuth();
+    const { user, token, isHydrated, hasPermission } = useAuth();
     const router = useRouter();
     const [stats, setStats] = useState<any>(null);
+    // Month-to-date expense figures. Fetched independently of `dateRange` so the
+    // date picker below never changes them.
+    const [mtdExpenses, setMtdExpenses] = useState<ExpenseMonthToDate | null>(null);
     const [loading, setLoading] = useState(true);
     const [selectedSale, setSelectedSale] = useState<any>(null);
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -78,6 +83,27 @@ export default function DashboardPage() {
             api.stores.list().then(setStores).catch(console.error);
         }
     }, [isAdmin]);
+
+    // Month-to-date expenses / net profit. Deliberately excludes `dateRange`
+    // from its dependencies: these cards always report the current calendar
+    // month regardless of the dashboard filter. A failure here leaves the cards
+    // hidden rather than breaking the rest of the dashboard.
+    useEffect(() => {
+        if (!isHydrated || !token) return;
+        if (!hasPermission('VIEW_EXPENSES')) return;
+
+        let cancelled = false;
+        api.expenses.monthToDate(selectedStoreId || undefined)
+            .then(data => { if (!cancelled) setMtdExpenses(data); })
+            .catch(e => {
+                if (!cancelled) {
+                    console.error('Failed to load month-to-date expenses', e);
+                    setMtdExpenses(null);
+                }
+            });
+
+        return () => { cancelled = true; };
+    }, [isHydrated, token, selectedStoreId, refreshNonce, hasPermission]);
 
     useEffect(() => {
         if (!isHydrated || !token) return;
@@ -321,6 +347,50 @@ export default function DashboardPage() {
                             );
                         })()}
                         {/* End of Stats Grid */}
+
+                        {/* Month-to-date financials. Kept in their own labelled row
+                            because, unlike everything above, they ignore the date
+                            filter and always cover the current calendar month. */}
+                        {mtdExpenses && (
+                            <div className="mb-10">
+                                <div className="flex items-baseline gap-2 mb-4">
+                                    <h2 className="text-[11px] font-semibold text-mid-grey uppercase tracking-widest">
+                                        Month to date
+                                    </h2>
+                                    <span className="text-[11px] text-mid-grey">
+                                        · {mtdExpenses.monthLabel} · not affected by the date filter above
+                                    </span>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    <StatsCard
+                                        title="Month-to-Date Expenses"
+                                        value={formatCurrency(mtdExpenses.expenses.total, user?.currency, user?.locale).replace(/([.,]00)(?=\s|$)/, '')}
+                                        icon={<Wallet size={20} className="text-brand-600" />}
+                                        bgColor="bg-brand-50"
+                                        subtext={`${mtdExpenses.expenses.count} expense${mtdExpenses.expenses.count === 1 ? '' : 's'} this month`}
+                                    />
+                                    <StatsCard
+                                        title="Month-to-Date Net Profit"
+                                        value={formatCurrency(mtdExpenses.netProfit.total, user?.currency, user?.locale).replace(/([.,]00)(?=\s|$)/, '')}
+                                        icon={mtdExpenses.netProfit.total >= 0
+                                            ? <TrendingUp size={20} className="text-brand-600" />
+                                            : <TrendingDown size={20} className="text-red-500" />}
+                                        bgColor={mtdExpenses.netProfit.total >= 0 ? 'bg-brand-50' : 'bg-red-50'}
+                                        subtext="Gross profit less expenses"
+                                    />
+                                    <StatsCard
+                                        title="Month-to-Date Gross Profit"
+                                        value={formatCurrency(mtdExpenses.grossProfit.total, user?.currency, user?.locale).replace(/([.,]00)(?=\s|$)/, '')}
+                                        icon={<Percent size={20} className="text-charcoal" />}
+                                        bgColor="bg-surface-muted"
+                                        subtext={mtdExpenses.expenseToSalesRatio !== null
+                                            ? `Expenses are ${mtdExpenses.expenseToSalesRatio.toFixed(1)}% of sales`
+                                            : 'Before expenses'}
+                                    />
+                                </div>
+                            </div>
+                        )}
 
                         {/* Main Content Grid */}
                         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
