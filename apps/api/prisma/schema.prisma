@@ -29,7 +29,9 @@ model Tenant {
   tills     Till[]
   purchaseOrders PurchaseOrder[]
   productCategories ProductCategory[]
-  
+  expenseCategories ExpenseCategory[]
+  expenses          Expense[]
+
   // Loyalty Settings
   loyaltyEarnRate   Decimal  @default(1.0)  // Points per Currency Unit
   loyaltyRedeemRate Decimal  @default(0.10) // Value per Point
@@ -64,6 +66,7 @@ model Store {
   grns          GoodsReceivedNote[]
   supplierReturns SupplierReturn[]
   discounts     Discount[]
+  expenses      Expense[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -97,6 +100,9 @@ model User {
   tillSessions TillSession[]
   purchaseOrdersCreated PurchaseOrder[]
   grnsReceived GoodsReceivedNote[]
+  expensesCreated  Expense[] @relation("ExpenseCreatedBy")
+  expensesModified Expense[] @relation("ExpenseUpdatedBy")
+  expenseAuditLogs ExpenseAuditLog[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -562,10 +568,121 @@ model SupplierReturnItem {
   id            String   @id @default(uuid())
   returnId      String
   supplierReturn SupplierReturn @relation(fields: [returnId], references: [id])
-  
+
   productId     String
   product       Product  @relation(fields: [productId], references: [id])
-  
+
   quantity      Int
   batchNumber   String?
+}
+
+// ---------------------------------------------------------------------------
+// Expenses Module
+//
+// Operating expenses (rent, payroll, utilities...). Deliberately independent of
+// the Inventory/Purchasing module (inventory purchases are NOT expenses — see
+// PurchaseOrder) and of cash management (expenses never touch a till drawer).
+// ---------------------------------------------------------------------------
+
+model ExpenseCategory {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  // Hex colour used by the category charts; falls back to the palette when null.
+  color       String?
+  status      String   @default("ACTIVE") // ACTIVE, ARCHIVED
+
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+
+  expenses    Expense[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([tenantId, name])
+  @@index([tenantId, status])
+}
+
+model Expense {
+  id           String   @id @default(uuid())
+
+  // Business date of the expense — distinct from createdAt (the entry date), so
+  // back-dated entries report in the period they belong to.
+  expenseDate  DateTime
+  amount       Decimal
+  description  String
+  notes        String?
+
+  // Optional operational detail. Nullable so the entry form stays short.
+  vendor        String?
+  reference     String?
+  paymentMethod String?
+
+  // Receipt / invoice attachment.
+  attachmentUrl  String?
+  attachmentName String?
+  attachmentType String?
+  attachmentSize Int?
+
+  categoryId   String
+  category     ExpenseCategory @relation(fields: [categoryId], references: [id])
+
+  // An expense always belongs to exactly one store. There are no
+  // organization-level expenses; cross-store views are aggregations only.
+  storeId      String
+  store        Store    @relation(fields: [storeId], references: [id])
+
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+
+  createdById  String
+  createdBy    User     @relation("ExpenseCreatedBy", fields: [createdById], references: [id])
+
+  updatedById  String?
+  updatedBy    User?    @relation("ExpenseUpdatedBy", fields: [updatedById], references: [id])
+
+  // Deletes are soft so the audit trail (including the DELETE entry itself)
+  // survives. Every read path filters on isDeleted = false.
+  isDeleted    Boolean  @default(false)
+  deletedAt    DateTime?
+  deletedById  String?
+
+  // Forward-compatibility: additional fields (tax treatment, cost centre,
+  // accounting-system ids) can be stored here without a schema migration.
+  metadata     Json?
+
+  auditLogs    ExpenseAuditLog[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([tenantId, storeId, expenseDate])
+  @@index([tenantId, categoryId])
+  @@index([tenantId, createdById])
+  @@index([tenantId, isDeleted])
+}
+
+model ExpenseAuditLog {
+  id          String   @id @default(uuid())
+
+  expenseId   String
+  expense     Expense  @relation(fields: [expenseId], references: [id])
+
+  action      String   // CREATE, UPDATE, DELETE, ATTACHMENT_ADDED, ATTACHMENT_REMOVED
+
+  // Field-level before/after pairs: { "amount": { "from": 100, "to": 150 } }
+  changes     Json?
+
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  // Denormalised so history survives a user rename or removal.
+  userName    String?
+
+  tenantId    String
+
+  createdAt   DateTime @default(now())
+
+  @@index([expenseId, createdAt])
+  @@index([tenantId, createdAt])
 }

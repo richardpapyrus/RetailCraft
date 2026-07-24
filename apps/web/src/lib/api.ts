@@ -410,6 +410,83 @@ export const api = {
         },
         receive: (data: { poId: string; storeId?: string; items: { productId: string; quantityReceived: number; batchNumber?: string; expiryDate?: string }[]; notes?: string }) => fetchClient('/grn', { method: 'POST', body: JSON.stringify(data) }),
     },
+    expenseCategories: {
+        list: (includeArchived?: boolean) =>
+            fetchClient(`/expense-categories${includeArchived ? '?includeArchived=true' : ''}`).then(res => res as ExpenseCategory[]),
+        create: (data: { name: string; description?: string; color?: string }) =>
+            fetchClient('/expense-categories', { method: 'POST', body: JSON.stringify(data) }).then(res => res as ExpenseCategory),
+        update: (id: string, data: { name?: string; description?: string; color?: string }) =>
+            fetchClient(`/expense-categories/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+        archive: (id: string) => fetchClient(`/expense-categories/${id}/archive`, { method: 'PATCH' }),
+        restore: (id: string) => fetchClient(`/expense-categories/${id}/restore`, { method: 'PATCH' }),
+        delete: (id: string) => fetchClient(`/expense-categories/${id}`, { method: 'DELETE' }),
+        seedDefaults: () => fetchClient('/expense-categories/seed-defaults', { method: 'POST' }).then(res => res as ExpenseCategory[]),
+    },
+    expenses: {
+        list: (filters: ExpenseListFilters = {}) => {
+            const params = new URLSearchParams();
+            Object.entries(filters).forEach(([key, value]) => {
+                if (value !== undefined && value !== null && value !== '') params.append(key, String(value));
+            });
+            return fetchClient(`/expenses?${params.toString()}`).then(res => res as ExpenseListResponse);
+        },
+        get: (id: string) => fetchClient(`/expenses/${id}`).then(res => res as Expense),
+        create: (data: ExpenseInput) => fetchClient('/expenses', { method: 'POST', body: JSON.stringify(data) }).then(res => res as Expense),
+        update: (id: string, data: ExpenseInput) => fetchClient(`/expenses/${id}`, { method: 'PATCH', body: JSON.stringify(data) }).then(res => res as Expense),
+        delete: (id: string) => fetchClient(`/expenses/${id}`, { method: 'DELETE' }),
+        bulkDelete: (ids: string[]) => fetchClient('/expenses/bulk-delete', { method: 'POST', body: JSON.stringify({ ids }) }).then(res => res as { deleted: number; skipped: { id: string; reason: string }[] }),
+        getAudit: (id: string) => fetchClient(`/expenses/${id}/audit`).then(res => res as ExpenseAuditEntry[]),
+
+        uploadReceipt: (id: string, file: File) => {
+            const formData = new FormData();
+            formData.append('file', file);
+            return fetchClient(`/expenses/${id}/attachment`, { method: 'POST', body: formData }).then(res => res as Expense);
+        },
+        removeReceipt: (id: string) => fetchClient(`/expenses/${id}/attachment`, { method: 'DELETE' }).then(res => res as Expense),
+        importCsv: (file: File, storeId?: string) => {
+            const formData = new FormData();
+            formData.append('file', file);
+            return fetchClient(`/expenses/import${storeId ? `?storeId=${storeId}` : ''}`, {
+                method: 'POST',
+                body: formData,
+            }).then(res => res as { imported: number; categoriesCreated: string[] });
+        },
+
+        // Month-to-date figures. Deliberately takes no date range — always the
+        // current calendar month, unaffected by any dashboard filter.
+        monthToDate: (storeId?: string) =>
+            fetchClient(`/expenses/month-to-date${storeId ? `?storeId=${storeId}` : ''}`).then(res => res as ExpenseMonthToDate),
+        summary: (from?: string, to?: string, storeId?: string) => {
+            const params = new URLSearchParams();
+            if (from) params.append('from', from);
+            if (to) params.append('to', to);
+            if (storeId) params.append('storeId', storeId);
+            return fetchClient(`/expenses/summary?${params.toString()}`).then(res => res as ExpenseSummary);
+        },
+        trend: (from?: string, to?: string, storeId?: string, granularity?: 'day' | 'week' | 'month' | 'auto') => {
+            const params = new URLSearchParams();
+            if (from) params.append('from', from);
+            if (to) params.append('to', to);
+            if (storeId) params.append('storeId', storeId);
+            if (granularity) params.append('granularity', granularity);
+            return fetchClient(`/expenses/trend?${params.toString()}`).then(res => res as { granularity: string; points: { date: string; amount: number }[] });
+        },
+        byStore: (from?: string, to?: string) => {
+            const params = new URLSearchParams();
+            if (from) params.append('from', from);
+            if (to) params.append('to', to);
+            return fetchClient(`/expenses/by-store?${params.toString()}`).then(res => res as { storeId: string; name: string; amount: number; count: number }[]);
+        },
+        alerts: (storeId?: string) =>
+            fetchClient(`/expenses/alerts${storeId ? `?storeId=${storeId}` : ''}`).then(res => res as ExpenseAlert[]),
+        exportCsv: (filters: ExpenseListFilters = {}) => {
+            const params = new URLSearchParams();
+            Object.entries(filters).forEach(([key, value]) => {
+                if (value !== undefined && value !== null && value !== '') params.append(key, String(value));
+            });
+            return fetchClient(`/expenses/export?${params.toString()}`);
+        },
+    },
     tillReports: {
         getDashboard: (from: string, to: string, tillId?: string) => {
             const params = new URLSearchParams();
@@ -442,6 +519,153 @@ export interface Role {
     permissions: string[];
     isSystem: boolean;
     _count?: { users: number };
+}
+
+// --- Expenses -------------------------------------------------------------
+
+export interface ExpenseCategory {
+    id: string;
+    name: string;
+    description?: string | null;
+    color?: string | null;
+    status: 'ACTIVE' | 'ARCHIVED';
+    expenseCount?: number;
+}
+
+export interface Expense {
+    id: string;
+    expenseDate: string;
+    amount: string | number;
+    description: string;
+    notes?: string | null;
+    vendor?: string | null;
+    reference?: string | null;
+    paymentMethod?: string | null;
+    attachmentUrl?: string | null;
+    attachmentName?: string | null;
+    attachmentType?: string | null;
+    attachmentSize?: number | null;
+    categoryId: string;
+    category?: { id: string; name: string; color?: string | null };
+    storeId: string;
+    store?: { id: string; name: string };
+    createdById: string;
+    createdBy?: { id: string; name?: string | null; email: string };
+    updatedBy?: { id: string; name?: string | null; email: string } | null;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface ExpenseInput {
+    expenseDate?: string;
+    amount?: number | string;
+    categoryId?: string;
+    description?: string;
+    notes?: string;
+    vendor?: string;
+    reference?: string;
+    paymentMethod?: string;
+    storeId?: string;
+}
+
+export interface ExpenseListFilters {
+    from?: string;
+    to?: string;
+    categoryId?: string;
+    storeId?: string;
+    createdById?: string;
+    search?: string;
+    minAmount?: string | number;
+    maxAmount?: string | number;
+    skip?: number;
+    take?: number;
+    sortBy?: string;
+    sortDir?: 'asc' | 'desc';
+}
+
+export interface ExpenseListResponse {
+    data: Expense[];
+    total: number;
+    skip: number;
+    take: number;
+    /** Sum across the entire filtered set, not just the current page. */
+    filteredTotal: number;
+}
+
+export interface ExpenseCategoryBreakdown {
+    categoryId: string;
+    name: string;
+    color?: string | null;
+    amount: number;
+    count: number;
+    percentage: number;
+}
+
+export interface ExpenseMonthToDate {
+    periodStart: string;
+    periodEnd: string;
+    monthLabel: string;
+    expenses: {
+        total: number;
+        count: number;
+        largest: number;
+        averageDaily: number;
+        previousTotal: number;
+        change: number | null;
+    };
+    grossProfit: { total: number; previousTotal: number; change: number | null };
+    revenue: { total: number; previousTotal: number };
+    netProfit: { total: number; previousTotal: number; change: number | null };
+    expenseToSalesRatio: number | null;
+    dailySeries: { date: string; amount: number }[];
+    netProfitSeries: { date: string; expenses: number; runningExpense: number }[];
+    categories: ExpenseCategoryBreakdown[];
+}
+
+export interface ExpenseSummary {
+    periodStart: string;
+    periodEnd: string;
+    expenses: {
+        total: number;
+        count: number;
+        largest: number;
+        averageDaily: number;
+        previousTotal: number;
+        change: number | null;
+    };
+    dailySeries: { date: string; amount: number }[];
+    categories: ExpenseCategoryBreakdown[];
+    topCategories: ExpenseCategoryBreakdown[];
+    /** Present only for users with VIEW_FINANCIAL_REPORTS. */
+    financials?: {
+        totalSales: number;
+        grossProfit: number;
+        totalExpenses: number;
+        netProfit: number;
+        previous: {
+            totalSales: number;
+            grossProfit: number;
+            totalExpenses: number;
+            netProfit: number;
+        };
+        expenseToSalesRatio: number | null;
+        netMargin: number | null;
+    };
+}
+
+export interface ExpenseAuditEntry {
+    id: string;
+    action: string;
+    changes?: Record<string, { from: unknown; to: unknown }> | null;
+    userName?: string | null;
+    user?: { id: string; name?: string | null; email: string } | null;
+    createdAt: string;
+}
+
+export interface ExpenseAlert {
+    severity: 'info' | 'warning';
+    title: string;
+    detail: string;
 }
 
 export interface PermissionGroup {

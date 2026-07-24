@@ -14,7 +14,7 @@ import {
     Calculator,
     Settings,
     LogOut,
-    Shield,
+    Wallet,
     Pin,
     PinOff,
     Award,
@@ -63,7 +63,8 @@ export function Sidebar({ mobile = false, onNavigate }: { mobile?: boolean; onNa
         { name: 'Suppliers', href: '/suppliers', icon: Truck, permission: 'MANAGE_SUPPLIERS' },
         { name: 'Sales', href: '/sales', icon: Banknote, permission: 'VIEW_SALES' },
         { name: 'Tills', href: '/tills', icon: Calculator, permission: 'MANAGE_TILLS' },
-        { name: 'Team', href: '/users', icon: Shield, permission: 'MANAGE_USERS' },
+        // User management lives on Settings → Team; this slot is now Expenses.
+        { name: 'Expenses', href: '/expenses', icon: Wallet, permission: 'VIEW_EXPENSES' },
         { name: 'Settings', href: '/settings', icon: Settings, permission: 'MANAGE_SETTINGS' },
         { name: 'Help Center', href: '/help', icon: HelpCircle, permission: '' },
     ];

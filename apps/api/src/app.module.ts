@@ -26,6 +26,7 @@ import { PurchaseOrdersModule } from "./purchase-orders/purchase-orders.module";
 import { GrnModule } from "./grn/grn.module";
 import { TillReportsModule } from "./till-reports/till-reports.module";
 import { CategoriesModule } from "./categories/categories.module";
+import { ExpensesModule } from "./expenses/expenses.module";
 import { join } from 'path';
 
 import { LoggerMiddleware } from "./common/middleware/logger.middleware";
@@ -56,6 +57,7 @@ import { ApiPrefixMiddleware } from "./common/middleware/api-prefix.middleware";
     GrnModule,
     TillReportsModule,
     CategoriesModule,
+    ExpensesModule,
   ],
   controllers: [],
   providers: [],

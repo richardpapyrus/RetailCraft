@@ -35,6 +35,15 @@ export const PERMISSIONS = {
   // Reports
   VIEW_REPORTS: "VIEW_REPORTS",
 
+  // Expenses
+  VIEW_EXPENSES: "VIEW_EXPENSES", // See the expense list & analytics for their store
+  CREATE_EXPENSES: "CREATE_EXPENSES", // Record a new expense
+  EDIT_EXPENSES: "EDIT_EXPENSES", // Edit / delete expenses they created
+  MANAGE_ALL_EXPENSES: "MANAGE_ALL_EXPENSES", // Edit / delete any expense (High privilege)
+  MANAGE_EXPENSE_CATEGORIES: "MANAGE_EXPENSE_CATEGORIES",
+  VIEW_ALL_STORE_EXPENSES: "VIEW_ALL_STORE_EXPENSES", // Aggregate across stores in reports
+  VIEW_FINANCIAL_REPORTS: "VIEW_FINANCIAL_REPORTS", // Sales / gross profit / net profit
+
   // Users & Roles
   MANAGE_USERS: "MANAGE_USERS", // Invite, Edit Users, Assign Roles
 
@@ -85,6 +94,18 @@ export const PERMISSION_GROUPS = [
   {
     label: "Reports",
     permissions: [PERMISSIONS.VIEW_REPORTS],
+  },
+  {
+    label: "Expenses",
+    permissions: [
+      PERMISSIONS.VIEW_EXPENSES,
+      PERMISSIONS.CREATE_EXPENSES,
+      PERMISSIONS.EDIT_EXPENSES,
+      PERMISSIONS.MANAGE_ALL_EXPENSES,
+      PERMISSIONS.MANAGE_EXPENSE_CATEGORIES,
+      PERMISSIONS.VIEW_ALL_STORE_EXPENSES,
+      PERMISSIONS.VIEW_FINANCIAL_REPORTS,
+    ],
   },
   {
     label: "Administration",
