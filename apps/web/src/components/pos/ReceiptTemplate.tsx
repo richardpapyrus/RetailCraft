@@ -16,6 +16,38 @@ export default function ReceiptTemplate({ sale, user, store: propStore }: Receip
     // Use Business Name (Tenant) as the main header, fallback to Store Name.
     const siteName = user?.tenant?.name || user?.tenantName || store.name || 'My Store';
 
+    // This template renders two different shapes: the POS's in-memory sale
+    // (tax / change / discount) and a Sale row from the API (taxTotal /
+    // changeGiven / discountTotal). Only subtotal and discount used to carry a
+    // fallback for both, so any receipt built from a server record silently
+    // dropped the Tax line entirely and printed the change as zero.
+    // Normalising all of them in one place keeps every row consistent.
+    const num = (value: unknown) => {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : 0;
+    };
+
+    const taxValue = num(sale.taxTotal ?? sale.tax);
+    const discountValue = num(sale.discountTotal ?? sale.discount);
+    const totalValue = num(sale.total);
+    // Subtotal is the pre-tax, pre-discount figure. The old fallback subtracted
+    // tax only, which under-reported it by the discount amount.
+    const subtotalValue = sale.subtotal !== undefined && sale.subtotal !== null
+        ? num(sale.subtotal)
+        : totalValue - taxValue + discountValue;
+    const changeValue = num(sale.changeGiven ?? sale.change);
+    // A server record has no "tendered" — the amount taken is the sale total.
+    const tenderedValue = sale.tendered !== undefined && sale.tendered !== null
+        ? num(sale.tendered)
+        : totalValue;
+
+    // Effective tax rate, shown only when it can be derived cleanly, so the
+    // customer can see what they were charged rather than a bare figure.
+    const taxableValue = subtotalValue - discountValue;
+    const taxRateLabel = taxValue > 0 && taxableValue > 0
+        ? `${(Math.round((taxValue / taxableValue) * 1000) / 10).toFixed(1).replace(/\.0$/, '')}%`
+        : null;
+
     // Receipt width adapts to exactly 100% of the printer's printable bounds (usually 72mm for an 80mm roll).
     return (
         <div id="receipt-print-area" className="hidden print:block w-full bg-white text-black font-mono text-[11px] leading-tight pt-2">
@@ -143,20 +175,20 @@ export default function ReceiptTemplate({ sale, user, store: propStore }: Receip
             <div className="mb-6 space-y-1 text-[11px] pr-1">
                 <div className="flex justify-between">
                     <span>Subtotal</span>
-                    <span>{formatCurrency(sale.subtotal || (sale.total - (sale.taxTotal || sale.tax || 0)), user?.currency, user?.locale)}</span>
+                    <span>{formatCurrency(subtotalValue, user?.currency, user?.locale)}</span>
                 </div>
 
-                {(sale.discountTotal > 0 || sale.discount > 0) && (
+                {discountValue > 0 && (
                     <div className="flex justify-between text-black">
                         <span>Discount</span>
-                        <span>-{formatCurrency(sale.discountTotal || sale.discount, user?.currency, user?.locale)}</span>
+                        <span>-{formatCurrency(discountValue, user?.currency, user?.locale)}</span>
                     </div>
                 )}
 
-                {sale.tax > 0 && (
+                {taxValue > 0 && (
                     <div className="flex justify-between">
-                        <span>Tax</span>
-                        <span>{formatCurrency(sale.tax, user?.currency, user?.locale)}</span>
+                        <span>Tax{taxRateLabel ? ` (${taxRateLabel})` : ''}</span>
+                        <span>{formatCurrency(taxValue, user?.currency, user?.locale)}</span>
                     </div>
                 )}
 
@@ -164,7 +196,7 @@ export default function ReceiptTemplate({ sale, user, store: propStore }: Receip
 
                 <div className="flex justify-between font-black text-lg my-1">
                     <span>TOTAL</span>
-                    <span>{formatCurrency(sale.total, user?.currency, user?.locale)}</span>
+                    <span>{formatCurrency(totalValue, user?.currency, user?.locale)}</span>
                 </div>
 
                 <div className="border-b border-black mb-2"></div>
@@ -181,14 +213,18 @@ export default function ReceiptTemplate({ sale, user, store: propStore }: Receip
                 ) : (
                     <div className="flex justify-between font-bold">
                         <span>{sale.paymentMethod || 'CASH'}</span>
-                        <span>{formatCurrency(sale.tendered, user?.currency, user?.locale)}</span>
+                        <span>{formatCurrency(tenderedValue, user?.currency, user?.locale)}</span>
                     </div>
                 )}
 
-                <div className="flex justify-between">
-                    <span>Change</span>
-                    <span>{formatCurrency(sale.change, user?.currency, user?.locale)}</span>
-                </div>
+                {/* Only meaningful on a cash sale — a card/transfer receipt showing
+                    "Change 0.00" is just noise on the customer's copy. */}
+                {changeValue > 0 && (
+                    <div className="flex justify-between">
+                        <span>Change</span>
+                        <span>{formatCurrency(changeValue, user?.currency, user?.locale)}</span>
+                    </div>
+                )}
 
                 {(sale.loyaltyPointsUsed > 0 || sale.redeemPoints > 0) && (
                     <div className="flex justify-between font-bold text-black mt-1 bg-gray-100 p-1">
