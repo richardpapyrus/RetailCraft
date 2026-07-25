@@ -39,6 +39,52 @@ interface ParkedTicket {
     pointsToRedeem: number;
 }
 
+interface DiscountLike {
+    id?: string;
+    name: string;
+    type: 'PERCENTAGE' | 'FIXED' | 'MANUAL';
+    value: number;
+    targetType?: 'ALL' | 'PRODUCT' | 'CATEGORY';
+    targetValues?: string[];
+}
+
+/**
+ * Subtotal of the cart lines a discount is allowed to touch.
+ *
+ * Category targets are matched by NAME only, exactly as SalesService does when
+ * it prices the sale server-side. Matching on the category id here as well
+ * would let the till display a reduction the server then refuses to apply, so
+ * the customer would be charged more than the screen shows.
+ *
+ * Shared by the totals calculation and the auto-apply selector so the discount
+ * that gets chosen and the discount that gets displayed can never diverge.
+ */
+function eligibleSubtotalFor(cart: CartItem[], discount: Pick<DiscountLike, 'targetType' | 'targetValues'>) {
+    if (!discount.targetType || discount.targetType === 'ALL') {
+        return cart.reduce((sum, item) => sum + Number(item.price) * item.cartQty, 0);
+    }
+
+    return cart.reduce((sum, item) => {
+        let isEligible = false;
+        if (discount.targetType === 'PRODUCT') {
+            isEligible = !!discount.targetValues?.includes(item.id);
+        } else if (discount.targetType === 'CATEGORY') {
+            const categoryName = (item.category as any)?.name;
+            isEligible = !!categoryName && !!discount.targetValues?.includes(categoryName);
+        }
+        return isEligible ? sum + Number(item.price) * item.cartQty : sum;
+    }, 0);
+}
+
+/** Currency amount a discount would take off the current cart. */
+function reductionFor(cart: CartItem[], discount: DiscountLike) {
+    const eligible = eligibleSubtotalFor(cart, discount);
+    if (eligible <= 0) return 0;
+    return discount.type === 'PERCENTAGE'
+        ? eligible * (Number(discount.value) / 100)
+        : Math.min(Number(discount.value), eligible);
+}
+
 
 export default function POSPage() {
     const { user, token, logout, isHydrated, selectedStoreId, hasPermission } = useAuth();
@@ -99,6 +145,12 @@ export default function POSPage() {
         targetType?: 'ALL' | 'PRODUCT' | 'CATEGORY',
         targetValues?: string[]
     } | null>(null);
+    // Whether the current discount was chosen automatically rather than by the
+    // cashier. A cashier's own choice always outranks the automatic one.
+    const [discountIsAuto, setDiscountIsAuto] = useState(false);
+    // Set when the cashier deliberately removes a discount, so the automatic
+    // selector does not immediately put it back. Cleared when the cart empties.
+    const [autoDiscountDismissed, setAutoDiscountDismissed] = useState(false);
     const [discountModalOpen, setDiscountModalOpen] = useState(false);
     const [manualDiscountInput, setManualDiscountInput] = useState('');
     const [manualDiscountType, setManualDiscountType] = useState<'FIXED' | 'PERCENTAGE'>('FIXED');
@@ -165,6 +217,8 @@ export default function POSPage() {
             // Context Change: Reset Cart to prevent leakage
             setCart([]);
             setAppliedDiscount(null);
+            setDiscountIsAuto(false);
+            setAutoDiscountDismissed(false);
             setSelectedCustomer(null);
             // Parked tickets hold product IDs from the previous store context —
             // resuming them across stores must never be possible. They are no
@@ -396,6 +450,8 @@ export default function POSPage() {
         setParkedTickets(prev => [...prev, ticket]);
         setCart([]);
         setAppliedDiscount(null);
+        setDiscountIsAuto(false);
+        setAutoDiscountDismissed(false);
         setSelectedCustomer(null);
         setUsePoints(false);
         setPointsToRedeem(0);
@@ -412,6 +468,11 @@ export default function POSPage() {
         setCart(ticket.cart);
         setSelectedCustomer(ticket.selectedCustomer);
         setAppliedDiscount(ticket.appliedDiscount);
+        // Restore the ticket exactly as it was parked: treating its discount as
+        // a cashier choice stops the automatic selector from silently repricing
+        // a sale the customer has already been quoted.
+        setDiscountIsAuto(false);
+        setAutoDiscountDismissed(!ticket.appliedDiscount);
         setUsePoints(ticket.usePoints);
         setPointsToRedeem(ticket.pointsToRedeem);
         setParkedTickets(prev => prev.filter(t => t.id !== id));
@@ -502,33 +563,8 @@ export default function POSPage() {
         let matchesNothing = false;
 
         if (appliedDiscount) {
-            let eligibleSubtotal = 0;
-            if (!appliedDiscount.targetType || appliedDiscount.targetType === 'ALL') {
-                eligibleSubtotal = sub;
-            } else {
-                cart.forEach(item => {
-                    let isEligible = false;
-                    if (appliedDiscount.targetType === 'PRODUCT') {
-                        if (appliedDiscount.targetValues?.includes(item.id)) isEligible = true;
-                    } else if (appliedDiscount.targetType === 'CATEGORY') {
-                        // Category targets are matched by NAME only, exactly as
-                        // SalesService does when it prices the sale server-side.
-                        // Also accepting the category id here would let the till
-                        // display a discount the server then refuses to apply —
-                        // the customer would be charged more than the screen shows.
-                        const categoryName = (item.category as any)?.name;
-                        if (categoryName && appliedDiscount.targetValues?.includes(categoryName)) isEligible = true;
-                    }
-
-                    if (isEligible) eligibleSubtotal += Number(item.price) * item.cartQty;
-                });
-            }
-
-            if (appliedDiscount.type === 'PERCENTAGE') {
-                disc = eligibleSubtotal * (appliedDiscount.value / 100);
-            } else {
-                disc = Math.min(appliedDiscount.value, eligibleSubtotal);
-            }
+            const eligibleSubtotal = eligibleSubtotalFor(cart, appliedDiscount);
+            disc = reductionFor(cart, appliedDiscount);
 
             matchesNothing =
                 appliedDiscount.targetType !== undefined &&
@@ -558,6 +594,60 @@ export default function POSPage() {
             discountMatchesNothing: matchesNothing,
         };
     }, [cart, appliedDiscount, taxes, usePoints, pointsToRedeem, user?.tenant?.loyaltyRedeemRate]);
+
+    // Automatically apply the best-value discount configured in Settings.
+    //
+    // Discounts set up in the back office are meant to just happen — the picker
+    // is for ad-hoc reductions the cashier enters by hand. The server re-resolves
+    // and re-applies whichever discount is sent with the sale, so choosing one
+    // here only decides what is offered; it never sets the final price.
+    useEffect(() => {
+        if (cart.length === 0) {
+            // New/empty sale: drop an automatic discount and re-arm the selector.
+            if (discountIsAuto) {
+                setAppliedDiscount(null);
+                setDiscountIsAuto(false);
+            }
+            if (autoDiscountDismissed) setAutoDiscountDismissed(false);
+            return;
+        }
+
+        // Never override the cashier: neither a hand-entered discount nor one
+        // they picked themselves, nor a removal they made on purpose.
+        if (appliedDiscount && !discountIsAuto) return;
+        if (autoDiscountDismissed) return;
+
+        let best: DiscountLike | null = null;
+        let bestReduction = 0;
+
+        for (const d of discounts) {
+            const candidate: DiscountLike = {
+                id: d.id,
+                name: d.name,
+                type: d.type,
+                value: Number(d.value),
+                targetType: d.targetType,
+                targetValues: d.targetValues,
+            };
+            // Where several discounts qualify, the customer gets the best one.
+            const reduction = reductionFor(cart, candidate);
+            if (reduction > bestReduction) {
+                bestReduction = reduction;
+                best = candidate;
+            }
+        }
+
+        if (best) {
+            if (!appliedDiscount || appliedDiscount.id !== best.id) {
+                setAppliedDiscount(best);
+                setDiscountIsAuto(true);
+            }
+        } else if (discountIsAuto) {
+            // The qualifying item was removed from the cart.
+            setAppliedDiscount(null);
+            setDiscountIsAuto(false);
+        }
+    }, [cart, discounts, appliedDiscount, discountIsAuto, autoDiscountDismissed]);
 
     const taxableAmount = subtotal - discountAmount;
     const totalTaxRate = taxes.reduce((sum, t) => sum + Number(t.rate), 0);
@@ -625,6 +715,8 @@ export default function POSPage() {
             // Reset UI
             setCart([]);
             setAppliedDiscount(null);
+            setDiscountIsAuto(false);
+            setAutoDiscountDismissed(false);
             setTendered('');
             setUsePoints(false);
             setPointsToRedeem(0);
@@ -924,7 +1016,13 @@ export default function POSPage() {
                             <div className="flex justify-end gap-12 text-xs font-medium text-gray-500 items-center">
                                 <div className="flex items-center gap-2">
                                     <span>Discount</span>
-                                    {appliedDiscount && <span className="text-[10px] bg-brand-100 text-brand-700 px-1.5 py-0.5 rounded font-semibold uppercase">{appliedDiscount.name}</span>}
+                                    {appliedDiscount && (
+                                        <span className="text-[10px] bg-brand-100 text-brand-700 px-1.5 py-0.5 rounded font-semibold uppercase">
+                                            {appliedDiscount.name}
+                                            {/* Tells the cashier the till chose this, not them. */}
+                                            {discountIsAuto && <span className="ml-1 opacity-70">· auto</span>}
+                                        </span>
+                                    )}
                                     <button onClick={() => setDiscountModalOpen(true)} className="text-[10px] text-brand-600 font-semibold hover:underline uppercase tracking-wider">
                                         {appliedDiscount ? 'Edit' : 'Add'}
                                     </button>
@@ -1646,6 +1744,9 @@ export default function POSPage() {
                                                         type: manualDiscountType, // 'FIXED' or 'PERCENTAGE'
                                                         value: val
                                                     });
+                                                    // Hand-entered — outranks any automatic discount.
+                                                    setDiscountIsAuto(false);
+                                                    setAutoDiscountDismissed(false);
                                                     setDiscountModalOpen(false);
                                                     setManualDiscountInput('');
                                                     setManualDiscountType('FIXED');
@@ -1663,6 +1764,35 @@ export default function POSPage() {
                             ) : (
                                 /* View 3: Discount List */
                                 <div className="space-y-3">
+                                    {/* Discounts now apply on their own, so the cashier needs a
+                                        way to take one off — e.g. when a customer is not entitled
+                                        to it. Removing is remembered for this sale so the
+                                        automatic selector does not put it straight back. */}
+                                    {appliedDiscount && (
+                                        <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-brand-50 border border-brand-100">
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-semibold text-brand-900 truncate">
+                                                    {appliedDiscount.name}
+                                                </p>
+                                                <p className="text-[11px] text-brand-700">
+                                                    {discountIsAuto ? 'Applied automatically' : 'Applied by you'} · −{formatCurrency(discountAmount, user?.currency, user?.locale)}
+                                                </p>
+                                            </div>
+                                            <button
+                                                onClick={() => {
+                                                    setAppliedDiscount(null);
+                                                    setDiscountIsAuto(false);
+                                                    setAutoDiscountDismissed(true);
+                                                    setDiscountModalOpen(false);
+                                                    toast.success('Discount removed from this sale');
+                                                }}
+                                                className="shrink-0 px-3 py-2 rounded-lg bg-white text-red-600 text-xs font-semibold hover:bg-red-50 border border-red-100"
+                                            >
+                                                Remove
+                                            </button>
+                                        </div>
+                                    )}
+
                                     <h4 className="text-sm font-semibold text-gray-500 uppercase">System Discounts</h4>
                                     <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto custom-scrollbar">
                                         {discounts.map(d => (
@@ -1677,6 +1807,9 @@ export default function POSPage() {
                                                         targetType: d.targetType,
                                                         targetValues: d.targetValues
                                                     });
+                                                    // Chosen by hand — the automatic selector must not replace it.
+                                                    setDiscountIsAuto(false);
+                                                    setAutoDiscountDismissed(false);
                                                     setDiscountModalOpen(false);
                                                 }}
                                                 className="p-3 border rounded-lg text-sm hover:bg-brand-50 hover:border-brand-500 text-left transition-colors"
