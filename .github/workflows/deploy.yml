@@ -46,15 +46,18 @@ jobs:
             -e "ssh -i ~/.ssh/retail-craft" \
             ./ root@165.227.26.131:/root/retail-craft-app/
 
+      # Migrations are applied via scripts/deploy-migrate.sh, which resolves the
+      # connection string from ecosystem.config.js — the same place the running
+      # pm2 app gets it. Calling `prisma migrate deploy` directly here would
+      # instead read the committed apps/api/.env, which points at the staging
+      # database and would silently migrate the wrong server.
       - name: Deploy on server
         run: |
           ssh -i ~/.ssh/retail-craft root@165.227.26.131 "
             cd /root/retail-craft-app/ && \
             npm install --production && \
-            cd apps/api && \
-            npx prisma generate && \
-            npx prisma migrate deploy && \
-            cd ../.. && \
+            (cd apps/api && npx prisma generate) && \
+            bash scripts/deploy-migrate.sh pos-api-prod && \
             pm2 startOrReload ecosystem.config.js --only pos-api-prod,pos-web-prod,pos-docs-prod --update-env && \
             pm2 save
           "

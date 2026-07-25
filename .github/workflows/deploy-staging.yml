@@ -47,15 +47,15 @@ jobs:
             -e "ssh -i ~/.ssh/retail-craft" \
             ./ root@165.227.26.131:/root/retail-craft-staging/
 
+      # See deploy.yml — the migration target is resolved from ecosystem.config.js
+      # so it can never diverge from the database this pm2 app actually runs on.
       - name: Deploy on server
         run: |
           ssh -i ~/.ssh/retail-craft root@165.227.26.131 "
             cd /root/retail-craft-staging/ && \
             npm install --production && \
-            cd apps/api && \
-            npx prisma generate && \
-            npx prisma migrate deploy && \
-            cd ../.. && \
+            (cd apps/api && npx prisma generate) && \
+            bash scripts/deploy-migrate.sh pos-api-staging && \
             pm2 startOrReload ecosystem.config.js --only pos-api-staging,pos-web-staging,pos-docs-staging --update-env && \
             pm2 save
           "
