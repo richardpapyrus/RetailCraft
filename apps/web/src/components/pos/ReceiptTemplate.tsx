@@ -35,11 +35,27 @@ export default function ReceiptTemplate({ sale, user, store: propStore }: Receip
     const subtotalValue = sale.subtotal !== undefined && sale.subtotal !== null
         ? num(sale.subtotal)
         : totalValue - taxValue + discountValue;
-    const changeValue = num(sale.changeGiven ?? sale.change);
-    // A server record has no "tendered" — the amount taken is the sale total.
-    const tenderedValue = sale.tendered !== undefined && sale.tendered !== null
-        ? num(sale.tendered)
-        : totalValue;
+    // Total actually handed over: the sum of the recorded payments, or the
+    // cash the POS says was tendered, falling back to the sale total.
+    const paidValue = Array.isArray(sale.payments) && sale.payments.length > 0
+        ? sale.payments.reduce((sum: number, p: any) => sum + num(p.amount), 0)
+        : sale.tendered !== undefined && sale.tendered !== null
+            ? num(sale.tendered)
+            : totalValue;
+
+    const tenderedValue = paidValue;
+
+    // Change is DERIVED, not read off the record. SalesService computes it
+    // (sales.service.ts:267) but never writes it to the Sale row, so the
+    // changeGiven column sits at its 0.0 default on every sale — trusting it
+    // printed 0.00, or nothing at all, on every receipt. Paid minus total is
+    // always available and always correct, on both the live POS receipt and a
+    // reprint from Sales history. The stored value still wins if it is ever
+    // populated later.
+    const storedChange = num(sale.changeGiven ?? sale.change);
+    const changeValue = storedChange > 0
+        ? storedChange
+        : Math.max(0, paidValue - totalValue);
 
     // Effective tax rate, shown only when it can be derived cleanly, so the
     // customer can see what they were charged rather than a bare figure.
