@@ -270,9 +270,19 @@ export default function TaxesDiscountsSettings() {
                                     <td className="py-3">
                                         {d.type === 'PERCENTAGE' ? `${d.value}%` : `$${Number(d.value).toFixed(2)}`}
                                         {d.targetType !== 'ALL' && (
-                                            <div className="text-xs text-gray-400">
-                                                Restricted to {d.targetType}: {d.targetValues?.join(', ')}
-                                            </div>
+                                            // A targeted discount with nothing selected can never apply at
+                                            // the till. Saving one used to be possible, so flag any that
+                                            // already exist instead of leaving them looking healthy.
+                                            (d.targetValues?.length ?? 0) === 0 ? (
+                                                <div className="text-xs text-red-600 mt-0.5">
+                                                    No {d.targetType === 'CATEGORY' ? 'categories' : 'products'} selected —
+                                                    this discount will never apply. Remove it and add it again.
+                                                </div>
+                                            ) : (
+                                                <div className="text-xs text-gray-400">
+                                                    Restricted to {d.targetType}: {d.targetValues.join(', ')}
+                                                </div>
+                                            )
                                         )}
                                     </td>
                                     <td className="py-3 text-sm text-gray-600">

@@ -167,8 +167,11 @@ export default function POSPage() {
             setAppliedDiscount(null);
             setSelectedCustomer(null);
             // Parked tickets hold product IDs from the previous store context —
-            // resuming them across stores must never be possible.
-            setParkedTickets([]);
+            // resuming them across stores must never be possible. They are no
+            // longer discarded outright: each store's tickets are stored under
+            // their own key and reloaded by the effect watching
+            // parkedStorageKey, so switching store swaps which set is visible
+            // rather than destroying work at the counter.
             setParkedPanelOpen(false);
 
             // Need to wait for selectedStoreId to be ready? It comes from useAuth which hydrates.
@@ -226,7 +229,17 @@ export default function POSPage() {
                 api.discounts.list(selectedStoreId || undefined)
             ]);
             setTaxes(t || []);
-            setDiscounts(d || []);
+
+            // Hide discounts outside their validity window. SalesService checks
+            // startDate/endDate when pricing the sale and silently ignores a
+            // discount that has expired or not started, so offering it here
+            // would show the cashier a reduction the customer never receives.
+            const now = Date.now();
+            setDiscounts((d || []).filter((disc: any) => {
+                const startsOk = !disc.startDate || new Date(disc.startDate).getTime() <= now;
+                const endsOk = !disc.endDate || new Date(disc.endDate).getTime() >= now;
+                return startsOk && endsOk;
+            }));
         } catch (e) { console.error('Failed active taxes/discounts', e); }
     };
 
@@ -296,14 +309,78 @@ export default function POSPage() {
         setCart(prev => prev.filter(p => p.id !== productId));
     };
 
-    // Hold / Park Sale — purely local UI state, nothing is persisted or sent to
-    // the server until the ticket is resumed and actually checked out.
+    // Hold / Park Sale.
+    //
+    // Parked tickets survive navigation and browser restarts via localStorage —
+    // a parked ticket is a real customer waiting at the counter, so losing it by
+    // stepping into another screen is not acceptable. Nothing is sent to the
+    // server until the ticket is resumed and actually checked out.
+    //
+    // Storage is keyed per tenant *and* store: a ticket holds product ids from
+    // one store's catalogue and must never be resumable under another store.
     const [parkedTickets, setParkedTickets] = useState<ParkedTicket[]>([]);
     const [parkedPanelOpen, setParkedPanelOpen] = useState(false);
+    // Which storage key the in-memory tickets were loaded from. Persisting is
+    // gated on this matching the current key, so the initial empty state can
+    // never overwrite stored tickets before they have been read back.
+    const [parkedLoadedKey, setParkedLoadedKey] = useState<string | null>(null);
+
+    const parkedStorageKey = useMemo(
+        () => (user?.tenantId ? `pos-parked:${user.tenantId}:${selectedStoreId || 'global'}` : null),
+        [user?.tenantId, selectedStoreId]
+    );
+
+    // Load tickets for the current tenant/store context.
+    useEffect(() => {
+        if (!parkedStorageKey) return;
+
+        let restored: ParkedTicket[] = [];
+        try {
+            const raw = localStorage.getItem(parkedStorageKey);
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed)) {
+                    // parkedAt round-trips through JSON as a string.
+                    restored = parsed
+                        .filter(t => t && Array.isArray(t.cart) && t.cart.length > 0)
+                        .map(t => {
+                            const parkedAt = new Date(t.parkedAt);
+                            return {
+                                ...t,
+                                parkedAt: isNaN(parkedAt.getTime()) ? new Date() : parkedAt,
+                            };
+                        });
+                }
+            }
+        } catch (e) {
+            // Corrupt or unavailable storage (private browsing, quota) must not
+            // take the till down — fall back to no parked tickets.
+            console.error('[POS] Could not read parked sales', e);
+        }
+
+        setParkedTickets(restored);
+        setParkedLoadedKey(parkedStorageKey);
+    }, [parkedStorageKey]);
+
+    // Persist on every change, but only once this context has been loaded.
+    useEffect(() => {
+        if (!parkedStorageKey || parkedLoadedKey !== parkedStorageKey) return;
+        try {
+            localStorage.setItem(parkedStorageKey, JSON.stringify(parkedTickets));
+        } catch (e) {
+            console.error('[POS] Could not save parked sales', e);
+            toast.error('Parked sales could not be saved to this device.');
+        }
+    }, [parkedTickets, parkedStorageKey, parkedLoadedKey]);
 
     const parkSale = () => {
         if (cart.length === 0) {
             toast.error('Cart is empty — nothing to park.');
+            return;
+        }
+        // Guard the storage quota without ever silently dropping a ticket.
+        if (parkedTickets.length >= 50) {
+            toast.error('You have 50 parked sales. Resume or discard some before parking more.');
             return;
         }
         const ticket: ParkedTicket = {
@@ -417,9 +494,12 @@ export default function POSPage() {
     };
 
     // Helper: Calculation (Memoized for Speed)
-    const { subtotal, discountAmount, taxAmount, cartTotal } = useMemo(() => {
+    const { subtotal, discountAmount, taxAmount, cartTotal, discountMatchesNothing } = useMemo(() => {
         const sub = cart.reduce((sum, item) => sum + (Number(item.price) * item.cartQty), 0);
         let disc = 0;
+        // True when a targeted discount is applied but nothing in the cart
+        // qualifies — otherwise the discount just silently does nothing.
+        let matchesNothing = false;
 
         if (appliedDiscount) {
             let eligibleSubtotal = 0;
@@ -431,9 +511,13 @@ export default function POSPage() {
                     if (appliedDiscount.targetType === 'PRODUCT') {
                         if (appliedDiscount.targetValues?.includes(item.id)) isEligible = true;
                     } else if (appliedDiscount.targetType === 'CATEGORY') {
-                        // Settings page saves category NAMES, not IDs.
-                        // Check if item.category.name is in targetValues
-                        if (item.category && appliedDiscount.targetValues?.some(v => v === (item.category as any).name || v === (item.category as any).id)) isEligible = true;
+                        // Category targets are matched by NAME only, exactly as
+                        // SalesService does when it prices the sale server-side.
+                        // Also accepting the category id here would let the till
+                        // display a discount the server then refuses to apply —
+                        // the customer would be charged more than the screen shows.
+                        const categoryName = (item.category as any)?.name;
+                        if (categoryName && appliedDiscount.targetValues?.includes(categoryName)) isEligible = true;
                     }
 
                     if (isEligible) eligibleSubtotal += Number(item.price) * item.cartQty;
@@ -445,6 +529,12 @@ export default function POSPage() {
             } else {
                 disc = Math.min(appliedDiscount.value, eligibleSubtotal);
             }
+
+            matchesNothing =
+                appliedDiscount.targetType !== undefined &&
+                appliedDiscount.targetType !== 'ALL' &&
+                cart.length > 0 &&
+                eligibleSubtotal === 0;
         }
 
         // Loyalty Discount
@@ -460,8 +550,14 @@ export default function POSPage() {
         const tax = taxable * totalRate;
         const total = taxable + tax;
 
-        return { subtotal: sub, discountAmount: disc, taxAmount: tax, cartTotal: total };
-    }, [cart, appliedDiscount, taxes, usePoints, pointsToRedeem]);
+        return {
+            subtotal: sub,
+            discountAmount: disc,
+            taxAmount: tax,
+            cartTotal: total,
+            discountMatchesNothing: matchesNothing,
+        };
+    }, [cart, appliedDiscount, taxes, usePoints, pointsToRedeem, user?.tenant?.loyaltyRedeemRate]);
 
     const taxableAmount = subtotal - discountAmount;
     const totalTaxRate = taxes.reduce((sum, t) => sum + Number(t.rate), 0);
@@ -704,7 +800,14 @@ export default function POSPage() {
                                                                     <span className="font-semibold text-gray-900 text-sm shrink-0">{formatCurrency(ticketTotal, user?.currency, user?.locale)}</span>
                                                                 </div>
                                                                 <div className="flex items-center justify-between gap-2">
-                                                                    <span className="text-[10px] text-gray-400">{ticket.cart.reduce((a, b) => a + b.cartQty, 0)} item(s) · {ticket.parkedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                                    <span className="text-[10px] text-gray-400">
+                                                                        {ticket.cart.reduce((a, b) => a + b.cartQty, 0)} item(s) ·{' '}
+                                                                        {/* Tickets now survive restarts, so a bare time would be
+                                                                            ambiguous once one is more than a day old. */}
+                                                                        {ticket.parkedAt.toDateString() === new Date().toDateString()
+                                                                            ? ticket.parkedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                                                                            : ticket.parkedAt.toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                                                    </span>
                                                                     <div className="flex items-center gap-2 shrink-0">
                                                                         <button onClick={() => resumeTicket(ticket.id)} className="text-brand-600 hover:text-brand-800" title="Resume"><PlayCircle className="w-4 h-4" /></button>
                                                                         <button onClick={() => discardTicket(ticket.id)} className="text-gray-300 hover:text-red-500" title="Discard"><Trash2 className="w-4 h-4" /></button>
@@ -828,6 +931,15 @@ export default function POSPage() {
                                 </div>
                                 <span className={`${discountAmount > 0 ? "text-green-600 font-semibold" : "text-gray-900 font-semibold"} w-24`}>-{formatCurrency(discountAmount, user?.currency, user?.locale)}</span>
                             </div>
+                            {/* A targeted discount that matches nothing in the cart would
+                                otherwise just show as zero with no explanation. */}
+                            {discountMatchesNothing && (
+                                <p className="text-[11px] text-amber-700 bg-amber-50 rounded px-2 py-1.5 text-left leading-snug">
+                                    “{appliedDiscount?.name}” only applies to specific{' '}
+                                    {appliedDiscount?.targetType === 'CATEGORY' ? 'categories' : 'products'}, and nothing
+                                    in this cart qualifies.
+                                </p>
+                            )}
                             <div className="flex justify-end gap-12 text-xs font-medium text-gray-500">
                                 <span>Tax ({(totalTaxRate * 100).toFixed(0)}%)</span>
                                 <span className="text-gray-900 font-semibold w-24">{formatCurrency(taxAmount, user?.currency, user?.locale)}</span>
