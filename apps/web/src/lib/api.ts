@@ -282,6 +282,21 @@ export const api = {
             if (storeId) query.append('storeId', storeId);
             return fetchClient(`/sales/hourly-heatmap?${query.toString()}`).then(res => res as { day: number; hour: number; revenue: number; count: number }[]);
         },
+        hourlyBaseline: (storeId?: string) => {
+            const query = new URLSearchParams();
+            if (storeId) query.append('storeId', storeId);
+            return fetchClient(`/sales/hourly-baseline?${query.toString()}`).then(res => res as {
+                avgHourlyRevenue: number;
+                tradingHours: number;
+                totalRevenue: number;
+                salesCount: number;
+                coverageDays: number;
+                isFullYear: boolean;
+                windowStart: string;
+                windowEnd: string;
+                computedAt: string;
+            });
+        },
         staffLeaderboard: (from?: string, to?: string, storeId?: string) => {
             const query = new URLSearchParams();
             if (from) query.append('from', from);

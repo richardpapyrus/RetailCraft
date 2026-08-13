@@ -1203,6 +1203,94 @@ export class SalesService {
     return grid;
   }
 
+  // Rolling 12-month average revenue per *trading* hour — the fixed benchmark the
+  // dashboard heatmap colours every cell against. "Trading hour" means a distinct
+  // clock-hour that had at least one completed sale, so closed/overnight hours never
+  // dilute the average. If the tenant has less than 12 months of history the window
+  // simply contains fewer hours, which is exactly the "use what's available" rule —
+  // once history exceeds 12 months the window naturally starts rolling.
+  //
+  // The window ends at local midnight this morning, so the value is identical for
+  // every request made during the same day. It is computed at most once per day per
+  // (tenant, store) — see getHourlyBaseline.
+  private async computeHourlyBaseline(tenantId: string, storeId: string | undefined, now: Date) {
+    const windowEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // local midnight
+    const windowStart = new Date(windowEnd);
+    windowStart.setFullYear(windowStart.getFullYear() - 1);
+
+    // Single DB-side aggregate: no 12 months of rows are ever pulled into Node.
+    // date_trunc to the hour is timezone-independent for whole-hour offsets, so the
+    // distinct-hour count matches however the grid itself is bucketed.
+    const rows: any[] = await prisma.$queryRaw`
+      SELECT
+        COALESCE(SUM(s.total), 0)                          AS revenue,
+        COUNT(*)                                           AS sales,
+        COUNT(DISTINCT date_trunc('hour', s."createdAt"))  AS trading_hours,
+        MIN(s."createdAt")                                 AS first_sale
+      FROM "Sale" s
+      WHERE s."tenantId" = ${tenantId}
+        AND s.status = 'COMPLETED'
+        AND s."createdAt" >= ${windowStart}
+        AND s."createdAt" < ${windowEnd}
+        AND (${storeId ? Prisma.sql`s."storeId" = ${storeId}` : Prisma.sql`1=1`})
+    `;
+
+    // COUNT() comes back as BigInt and SUM(Decimal) as Decimal/string — both must be
+    // normalised to plain numbers or JSON serialisation of the response throws.
+    const row = rows?.[0] || {};
+    const totalRevenue = Number(row.revenue || 0);
+    const tradingHours = Number(row.trading_hours || 0);
+    const salesCount = Number(row.sales || 0);
+    const firstSale = row.first_sale ? new Date(row.first_sale) : null;
+
+    const coverageStart = firstSale && firstSale > windowStart ? firstSale : windowStart;
+    const coverageDays = firstSale
+      ? Math.max(1, Math.round((windowEnd.getTime() - coverageStart.getTime()) / 86400000))
+      : 0;
+
+    return {
+      avgHourlyRevenue: tradingHours > 0 ? totalRevenue / tradingHours : 0,
+      tradingHours,
+      totalRevenue,
+      salesCount,
+      coverageDays,
+      isFullYear: coverageDays >= 365,
+      windowStart: windowStart.toISOString(),
+      windowEnd: windowEnd.toISOString(),
+      computedAt: new Date().toISOString(),
+    };
+  }
+
+  // Day-scoped in-process cache. The promise (not the resolved value) is cached so a
+  // burst of dashboard loads on the first hit of the day collapses into one query
+  // instead of N concurrent 12-month scans.
+  private static readonly hourlyBaselineCache = new Map<
+    string,
+    { day: string; promise: Promise<any> }
+  >();
+
+  async getHourlyBaseline(tenantId: string, storeId?: string) {
+    const now = new Date();
+    const day = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+    const key = `${tenantId}|${storeId || "*"}`;
+    const cache = SalesService.hourlyBaselineCache;
+
+    const hit = cache.get(key);
+    if (hit && hit.day === day) return hit.promise;
+
+    // Yesterday's entries are dead weight once the day rolls over.
+    for (const [k, v] of cache) if (v.day !== day) cache.delete(k);
+
+    const entry: { day: string; promise: Promise<any> } = { day, promise: null as any };
+    entry.promise = this.computeHourlyBaseline(tenantId, storeId, now).catch((err) => {
+      // Don't cache a failure — let the next request try again.
+      if (cache.get(key) === entry) cache.delete(key);
+      throw err;
+    });
+    cache.set(key, entry);
+    return entry.promise;
+  }
+
   async getStaffLeaderboard(
     tenantId: string,
     from?: string,
