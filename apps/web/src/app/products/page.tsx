@@ -8,7 +8,7 @@ import { useAuth, formatCurrency } from '@/lib/useAuth';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import CategoryManager from '@/components/products/CategoryManager';
-import { RefreshCw, ClipboardList, SlidersHorizontal, ArrowDownToLine, Pencil, Archive, ArchiveRestore, X } from 'lucide-react';
+import { RefreshCw, ClipboardList, SlidersHorizontal, ArrowDownToLine, Pencil, Archive, ArchiveRestore, X, Hourglass } from 'lucide-react';
 
 export default function ProductsPage() {
     const { user, token, isHydrated, hasPermission, selectedStoreId } = useAuth();
@@ -502,6 +502,13 @@ export default function ProductsPage() {
                             className="bg-white border border-cool-grey text-charcoal text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-surface-muted transition flex items-center gap-2"
                         >
                             <RefreshCw size={15} /> Refresh
+                        </button>
+                        <button
+                            onClick={() => router.push('/products/aging')}
+                            className="bg-white border border-cool-grey text-charcoal text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-surface-muted transition flex items-center gap-2"
+                            title="Stock that is sitting unsold and tying up funds"
+                        >
+                            <Hourglass size={15} /> Aging Report
                         </button>
                         {(hasPermission('MANAGE_PRODUCTS') || hasPermission('RAISE_PURCHASE_ORDER')) && (
                             <button

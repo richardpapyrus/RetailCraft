@@ -53,6 +53,142 @@ export class InventoryService {
     });
   }
 
+  // Read-only aging report.
+  //
+  // "Age" = days since stock was last added for that product+store (latest
+  // RECEIVE / RECEIVE_STOCK / ADJUSTMENT_ADD event; products whose only stock
+  // came from creation/CSV import have no such event, so we fall back to the
+  // product's createdAt). An item is EXCLUDED while it is still selling: any
+  // SALE event within `staleDays` means the stock is turning over and the lack
+  // of replenishment just means it hasn't hit its reorder point yet.
+  async getAgingReport(params: {
+    tenantId: string;
+    storeId?: string;
+    staleDays?: number;
+    take?: number;
+  }) {
+    const { tenantId, storeId, take } = params;
+    const staleDays = Math.min(365, Math.max(1, Math.floor(params.staleDays ?? 60)));
+
+    const inventories = await prisma.inventory.findMany({
+      where: {
+        quantity: { gt: 0 },
+        ...(storeId ? { storeId } : {}),
+        product: { tenantId, isArchived: false },
+      },
+      include: {
+        product: {
+          select: {
+            id: true,
+            name: true,
+            sku: true,
+            costPrice: true,
+            minStockLevel: true,
+            createdAt: true,
+            category: { select: { name: true } },
+          },
+        },
+        store: { select: { id: true, name: true } },
+      },
+    });
+
+    const emptySummary = {
+      totalItems: 0,
+      totalQuantity: 0,
+      totalValueTiedUp: 0,
+      staleDays,
+    };
+    if (inventories.length === 0) return { items: [], summary: emptySummary };
+
+    const productIds = [...new Set(inventories.map((i) => i.productId))];
+    const storeIds = [...new Set(inventories.map((i) => i.storeId))];
+
+    const [lastAdds, lastSales] = await Promise.all([
+      prisma.inventoryEvent.groupBy({
+        by: ['productId', 'storeId'],
+        where: {
+          productId: { in: productIds },
+          storeId: { in: storeIds },
+          type: { in: ['RECEIVE', 'RECEIVE_STOCK', 'ADJUSTMENT_ADD'] },
+        },
+        _max: { createdAt: true },
+      }),
+      prisma.inventoryEvent.groupBy({
+        by: ['productId', 'storeId'],
+        where: {
+          productId: { in: productIds },
+          storeId: { in: storeIds },
+          type: 'SALE',
+        },
+        _max: { createdAt: true },
+      }),
+    ]);
+
+    const key = (productId: string, sId: string) => `${productId}|${sId}`;
+    const lastAddMap = new Map(
+      lastAdds.map((e) => [key(e.productId, e.storeId), e._max.createdAt]),
+    );
+    const lastSaleMap = new Map(
+      lastSales.map((e) => [key(e.productId, e.storeId), e._max.createdAt]),
+    );
+
+    const DAY_MS = 24 * 60 * 60 * 1000;
+    const now = Date.now();
+    const staleCutoff = now - staleDays * DAY_MS;
+
+    const items: any[] = [];
+    let totalQuantity = 0;
+    let totalValueTiedUp = 0;
+
+    for (const inv of inventories) {
+      const k = key(inv.productId, inv.storeId);
+      const lastSoldAt = lastSaleMap.get(k) ?? null;
+
+      // Still turning over — not "sitting" stock.
+      if (lastSoldAt && lastSoldAt.getTime() >= staleCutoff) continue;
+
+      const lastReceivedAt = lastAddMap.get(k) ?? inv.product.createdAt;
+      const ageDays = Math.max(0, Math.floor((now - lastReceivedAt.getTime()) / DAY_MS));
+      const unitCost = Number(inv.product.costPrice) || 0;
+      const valueTiedUp = unitCost * inv.quantity;
+
+      totalQuantity += inv.quantity;
+      totalValueTiedUp += valueTiedUp;
+
+      items.push({
+        productId: inv.productId,
+        name: inv.product.name,
+        sku: inv.product.sku,
+        category: inv.product.category?.name ?? null,
+        storeId: inv.storeId,
+        storeName: inv.store.name,
+        quantity: inv.quantity,
+        minStockLevel: inv.product.minStockLevel,
+        unitCost,
+        valueTiedUp,
+        lastReceivedAt,
+        lastSoldAt,
+        ageDays,
+        daysSinceLastSale: lastSoldAt
+          ? Math.max(0, Math.floor((now - lastSoldAt.getTime()) / DAY_MS))
+          : null, // never sold
+      });
+    }
+
+    // Oldest stock first; ties broken by the most money tied up.
+    items.sort((a, b) => b.ageDays - a.ageDays || b.valueTiedUp - a.valueTiedUp);
+
+    return {
+      items: take && take > 0 ? items.slice(0, take) : items,
+      summary: {
+        totalItems: items.length,
+        totalQuantity,
+        totalValueTiedUp,
+        staleDays,
+      },
+    };
+  }
+
   async getStock(storeId: string, productId: string) {
     return prisma.inventory.findUnique({
       where: {

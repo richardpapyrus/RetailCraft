@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Request } from "@nestjs/common";
+import { Controller, Get, Post, Body, Query, UseGuards, Request } from "@nestjs/common";
 import { InventoryService } from "./inventory.service";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 
@@ -6,6 +6,34 @@ import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 @UseGuards(JwtAuthGuard)
 export class InventoryController {
   constructor(private readonly inventoryService: InventoryService) { }
+
+  // Read-only aging / dead-stock report. Admins may pass ?storeId= or omit it
+  // for all locations; store users are locked to their own store.
+  @Get("aging")
+  async getAgingReport(
+    @Request() req,
+    @Query("storeId") queryStoreId?: string,
+    @Query("staleDays") staleDays?: string,
+    @Query("take") take?: string,
+  ) {
+    const isSystemAdmin = req.user.role === 'Administrator' || req.user.permissions?.includes('*');
+
+    let storeId = queryStoreId;
+    if (storeId === 'undefined' || storeId === 'null') storeId = undefined;
+    if (!isSystemAdmin && req.user.storeId) {
+      storeId = req.user.storeId;
+    }
+
+    const parsedStaleDays = parseInt(staleDays || "", 10);
+    const parsedTake = parseInt(take || "", 10);
+
+    return this.inventoryService.getAgingReport({
+      tenantId: req.user.tenantId,
+      storeId,
+      staleDays: isNaN(parsedStaleDays) ? undefined : parsedStaleDays,
+      take: isNaN(parsedTake) ? undefined : parsedTake,
+    });
+  }
 
   @Post("adjust")
   async adjustStock(
