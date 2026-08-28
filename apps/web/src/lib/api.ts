@@ -137,6 +137,33 @@ export interface Product {
     isArchived?: boolean;
 }
 
+export interface InventoryAgingItem {
+    productId: string;
+    name: string;
+    sku: string;
+    category: string | null;
+    storeId: string;
+    storeName: string;
+    quantity: number;
+    minStockLevel: number;
+    unitCost: number;
+    valueTiedUp: number;
+    lastReceivedAt: string;
+    lastSoldAt: string | null;
+    ageDays: number;
+    daysSinceLastSale: number | null; // null = never sold
+}
+
+export interface InventoryAgingReport {
+    items: InventoryAgingItem[];
+    summary: {
+        totalItems: number;
+        totalQuantity: number;
+        totalValueTiedUp: number;
+        staleDays: number;
+    };
+}
+
 export interface ReturnRequest {
     saleId: string;
     items: { productId: string; quantity: number; restock: boolean }[];
@@ -218,6 +245,13 @@ export const api = {
                 method: 'POST',
                 body: JSON.stringify(data),
             }),
+        aging: (params: { storeId?: string; staleDays?: number; take?: number } = {}) => {
+            const query = new URLSearchParams();
+            if (params.storeId) query.append('storeId', params.storeId);
+            if (params.staleDays) query.append('staleDays', params.staleDays.toString());
+            if (params.take) query.append('take', params.take.toString());
+            return fetchClient(`/inventory/aging?${query.toString()}`).then(res => res as InventoryAgingReport);
+        },
     },
     sales: {
         list: (skip: number = 0, take: number = 50, storeId?: string, search?: string, filter?: string) => {
