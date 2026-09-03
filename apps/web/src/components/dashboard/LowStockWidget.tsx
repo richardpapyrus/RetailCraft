@@ -6,20 +6,39 @@ import { api } from '@/lib/api';
 import { useAuth, formatCurrency } from '@/lib/useAuth';
 import { AlertTriangle } from 'lucide-react';
 
-export default function LowStockWidget({ storeId }: { storeId?: string }) {
+export interface ProductStatsSummary {
+    totalProducts: number;
+    inventoryValue: string;
+    lowStockCount: number;
+}
+
+// `stats`/`loading` are optional: pass both to render from data the parent has
+// already fetched (the dashboard does this so opening the Inventory tab doesn't
+// repeat a query the page ran on load). Omit them and the widget fetches for
+// itself, which is the original behaviour.
+export default function LowStockWidget({ storeId, stats: providedStats, loading: providedLoading }: {
+    storeId?: string;
+    stats?: ProductStatsSummary | null;
+    loading?: boolean;
+}) {
     const { user } = useAuth();
-    const [stats, setStats] = useState<{ totalProducts: number; inventoryValue: string; lowStockCount: number } | null>(null);
-    const [loading, setLoading] = useState(true);
+    const controlled = providedLoading !== undefined;
+    const [ownStats, setOwnStats] = useState<ProductStatsSummary | null>(null);
+    const [ownLoading, setOwnLoading] = useState(true);
 
     useEffect(() => {
+        if (controlled) return;
         let cancelled = false;
-        setLoading(true);
+        setOwnLoading(true);
         api.products.getStats(storeId)
-            .then(res => { if (!cancelled) setStats(res); })
-            .catch(err => { console.error('Failed to load product stats', err); if (!cancelled) setStats(null); })
-            .finally(() => { if (!cancelled) setLoading(false); });
+            .then(res => { if (!cancelled) setOwnStats(res); })
+            .catch(err => { console.error('Failed to load product stats', err); if (!cancelled) setOwnStats(null); })
+            .finally(() => { if (!cancelled) setOwnLoading(false); });
         return () => { cancelled = true; };
-    }, [storeId]);
+    }, [storeId, controlled]);
+
+    const stats = controlled ? (providedStats ?? null) : ownStats;
+    const loading = controlled ? providedLoading : ownLoading;
 
     if (loading) return <div className="text-center py-8 text-gray-400 text-sm">Loading...</div>;
     if (!stats) return <div className="text-center py-8 text-gray-400 text-sm">Unable to load inventory data</div>;

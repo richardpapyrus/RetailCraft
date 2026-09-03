@@ -22,6 +22,23 @@ module.exports = {
                     800: '#102621',
                     900: '#0B1B17',
                 },
+                // Warm editorial palette — used ONLY by /dashboard/news-feed, which is
+                // a deliberately different reading of the dashboard. Kept apart from
+                // the brand scale so neither drifts into the other.
+                feed: {
+                    paper: '#FBF9F5',
+                    ink: '#1A1815',
+                    ink2: '#55504A',
+                    ink3: '#948D84',
+                    tint: '#C9C1B4',
+                    rule: '#E5DFD5',
+                    hair: '#EFEAE1',
+                    base: '#D8D0C3',
+                    mute: '#F0EDE6',
+                    green: '#2A4A3C',
+                    clay: '#C05621',
+                    blue: '#3A5FA8',
+                },
                 primary: "#235347",
                 // Calm neutral surfaces (white-dominant backgrounds)
                 canvas: "#FAFAFA",

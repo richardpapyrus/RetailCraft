@@ -20,20 +20,32 @@ export function formatAge(days: number) {
 
 // Top-10 slice of the aging (dead stock) report. When no store filter is
 // active (all-locations view) each row shows which store the stock sits in.
-export default function InventoryAgingWidget({ storeId }: { storeId?: string }) {
+// `report`/`loading` are optional: pass both to render from data the parent has
+// already fetched. Omit them and the widget fetches for itself, which is the
+// original behaviour.
+export default function InventoryAgingWidget({ storeId, report: providedReport, loading: providedLoading }: {
+    storeId?: string;
+    report?: InventoryAgingReport | null;
+    loading?: boolean;
+}) {
     const { user } = useAuth();
-    const [report, setReport] = useState<InventoryAgingReport | null>(null);
-    const [loading, setLoading] = useState(true);
+    const controlled = providedLoading !== undefined;
+    const [ownReport, setOwnReport] = useState<InventoryAgingReport | null>(null);
+    const [ownLoading, setOwnLoading] = useState(true);
 
     useEffect(() => {
+        if (controlled) return;
         let cancelled = false;
-        setLoading(true);
+        setOwnLoading(true);
         api.inventory.aging({ storeId: storeId || undefined, take: 10 })
-            .then(res => { if (!cancelled) setReport(res); })
-            .catch(err => { console.error('Failed to load inventory aging', err); if (!cancelled) setReport(null); })
-            .finally(() => { if (!cancelled) setLoading(false); });
+            .then(res => { if (!cancelled) setOwnReport(res); })
+            .catch(err => { console.error('Failed to load inventory aging', err); if (!cancelled) setOwnReport(null); })
+            .finally(() => { if (!cancelled) setOwnLoading(false); });
         return () => { cancelled = true; };
-    }, [storeId]);
+    }, [storeId, controlled]);
+
+    const report = controlled ? (providedReport ?? null) : ownReport;
+    const loading = controlled ? providedLoading : ownLoading;
 
     if (loading) return <div className="text-center py-8 text-gray-400 text-sm">Loading...</div>;
     if (!report) return <div className="text-center py-8 text-gray-400 text-sm">Unable to load aging data</div>;
