@@ -6,9 +6,38 @@ import { useAuth, formatCurrency } from '@/lib/useAuth';
 
 const HOUR_LABELS = [0, 4, 8, 12, 16, 20];
 
-// Diverging scale anchors: clay red below average, brand green above.
-const RED = '179, 87, 74';    // #B3574A
-const GREEN = '35, 83, 71';   // #235347
+// Diverging scale anchors: warm hue below average, cool/green above.
+// `brand` is the dashboard's palette; `feed` is the news feed's warm editorial one.
+const TONES = {
+    brand: {
+        neg: '179, 87, 74',   // #B3574A clay
+        pos: '35, 83, 71',    // #235347 brand green
+        empty: 'var(--rc-surface-muted, #F3F3F3)',
+        future: 'rgba(243, 243, 243, 0.4)',
+        meta: 'text-mid-grey',
+        rowLabel: 'text-gray-500',
+        rowDate: 'text-gray-300',
+        todayLabel: 'text-brand-700',
+        todayDate: 'text-brand-300',
+        benchmark: 'text-gray-500',
+        swatch: 'bg-white',
+        blank: 'text-gray-400',
+    },
+    feed: {
+        neg: '192, 86, 33',   // #C05621 terracotta
+        pos: '42, 74, 60',    // #2A4A3C botanical green
+        empty: '#F0EDE6',
+        future: 'rgba(240, 237, 230, 0.5)',
+        meta: 'text-feed-ink3',
+        rowLabel: 'text-feed-ink2',
+        rowDate: 'text-feed-tint',
+        todayLabel: 'text-feed-green',
+        todayDate: 'text-feed-tint',
+        benchmark: 'text-feed-ink2',
+        swatch: 'bg-feed-paper',
+        blank: 'text-feed-ink3',
+    },
+};
 
 interface Cell { day: number; hour: number; revenue: number; count: number }
 interface Baseline { avgHourlyRevenue: number; tradingHours: number; coverageDays: number; isFullYear: boolean }
@@ -31,8 +60,12 @@ interface Baseline { avgHourlyRevenue: number; tradingHours: number; coverageDay
 // If the baseline is unavailable — API not yet deployed, or a tenant with no
 // completed history before today — we fall back to averaging the visible window
 // so the heatmap still renders something meaningful.
-export default function HourlyHeatmap({ storeId }: { storeId?: string }) {
+export default function HourlyHeatmap({ storeId, tone = 'brand' }: {
+    storeId?: string;
+    tone?: keyof typeof TONES;
+}) {
     const { user } = useAuth();
+    const t = TONES[tone] ?? TONES.brand;
     const [pastCells, setPastCells] = useState<Cell[]>([]);
     const [todayCells, setTodayCells] = useState<Cell[]>([]);
     const [baseline, setBaseline] = useState<Baseline | null>(null);
@@ -76,7 +109,7 @@ export default function HourlyHeatmap({ storeId }: { storeId?: string }) {
         return () => { cancelled = true; clearInterval(intervalId); };
     }, [storeId]);
 
-    if (loading) return <div className="text-center py-12 text-gray-400 text-sm">Loading...</div>;
+    if (loading) return <div className={`text-center py-12 text-sm ${t.blank}`}>Loading...</div>;
 
     const now = new Date();
     const currentHour = now.getHours();
@@ -114,11 +147,11 @@ export default function HourlyHeatmap({ storeId }: { storeId?: string }) {
     // Fixed ±100% diverging scale anchored on `avg`: 0 revenue is full red, exactly
     // the benchmark is neutral, 2× the benchmark or more is full green.
     const cellColor = (cell?: Cell) => {
-        if (!cell || cell.count === 0) return 'var(--rc-surface-muted, #F3F3F3)';
-        if (avg <= 0) return `rgba(${GREEN}, 0.5)`;
+        if (!cell || cell.count === 0) return t.empty;
+        if (avg <= 0) return `rgba(${t.pos}, 0.5)`;
         const diff = cell.revenue - avg;
-        const t = Math.min(1, Math.abs(diff) / avg);
-        return `rgba(${diff >= 0 ? GREEN : RED}, ${0.2 + t * 0.75})`;
+        const intensity = Math.min(1, Math.abs(diff) / avg);
+        return `rgba(${diff >= 0 ? t.pos : t.neg}, ${0.2 + intensity * 0.75})`;
     };
 
     const benchmarkLabel = baseline
@@ -132,22 +165,22 @@ export default function HourlyHeatmap({ storeId }: { storeId?: string }) {
     return (
         <div>
             {!hasAnyData ? (
-                <div className="text-center py-12 text-gray-400 text-sm">No sales in the last 7 days</div>
+                <div className={`text-center py-12 text-sm ${t.blank}`}>No sales in the last 7 days</div>
             ) : (
                 <div className="overflow-x-auto">
                     <div className="min-w-[560px]">
                         <div className="grid gap-[3px]" style={{ gridTemplateColumns: '64px repeat(24, 1fr)' }}>
                             <div />
                             {Array.from({ length: 24 }).map((_, h) => (
-                                <div key={h} className="text-[9px] text-mid-grey text-center font-medium">
+                                <div key={h} className={`text-[9px] text-center font-medium ${t.meta}`}>
                                     {HOUR_LABELS.includes(h) ? h : ''}
                                 </div>
                             ))}
                             {rows.map((row) => (
                                 <div key={`${row.isToday ? 'today' : row.weekday}`} className="contents">
-                                    <div className={`text-[10px] font-semibold flex items-center gap-1 pr-1 ${row.isToday ? 'text-brand-700' : 'text-gray-500'}`}>
+                                    <div className={`text-[10px] font-semibold flex items-center gap-1 pr-1 ${row.isToday ? t.todayLabel : t.rowLabel}`}>
                                         <span>{row.label}</span>
-                                        <span className={`font-medium ${row.isToday ? 'text-brand-300' : 'text-gray-300'}`}>{row.dateLabel}</span>
+                                        <span className={`font-medium ${row.isToday ? t.todayDate : t.rowDate}`}>{row.dateLabel}</span>
                                     </div>
                                     {Array.from({ length: 24 }).map((_, hour) => {
                                         const isFuture = row.isToday && hour > currentHour;
@@ -168,8 +201,8 @@ export default function HourlyHeatmap({ storeId }: { storeId?: string }) {
                                                 title={title}
                                                 className="aspect-square rounded-[3px]"
                                                 style={{
-                                                    backgroundColor: isFuture ? 'rgba(243, 243, 243, 0.4)' : cellColor(cell),
-                                                    boxShadow: isCurrent ? `inset 0 0 0 1.5px rgba(${GREEN}, 0.55)` : undefined,
+                                                    backgroundColor: isFuture ? t.future : cellColor(cell),
+                                                    boxShadow: isCurrent ? `inset 0 0 0 1.5px rgba(${t.pos}, 0.55)` : undefined,
                                                 }}
                                             />
                                         );
@@ -177,9 +210,9 @@ export default function HourlyHeatmap({ storeId }: { storeId?: string }) {
                                 </div>
                             ))}
                         </div>
-                        <div className="flex items-center justify-between gap-4 mt-3 text-[10px] font-medium text-mid-grey flex-wrap">
+                        <div className={`flex items-center justify-between gap-4 mt-3 text-[10px] font-medium flex-wrap ${t.meta}`}>
                             <span
-                                className="font-semibold text-gray-500"
+                                className={`font-semibold ${t.benchmark}`}
                                 title={baseline
                                     ? `Average revenue per trading hour across ${baseline.tradingHours.toLocaleString()} hours with sales in the rolling 12 months ending last midnight. Recalculated once a day.`
                                     : 'Long-term benchmark unavailable — falling back to the average of the hours shown.'}
@@ -188,19 +221,19 @@ export default function HourlyHeatmap({ storeId }: { storeId?: string }) {
                             </span>
                             <span className="flex items-center gap-4 flex-wrap">
                             <span className="flex items-center gap-1.5">
-                                <span className="w-2.5 h-2.5 rounded-[3px]" style={{ backgroundColor: `rgba(${RED}, 0.8)` }} />
+                                <span className="w-2.5 h-2.5 rounded-[3px]" style={{ backgroundColor: `rgba(${t.neg}, 0.8)` }} />
                                 Below benchmark
                             </span>
                             <span className="flex items-center gap-1.5">
-                                <span className="w-2.5 h-2.5 rounded-[3px]" style={{ backgroundColor: 'var(--rc-surface-muted, #F3F3F3)' }} />
+                                <span className="w-2.5 h-2.5 rounded-[3px]" style={{ backgroundColor: t.empty }} />
                                 No sales
                             </span>
                             <span className="flex items-center gap-1.5">
-                                <span className="w-2.5 h-2.5 rounded-[3px]" style={{ backgroundColor: `rgba(${GREEN}, 0.8)` }} />
+                                <span className="w-2.5 h-2.5 rounded-[3px]" style={{ backgroundColor: `rgba(${t.pos}, 0.8)` }} />
                                 Above benchmark
                             </span>
                             <span className="flex items-center gap-1.5">
-                                <span className="w-2.5 h-2.5 rounded-[3px] bg-white" style={{ boxShadow: `inset 0 0 0 1.5px rgba(${GREEN}, 0.55)` }} />
+                                <span className={`w-2.5 h-2.5 rounded-[3px] ${t.swatch}`} style={{ boxShadow: `inset 0 0 0 1.5px rgba(${t.pos}, 0.55)` }} />
                                 Current hour
                             </span>
                             </span>

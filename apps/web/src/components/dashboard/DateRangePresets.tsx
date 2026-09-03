@@ -32,10 +32,23 @@ function makePresets() {
     ];
 }
 
-export default function DateRangePresets({ dateRange, onSelect }: {
+const TONES = {
+    brand: {
+        active: 'bg-brand-500 text-white',
+        idle: 'bg-white text-charcoal border border-cool-grey hover:bg-surface-muted',
+    },
+    feed: {
+        active: 'bg-feed-ink text-feed-paper',
+        idle: 'text-feed-ink2 border border-feed-rule hover:bg-feed-mute',
+    },
+};
+
+export default function DateRangePresets({ dateRange, onSelect, tone = 'brand' }: {
     dateRange: { from: string; to: string },
-    onSelect: (range: { from: string; to: string }) => void
+    onSelect: (range: { from: string; to: string }) => void,
+    tone?: keyof typeof TONES
 }) {
+    const palette = TONES[tone] ?? TONES.brand;
     const presets = makePresets();
     const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
 
@@ -62,10 +75,7 @@ export default function DateRangePresets({ dateRange, onSelect }: {
                             setSelectedLabel(p.label);
                             onSelect({ from: p.from, to: p.to });
                         }}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${active
-                            ? 'bg-brand-500 text-white'
-                            : 'bg-white text-charcoal border border-cool-grey hover:bg-surface-muted'
-                            }`}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${active ? palette.active : palette.idle}`}
                     >
                         {p.label}
                     </button>

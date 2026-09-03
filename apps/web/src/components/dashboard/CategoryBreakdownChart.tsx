@@ -4,7 +4,10 @@ import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth, formatCurrency } from '@/lib/useAuth';
 
-const PALETTE = ['#235347', '#B8843A', '#B3574A', '#3F5C8A', '#7BA396'];
+// Categories are nominal and the bar length already encodes the value, so every
+// bar carries the same brand hue. Colouring each one differently would spend the
+// only free channel on information the chart is already showing.
+const BAR_COLOR = '#235347';
 
 export default function CategoryBreakdownChart({ from, to, storeId }: { from?: string, to?: string, storeId?: string }) {
     const { user } = useAuth();
@@ -29,7 +32,7 @@ export default function CategoryBreakdownChart({ from, to, storeId }: { from?: s
 
     return (
         <div className="space-y-3">
-            {top.map((d, i) => (
+            {top.map(d => (
                 <div key={d.name}>
                     <div className="flex justify-between items-baseline mb-1">
                         <span className="text-sm font-medium text-gray-700 truncate">{d.name}</span>
@@ -38,7 +41,7 @@ export default function CategoryBreakdownChart({ from, to, storeId }: { from?: s
                     <div className="h-2 rounded-full bg-surface-muted overflow-hidden">
                         <div
                             className="h-full rounded-full transition-all"
-                            style={{ width: `${Math.max(4, (d.revenue / max) * 100)}%`, backgroundColor: PALETTE[i % PALETTE.length] }}
+                            style={{ width: `${Math.max(4, (d.revenue / max) * 100)}%`, backgroundColor: BAR_COLOR }}
                         />
                     </div>
                 </div>
