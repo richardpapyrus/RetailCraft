@@ -2,7 +2,7 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
+import { prisma } from "../prisma/client"; // shared pool (was new PrismaClient())
 
 @Injectable()
 export class GrnService {
@@ -165,7 +165,8 @@ export class GrnService {
     async findAll(storeId: string) {
         return prisma.goodsReceivedNote.findMany({
             where: { storeId },
-            include: { user: true, purchaseOrder: true },
+            // Narrowed from `user: true`, which returned the password hash and invitation token.
+            include: { user: { select: { id: true, name: true } }, purchaseOrder: true },
             orderBy: { receivedDate: 'desc' }
         });
     }

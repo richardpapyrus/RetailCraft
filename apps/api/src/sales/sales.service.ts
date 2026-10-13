@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException } from "@nestjs/common";
 import { PrismaClient, Prisma } from "@prisma/client";
 
-const prisma = new PrismaClient();
+import { prisma } from "../prisma/client"; // shared pool (was new PrismaClient())
 
 @Injectable()
 export class SalesService {

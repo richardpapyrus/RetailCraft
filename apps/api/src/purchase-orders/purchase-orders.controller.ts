@@ -44,13 +44,26 @@ export class PurchaseOrdersController {
     }
 
     @Get()
-    findAll(@Request() req, @Query('status') status?: string, @Query('storeId') queryStoreId?: string) {
+    findAll(
+        @Request() req,
+        @Query('status') status?: string,
+        @Query('storeId') queryStoreId?: string,
+        @Query('page') page?: string,
+        @Query('limit') limit?: string,
+    ) {
         let storeId = req.user.storeId;
         const isSystemAdmin = req.user.role === 'Administrator' || req.user.permissions?.includes('*');
 
         if (isSystemAdmin) {
             // Allow Admin to view all or specific store
             storeId = queryStoreId;
+        }
+
+        // Paging is opt-in: without ?page the response stays the plain array older clients expect.
+        if (page !== undefined) {
+            const pageNum = Math.max(1, parseInt(page, 10) || 1);
+            const limitNum = Math.min(100, Math.max(1, parseInt(limit ?? '', 10) || 20));
+            return this.poService.findPage(req.user.tenantId, pageNum, limitNum, storeId, status);
         }
 
         return this.poService.findAll(req.user.tenantId, storeId, status);

@@ -2,7 +2,12 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
+import { prisma } from "../prisma/client"; // shared pool (was new PrismaClient())
+
+const PO_LIST_INCLUDE = {
+    supplier: true,
+    user: { select: { id: true, name: true } },
+};
 
 @Injectable()
 export class PurchaseOrdersService {
@@ -87,16 +92,36 @@ export class PurchaseOrdersService {
     }
 
     // Find All (Store Filtered)
+    // `user` is narrowed to id/name: the full row carried the password hash and invitation token.
     async findAll(tenantId: string, storeId?: string, status?: string) {
+        return prisma.purchaseOrder.findMany({
+            where: this.listWhere(tenantId, storeId, status),
+            include: PO_LIST_INCLUDE,
+            orderBy: { createdAt: 'desc' }
+        });
+    }
+
+    // Paged variant of findAll — one page from the DB plus a total, instead of every PO ever raised.
+    async findPage(tenantId: string, page: number, limit: number, storeId?: string, status?: string) {
+        const where = this.listWhere(tenantId, storeId, status);
+        const [data, total] = await Promise.all([
+            prisma.purchaseOrder.findMany({
+                where,
+                include: PO_LIST_INCLUDE,
+                orderBy: { createdAt: 'desc' },
+                skip: (page - 1) * limit,
+                take: limit,
+            }),
+            prisma.purchaseOrder.count({ where }),
+        ]);
+        return { data, total };
+    }
+
+    private listWhere(tenantId: string, storeId?: string, status?: string) {
         const where: any = { tenantId };
         if (storeId) where.storeId = storeId;
         if (status) where.status = status;
-
-        return prisma.purchaseOrder.findMany({
-            where,
-            include: { supplier: true, user: true },
-            orderBy: { createdAt: 'desc' }
-        });
+        return where;
     }
 
     // Find One

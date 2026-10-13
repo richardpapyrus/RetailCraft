@@ -3,7 +3,7 @@ import { PrismaClient, Prisma } from "@prisma/client";
 import * as csv from "csv-parser";
 import { Readable } from "stream";
 
-const prisma = new PrismaClient();
+import { prisma } from "../prisma/client"; // shared pool (was new PrismaClient())
 
 @Injectable()
 export class ProductsService {
@@ -366,22 +366,23 @@ export class ProductsService {
       const productIds = lowStockProducts.map((p) => p.id);
 
       // Count total matching for pagination
-      const totalResult: any[] = await prisma.$queryRawUnsafe(`
-                 SELECT COUNT(DISTINCT p.id) as count
+      // Parameterised (was $queryRawUnsafe with the search text spliced in — SQL injection).
+      // Same filters as the page query above; one row per matching product, so length = total.
+      const totalResult: any[] = await (prisma as any).$queryRaw`
+                 SELECT p.id
                  FROM "Product" p
-                  LEFT JOIN "Inventory" i ON p.id = i."productId" ${storeId ? `AND i."storeId" = '${storeId}'` : ''}
-                  WHERE p."tenantId" = '${tenantId}'
-                 ${storeId ? `AND (p."storeId" = '${storeId}' OR p."storeId" IS NULL OR i."storeId" = '${storeId}')` : ''}
-                 AND (${filters.category ? `p."categoryId" = '${filters.category}'` : '1=1'})
+                 LEFT JOIN "Inventory" i ON p.id = i."productId" AND (${storeId ? (Prisma as any).sql`i."storeId" = ${storeId}` : (Prisma as any).sql`1=1`})
+                 WHERE p."tenantId" = ${tenantId}
+                 AND (${filters.category ? (Prisma as any).sql`p."categoryId" = ${filters.category}` : (Prisma as any).sql`1=1`})
                  AND (
-                    p.name ILIKE '%${searchTerm}%' OR 
-                    p.sku ILIKE '%${searchTerm}%' OR 
-                    p.barcode ILIKE '%${searchTerm}%'
+                    p.name ILIKE ${searchTerm} OR
+                    p.sku ILIKE ${searchTerm} OR
+                    p.barcode ILIKE ${searchTerm}
                  )
-
+                 AND (${storeId ? (Prisma as any).sql`(p."storeId" = ${storeId} OR p."storeId" IS NULL OR i."storeId" = ${storeId})` : (Prisma as any).sql`1=1`})
                  GROUP BY p.id
                  HAVING COALESCE(SUM(i.quantity), 0) <= COALESCE(p."minStockLevel", 0) OR COALESCE(SUM(i.quantity), 0) = 0
-            `);
+            `;
       const total = totalResult.length;
 
       const data = await prisma.product.findMany({

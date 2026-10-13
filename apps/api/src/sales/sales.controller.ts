@@ -12,7 +12,7 @@ import { SalesService } from "./sales.service";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient(); // Quick fix for querying default store helper if needed, better to use service
+import { prisma } from "../prisma/client"; // shared pool (was new PrismaClient())
 
 @InjectableHelper()
 class InventoryHelper {
