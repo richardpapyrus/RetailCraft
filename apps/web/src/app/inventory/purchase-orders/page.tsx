@@ -13,26 +13,41 @@ export default function PurchaseOrdersPage() {
     const { token, isHydrated, selectedStoreId, hasPermission } = useAuth();
     const router = useRouter();
     const [orders, setOrders] = useState<any[]>([]);
+    const [totalOrders, setTotalOrders] = useState(0);
+    // An older API ignores ?page and returns every order; we then page client-side as before.
+    const [clientPaged, setClientPaged] = useState(false);
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
 
     useEffect(() => {
-        if (!isHydrated || !token) return;
         setCurrentPage(1); // Reset to first page when store changes
-        loadOrders();
-    }, [token, isHydrated, selectedStoreId]);
+    }, [selectedStoreId]);
 
-    const loadOrders = async () => {
-        try {
-            setLoading(true);
-            const data = await api.purchaseOrders.list(undefined, selectedStoreId || undefined);
-            setOrders(data);
-        } catch (e) {
-            console.error(e);
-        } finally {
-            setLoading(false);
-        }
-    };
+    useEffect(() => {
+        if (!isHydrated || !token) return;
+        let cancelled = false;
+        (async () => {
+            try {
+                setLoading(true);
+                const res = await api.purchaseOrders.listPage(currentPage, PAGE_SIZE, undefined, selectedStoreId || undefined);
+                if (cancelled) return;
+                if (Array.isArray(res)) {
+                    setClientPaged(true);
+                    setOrders(res);
+                    setTotalOrders(res.length);
+                } else {
+                    setClientPaged(false);
+                    setOrders(res.data || []);
+                    setTotalOrders(res.total || 0);
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        })();
+        return () => { cancelled = true; };
+    }, [token, isHydrated, selectedStoreId, currentPage]);
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -46,12 +61,13 @@ export default function PurchaseOrdersPage() {
     };
 
     // Pagination calculations
-    const totalPages = Math.max(1, Math.ceil(orders.length / PAGE_SIZE));
+    const totalPages = Math.max(1, Math.ceil(totalOrders / PAGE_SIZE));
     const startIndex = (currentPage - 1) * PAGE_SIZE;
-    const endIndex = Math.min(startIndex + PAGE_SIZE, orders.length);
-    const paginatedOrders = orders.slice(startIndex, endIndex);
+    const endIndex = Math.min(startIndex + PAGE_SIZE, totalOrders);
+    const paginatedOrders = clientPaged ? orders.slice(startIndex, endIndex) : orders;
 
-    if (loading) return <div className="p-8">Loading Orders...</div>;
+    // Full-page loader only on first load; page flips keep the table on screen.
+    if (loading && orders.length === 0) return <div className="p-8">Loading Orders...</div>;
 
     return (
         <div className="flex flex-col h-full bg-gray-50 p-6 overflow-auto">
@@ -129,11 +145,11 @@ export default function PurchaseOrdersPage() {
                     </table>
 
                     {/* Pagination Footer */}
-                    {orders.length > PAGE_SIZE && (
+                    {totalOrders > PAGE_SIZE && (
                         <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-gray-50">
                             <p className="text-sm text-gray-600">
                                 Showing <span className="font-semibold">{startIndex + 1}</span>–<span className="font-semibold">{endIndex}</span> of{' '}
-                                <span className="font-semibold">{orders.length}</span> orders
+                                <span className="font-semibold">{totalOrders}</span> orders
                             </p>
                             <div className="flex items-center gap-2">
                                 <button

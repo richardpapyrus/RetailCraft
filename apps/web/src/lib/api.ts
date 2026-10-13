@@ -447,6 +447,13 @@ export const api = {
             if (storeId) params.append('storeId', storeId);
             return fetchClient(`/purchase-orders?${params.toString()}`).then(res => res as any[]);
         },
+        // Returns { data, total } from a paging-aware API, or the full array from an older one.
+        listPage: (page: number, limit: number, status?: string, storeId?: string) => {
+            const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+            if (status) params.append('status', status);
+            if (storeId) params.append('storeId', storeId);
+            return fetchClient(`/purchase-orders?${params.toString()}`).then(res => res as { data: any[]; total: number } | any[]);
+        },
         create: (data: { supplierId: string; storeId?: string; items: { productId: string; quantity: number; unitCost: number }[]; notes?: string }) => fetchClient('/purchase-orders', { method: 'POST', body: JSON.stringify(data) }),
         get: (id: string) => fetchClient(`/purchase-orders/${id}`).then(res => res as any),
         updateStatus: (id: string, status: string) => fetchClient(`/purchase-orders/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),

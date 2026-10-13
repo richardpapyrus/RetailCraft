@@ -8,6 +8,9 @@ module.exports = {
             env: {
                 NODE_ENV: "production",
                 PORT: 4000,
+                // Max DB connections for this API process (apps/api/src/prisma/client.ts).
+                // Prod + staging together must stay under the DO cluster's connection limit.
+                DATABASE_POOL_SIZE: "10",
                 DATABASE_URL: "postgresql://doadmin:AVNS_iNZVQYj-RX036W3B0oS@retail-craft-db-postgres-do-user-24373738-0.k.db.ondigitalocean.com:25060/pos_db?sslmode=require"
             }
         },
@@ -30,6 +33,7 @@ module.exports = {
             env: {
                 NODE_ENV: "production",
                 PORT: 4001,
+                DATABASE_POOL_SIZE: "5",
                 DATABASE_URL: "postgresql://doadmin:AVNS_iNZVQYj-RX036W3B0oS@retail-craft-db-postgres-do-user-24373738-0.k.db.ondigitalocean.com:25060/pos_db_staging?sslmode=require"
             }
         },

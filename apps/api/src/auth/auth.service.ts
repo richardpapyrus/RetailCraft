@@ -6,10 +6,11 @@ import {
 import { JwtService } from "@nestjs/jwt";
 import { PrismaClient } from "@prisma/client";
 import * as bcrypt from "bcrypt";
+import { prisma as sharedPrisma } from "../prisma/client";
 
 @Injectable()
 export class AuthService {
-  private prisma = new PrismaClient();
+  private prisma: PrismaClient = sharedPrisma; // shared pool (was new PrismaClient())
 
   constructor(private jwtService: JwtService) { }
 

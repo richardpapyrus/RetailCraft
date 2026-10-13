@@ -3,7 +3,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { SalesService } from '../sales/sales.service';
 import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
+import { prisma } from "../prisma/client"; // shared pool (was new PrismaClient())
 
 @Controller('business')
 @UseGuards(JwtAuthGuard)

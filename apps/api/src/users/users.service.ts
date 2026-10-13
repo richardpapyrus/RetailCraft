@@ -3,7 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import * as crypto from 'crypto';
 import { EmailService } from "../common/email/email.service";
 
-const prisma = new PrismaClient();
+import { prisma } from "../prisma/client"; // shared pool (was new PrismaClient())
 
 @Injectable()
 export class UsersService {
