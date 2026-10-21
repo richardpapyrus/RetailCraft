@@ -234,8 +234,13 @@ export class InventoryService {
           where: { name: supplierName, tenantId },
         });
         if (!supplier) {
+          // Inherit the tenant's currency; the schema default is USD.
+          const tenant = await tx.tenant.findUnique({
+            where: { id: tenantId },
+            select: { currency: true },
+          });
           supplier = await tx.supplier.create({
-            data: { name: supplierName, tenantId },
+            data: { name: supplierName, tenantId, currency: tenant?.currency || "NGN" },
           });
         }
         supplierId = supplier.id;

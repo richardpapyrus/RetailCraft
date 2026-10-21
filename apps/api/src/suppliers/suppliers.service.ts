@@ -15,13 +15,18 @@ export class SuppliersService {
     tenantId: string;
     storeId?: string;
   }) {
+    // Default to the tenant's currency rather than the schema default (USD).
+    const currency =
+      data.currency ||
+      (await prisma.tenant.findUnique({ where: { id: data.tenantId }, select: { currency: true } }))?.currency ||
+      "NGN";
     return prisma.supplier.create({
       data: {
         name: data.name,
         contact: data.contact,
         phone: data.phone,
         email: data.email,
-        currency: data.currency || "USD",
+        currency,
         termDays: data.termDays || 30,
         tenantId: data.tenantId,
         storeId: data.storeId,
