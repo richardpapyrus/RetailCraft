@@ -1,0 +1,64 @@
+name: Fix Supplier Currency
+
+# One-off data fix, run by hand from the Actions tab:
+#   Actions → Fix Supplier Currency → Run workflow.
+# Run it with "preview" first to see what would change, then "apply".
+# See scripts/fix-supplier-currency.js for exactly what it touches.
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Which system to fix'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+      mode:
+        description: 'preview = show what would change. apply = save the fix.'
+        required: true
+        default: 'preview'
+        type: choice
+        options:
+          - preview
+          - apply
+
+# Never let two runs overlap.
+concurrency:
+  group: fix-supplier-currency
+  cancel-in-progress: false
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/retail-craft
+          chmod 600 ~/.ssh/retail-craft
+          ssh-keyscan -H 165.227.26.131 >> ~/.ssh/known_hosts
+
+      # The script is copied up from this checkout so it does not depend on
+      # which commit was last deployed to the server.
+      - name: Run fix on server
+        env:
+          ENVIRONMENT: ${{ inputs.environment }}
+          MODE: ${{ inputs.mode }}
+        run: |
+          if [ "$ENVIRONMENT" = "production" ]; then
+            APP_DIR=/root/retail-craft-app; PM2_APP=pos-api-prod
+          else
+            APP_DIR=/root/retail-craft-staging; PM2_APP=pos-api-staging
+          fi
+          FLAG=""; [ "$MODE" = "apply" ] && FLAG="--apply"
+
+          scp -i ~/.ssh/retail-craft scripts/fix-supplier-currency.js \
+            root@165.227.26.131:$APP_DIR/scripts/fix-supplier-currency.js
+          ssh -i ~/.ssh/retail-craft root@165.227.26.131 \
+            "cd $APP_DIR && node scripts/fix-supplier-currency.js $PM2_APP $FLAG"

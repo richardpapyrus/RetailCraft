@@ -64,7 +64,7 @@ export default function SuppliersPage() {
                 const { id, ...data } = formData;
                 await api.suppliers.create({
                     ...data,
-                    currency: user?.currency || 'USD',
+                    currency: user?.currency || 'NGN',
                     storeId: selectedStoreId || undefined
                 });
             }

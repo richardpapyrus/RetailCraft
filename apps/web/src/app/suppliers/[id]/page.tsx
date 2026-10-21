@@ -11,7 +11,7 @@ import { ArrowLeft, Save, Plus, Trash } from 'lucide-react';
 
 export default function SupplierDetailsPage() {
     const { id } = useParams();
-    const { token, isHydrated, selectedStoreId } = useAuth();
+    const { token, isHydrated, selectedStoreId, user } = useAuth();
     const router = useRouter();
 
     const [supplier, setSupplier] = useState<any>(null);
@@ -165,7 +165,7 @@ export default function SupplierDetailsPage() {
                                         <label className="block text-sm font-medium mb-1">Currency</label>
                                         <select
                                             className="w-full p-2 border rounded"
-                                            value={supplier.currency || 'USD'}
+                                            value={supplier.currency || user?.currency || 'NGN'}
                                             onChange={e => setSupplier({ ...supplier, currency: e.target.value })}
                                         >
                                             <option value="USD">USD ($)</option>
@@ -225,7 +225,7 @@ export default function SupplierDetailsPage() {
                                                         </td>
                                                         <td className="p-3 text-right text-gray-600">{po.items?.length || 0}</td>
                                                         <td className="p-3 text-right font-semibold text-gray-900">
-                                                            {po.items?.reduce((sum: number, item: any) => sum + (item.quantityOrdered * item.unitCost), 0).toLocaleString(undefined, { style: 'currency', currency: supplier.currency || 'USD' })}
+                                                            {po.items?.reduce((sum: number, item: any) => sum + (item.quantityOrdered * item.unitCost), 0).toLocaleString(undefined, { style: 'currency', currency: supplier.currency || user?.currency || 'NGN' })}
                                                         </td>
                                                     </tr>
                                                 ))

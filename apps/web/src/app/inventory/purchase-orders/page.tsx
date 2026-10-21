@@ -10,7 +10,7 @@ import { Plus, Eye, Truck, ChevronLeft, ChevronRight } from 'lucide-react';
 const PAGE_SIZE = 20;
 
 export default function PurchaseOrdersPage() {
-    const { token, isHydrated, selectedStoreId, hasPermission } = useAuth();
+    const { token, isHydrated, selectedStoreId, hasPermission, user } = useAuth();
     const router = useRouter();
     const [orders, setOrders] = useState<any[]>([]);
     const [totalOrders, setTotalOrders] = useState(0);
@@ -118,7 +118,7 @@ export default function PurchaseOrdersPage() {
                                             </span>
                                         </td>
                                         <td className="p-4 text-right font-mono">
-                                            {Number(po.totalAmount).toLocaleString('en-US', { style: 'currency', currency: po.supplier?.currency || 'USD' })}
+                                            {Number(po.totalAmount).toLocaleString('en-US', { style: 'currency', currency: po.supplier?.currency || user?.currency || 'NGN' })}
                                         </td>
                                         <td className="p-4 text-right space-x-2">
                                             <button

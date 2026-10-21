@@ -53,10 +53,16 @@ export class PurchaseOrdersService {
             if (systemVendor) {
                 finalSupplierId = systemVendor.id;
             } else {
+                // Inherit the tenant's currency; the schema default is USD.
+                const tenant = await prisma.tenant.findUnique({
+                    where: { id: data.tenantId },
+                    select: { currency: true }
+                });
                 const newVendor = await prisma.supplier.create({
                     data: {
                         name: 'Unregistered Supplier',
                         tenantId: data.tenantId,
+                        currency: tenant?.currency || 'NGN',
                         termDays: 0,
                         contact: 'System Generated'
                     }
