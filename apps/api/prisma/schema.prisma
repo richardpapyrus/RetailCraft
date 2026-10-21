@@ -162,6 +162,9 @@ model Product {
 
   @@unique([sku, storeId, tenantId])
   @@unique([barcode, storeId, tenantId])
+
+  // Built by scripts/apply-indexes.js (CONCURRENTLY); see scripts/proposed-indexes.sql
+  @@index([tenantId, isArchived, name])
 }
 
 model ProductCategory {
@@ -191,6 +194,9 @@ model Inventory {
   updatedAt DateTime @updatedAt
 
   @@unique([storeId, productId])
+
+  // Built by scripts/apply-indexes.js (CONCURRENTLY); see scripts/proposed-indexes.sql
+  @@index([productId])
 }
 
 model InventoryEvent {
@@ -207,6 +213,9 @@ model InventoryEvent {
   supplierId String?
   supplier  Supplier? @relation(fields: [supplierId], references: [id])
   createdAt DateTime @default(now())
+
+  // Built by scripts/apply-indexes.js (CONCURRENTLY); see scripts/proposed-indexes.sql
+  @@index([productId, storeId, createdAt])
 }
 
 model Supplier {
@@ -301,6 +310,12 @@ model Sale {
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
   returns       SalesReturn[]
+
+  // Built by scripts/apply-indexes.js (CONCURRENTLY); see scripts/proposed-indexes.sql
+  @@index([tenantId, storeId, createdAt])
+  @@index([tenantId, createdAt])
+  @@index([tillSessionId])
+  @@index([customerId])
 }
 
 model SalePayment {
@@ -311,6 +326,9 @@ model SalePayment {
   amount    Decimal
   reference String?  // Transaction ID
   createdAt DateTime @default(now())
+
+  // Built by scripts/apply-indexes.js (CONCURRENTLY); see scripts/proposed-indexes.sql
+  @@index([saleId])
 }
 
 model Customer {
@@ -349,6 +367,10 @@ model SaleItem {
   costAtSale  Decimal  @default(0.0)
   
   createdAt   DateTime @default(now())
+
+  // Built by scripts/apply-indexes.js (CONCURRENTLY); see scripts/proposed-indexes.sql
+  @@index([saleId])
+  @@index([productId])
 }
 
 
@@ -384,6 +406,9 @@ model TillSession {
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  // Built by scripts/apply-indexes.js (CONCURRENTLY); see scripts/proposed-indexes.sql
+  @@index([tillId, status, openedAt])
 }
 
 model CashTransaction {
@@ -395,6 +420,9 @@ model CashTransaction {
   reason        String?
   description   String?
   createdAt     DateTime @default(now())
+
+  // Built by scripts/apply-indexes.js (CONCURRENTLY); see scripts/proposed-indexes.sql
+  @@index([tillSessionId])
 }
 
 model SalesReturn {
@@ -418,6 +446,10 @@ model SalesReturn {
   user        User     @relation(fields: [createdBy], references: [id])
   
   createdAt   DateTime @default(now())
+
+  // Built by scripts/apply-indexes.js (CONCURRENTLY); see scripts/proposed-indexes.sql
+  @@index([saleId])
+  @@index([tenantId, storeId, createdAt])
 }
 
 model SalesReturnItem {
@@ -432,6 +464,9 @@ model SalesReturnItem {
   quantity    Int
   restock     Boolean  @default(true)
   refundAmount Decimal
+
+  // Built by scripts/apply-indexes.js (CONCURRENTLY); see scripts/proposed-indexes.sql
+  @@index([returnId])
 }
 
 model SupplierProduct {
@@ -477,6 +512,10 @@ model PurchaseOrder {
   updatedAt     DateTime @updatedAt
 
   @@unique([poNumber, tenantId])
+
+  // Built by scripts/apply-indexes.js (CONCURRENTLY); see scripts/proposed-indexes.sql
+  @@index([tenantId, storeId, createdAt])
+  @@index([supplierId, createdAt])
 }
 
 model PurchaseOrderItem {
@@ -492,6 +531,9 @@ model PurchaseOrderItem {
   
   unitCost      Decimal
   totalCost     Decimal
+
+  // Built by scripts/apply-indexes.js (CONCURRENTLY); see scripts/proposed-indexes.sql
+  @@index([poId])
 }
 
 model GoodsReceivedNote {
@@ -513,6 +555,10 @@ model GoodsReceivedNote {
   items         GRNItem[]
   
   invoiceId     String?
+
+  // Built by scripts/apply-indexes.js (CONCURRENTLY); see scripts/proposed-indexes.sql
+  @@index([poId])
+  @@index([storeId, receivedDate])
 }
 
 model GRNItem {
@@ -527,6 +573,9 @@ model GRNItem {
   
   batchNumber   String?
   expiryDate    DateTime?
+
+  // Built by scripts/apply-indexes.js (CONCURRENTLY); see scripts/proposed-indexes.sql
+  @@index([grnId])
 }
 
 model SupplierInvoice {
