@@ -6,19 +6,25 @@ import { PrismaService } from '../prisma/prisma.service';
 export class TillReportsService {
     constructor(private prisma: PrismaService) { }
 
-    async getDashboardStats(tenantId: string, storeId: string, from: Date, to: Date, tillId?: string) {
-        const where = {
-            till: { tenantId, storeId },
+    // Sessions opened in the period on the tills in scope. No storeId means every store in
+    // the tenant (Organization HQ view); the controller decides who may ask for that.
+    private sessionScope(tenantId: string, storeId: string | undefined, from: Date, to: Date, tillId?: string) {
+        return {
+            till: { tenantId, ...(storeId ? { storeId } : {}) },
             openedAt: { gte: from, lte: to },
             ...(tillId ? { tillId } : {})
         };
+    }
+
+    async getDashboardStats(tenantId: string, storeId: string | undefined, from: Date, to: Date, tillId?: string) {
+        const where = this.sessionScope(tenantId, storeId, from, to, tillId);
 
         // 1. Session Overview
         const sessions = await (this.prisma as any).tillSession.findMany({
             where,
             include: {
                 user: { select: { name: true } },
-                till: { select: { name: true } }
+                till: { select: { name: true, store: { select: { name: true } } } }
             },
             orderBy: { openedAt: 'desc' }
         });
@@ -53,13 +59,15 @@ export class TillReportsService {
                 sessions: sessions.map(s => ({
                     id: s.id,
                     tillName: s.till.name,
+                    storeName: s.till.store?.name,
                     staffName: s.user.name,
                     openedAt: s.openedAt,
                     closedAt: s.closedAt,
                     status: s.status,
                     openingFloat: Number(s.openingFloat),
-                    closingCash: s.closingCash ? Number(s.closingCash) : null,
-                    variance: s.variance ? Number(s.variance) : null
+                    // != null, not truthiness: a till that balanced exactly has variance 0.
+                    closingCash: s.closingCash != null ? Number(s.closingCash) : null,
+                    variance: s.variance != null ? Number(s.variance) : null
                 }))
             },
             sales: {
@@ -75,46 +83,57 @@ export class TillReportsService {
         };
     }
 
-    async getPaymentBreakdown(tenantId: string, storeId: string, from: Date, to: Date, tillId?: string) {
-        const whereSession = {
-            till: { tenantId, storeId },
-            openedAt: { gte: from, lte: to },
-            ...(tillId ? { tillId } : {})
-        };
+    async getPaymentBreakdown(tenantId: string, storeId: string | undefined, from: Date, to: Date, tillId?: string) {
+        const whereSession = this.sessionScope(tenantId, storeId, from, to, tillId);
 
         // Find sessions first to scope the payments
         const sessions = await (this.prisma as any).tillSession.findMany({ where: whereSession, select: { id: true } });
         const sessionIds = sessions.map(s => s.id);
 
-        // Group by Payment Method on Sale
-        // Wait, Sales have ONE payment method usually in simple schema, or distinct Payments table?
-        // User requested "Split payments". This implies `Payment` entity.
-        // Check Schema: `Payment` table exists?
-        // If not, we rely on `Sale.paymentMethod`.
-        // Let's assume `Sale.paymentMethod` for now based on previous knowledge, BUT check for `Payment` relation if splits exist.
-        // I will use `Sale` aggregation for now, but if `Payment` exists I'll swap.
-
-        // TODO: strictly we should check schema. Assuming Sale.paymentMethod for now.
-        const byMethod = await (this.prisma as any).sale.groupBy({
-            by: ['paymentMethod'],
+        // Split by the actual tenders (SalePayment), not Sale.paymentMethod, which is just
+        // "SPLIT" for multi-tender sales. Change is handed back in cash, so it comes off CASH,
+        // the same rule the till's own session report and expected-cash use. The methods then
+        // add up to the sales total.
+        const sales = await this.prisma.sale.findMany({
             where: { tillSessionId: { in: sessionIds }, status: 'COMPLETED' },
-            _sum: { total: true },
-            _count: { _all: true }
+            select: { total: true, paymentMethod: true, payments: { select: { method: true, amount: true } } }
         });
 
-        return byMethod.map(g => ({
-            method: g.paymentMethod,
-            amount: Number(g._sum.total || 0),
-            count: Number(g._count._all || 0)
-        }));
+        const byMethod = new Map<string, { amount: number; count: number }>();
+        const add = (method: string, amount: number) => {
+            const row = byMethod.get(method) || { amount: 0, count: 0 };
+            row.amount += amount;
+            row.count += 1;
+            byMethod.set(method, row);
+        };
+
+        for (const sale of sales) {
+            const total = Number(sale.total);
+            if (sale.payments.length === 0) {
+                // Older sales recorded before split tenders have no payment rows.
+                add(sale.paymentMethod || 'UNKNOWN', total);
+                continue;
+            }
+            const paid = sale.payments.reduce((sum, p) => sum + Number(p.amount), 0);
+            let change = Math.max(0, paid - total);
+            for (const p of sale.payments) {
+                let amount = Number(p.amount);
+                if (p.method === 'CASH' && change > 0) {
+                    const fromCash = Math.min(change, amount);
+                    amount -= fromCash;
+                    change -= fromCash;
+                }
+                add(p.method, amount);
+            }
+        }
+
+        return [...byMethod.entries()]
+            .map(([method, row]) => ({ method, amount: row.amount, count: row.count }))
+            .sort((a, b) => b.amount - a.amount);
     }
 
-    async getExceptions(tenantId: string, storeId: string, from: Date, to: Date, tillId?: string) {
-        const whereSession = {
-            till: { tenantId, storeId },
-            openedAt: { gte: from, lte: to },
-            ...(tillId ? { tillId } : {})
-        };
+    async getExceptions(tenantId: string, storeId: string | undefined, from: Date, to: Date, tillId?: string) {
+        const whereSession = this.sessionScope(tenantId, storeId, from, to, tillId);
         const sessions = await this.prisma.tillSession.findMany({ where: whereSession, select: { id: true } });
         const sessionIds = sessions.map(s => s.id);
 
@@ -144,12 +163,8 @@ export class TillReportsService {
             cashEvents: cashTx
         };
     }
-    async getInventoryImpact(tenantId: string, storeId: string, from: Date, to: Date, tillId?: string) {
-        const whereSession = {
-            till: { tenantId, storeId },
-            openedAt: { gte: from, lte: to },
-            ...(tillId ? { tillId } : {})
-        };
+    async getInventoryImpact(tenantId: string, storeId: string | undefined, from: Date, to: Date, tillId?: string) {
+        const whereSession = this.sessionScope(tenantId, storeId, from, to, tillId);
         const sessions = await this.prisma.tillSession.findMany({ where: whereSession, select: { id: true } });
         const sessionIds = sessions.map(s => s.id);
 

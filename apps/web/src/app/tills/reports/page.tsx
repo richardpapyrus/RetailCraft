@@ -32,22 +32,25 @@ export default function TillReportsPage() {
             router.push('/tills');
             return;
         }
+        setSelectedTillId('');
         loadTills();
-    }, [user]);
+    }, [user, selectedStoreId]);
 
     useEffect(() => {
         if (user && hasPermission('VIEW_TILL_REPORTS')) {
             loadReportData();
         }
-    }, [dateRange, customFrom, customTo, selectedTillId, user]);
+    }, [dateRange, customFrom, customTo, selectedTillId, user, selectedStoreId]);
+
+    // Same store scope as the Tills page: the store picked in the top bar, or every store when
+    // Organization HQ is selected (the API holds non-admins to their own store either way).
+    const reportStoreId = selectedStoreId || undefined;
+    const allStores = !selectedStoreId;
 
     const loadTills = async () => {
         try {
-            const storeId = selectedStoreId || user?.storeId;
-            if (storeId) {
-                const data = await api.tills.list(storeId);
-                setAvailableTills(Array.isArray(data) ? data : []);
-            }
+            const data = await api.tills.list(selectedStoreId || '');
+            setAvailableTills(Array.isArray(data) ? data : []);
         } catch (e) {
             console.error('Failed to load tills filter', e);
         }
@@ -68,11 +71,17 @@ export default function TillReportsPage() {
             to.setHours(23, 59, 59, 999);
         } else if (dateRange === 'week') {
             from.setDate(from.getDate() - 7);
+            from.setHours(0, 0, 0, 0);
         } else if (dateRange === 'month') {
             from.setDate(from.getDate() - 30);
+            from.setHours(0, 0, 0, 0);
         } else if (dateRange === 'custom') {
-            from = new Date(customFrom);
-            to = new Date(customTo);
+            // new Date('YYYY-MM-DD') is UTC midnight, which dropped the whole last day and
+            // the first hour of the first; read the picked dates as whole local days instead.
+            const [fy, fm, fd] = customFrom.split('-').map(Number);
+            const [ty, tm, td] = customTo.split('-').map(Number);
+            from = new Date(fy, fm - 1, fd, 0, 0, 0, 0);
+            to = new Date(ty, tm - 1, td, 23, 59, 59, 999);
         }
 
         return { from: from.toISOString(), to: to.toISOString() };
@@ -81,12 +90,14 @@ export default function TillReportsPage() {
     const loadReportData = async () => {
         try {
             setLoading(true);
+            // A custom range does nothing until both dates are picked.
+            if (dateRange === 'custom' && (!customFrom || !customTo)) return;
             const { from, to } = getDateParams();
 
             const [dashData, excData, invData] = await Promise.all([
-                api.tillReports.getDashboard(from, to, selectedTillId),
-                api.tillReports.getExceptions(from, to, selectedTillId),
-                api.tillReports.getInventory(from, to, selectedTillId)
+                api.tillReports.getDashboard(from, to, selectedTillId, reportStoreId),
+                api.tillReports.getExceptions(from, to, selectedTillId, reportStoreId),
+                api.tillReports.getInventory(from, to, selectedTillId, reportStoreId)
             ]);
 
             setOverview(dashData);
@@ -173,7 +184,7 @@ export default function TillReportsPage() {
                     >
                         <option value="">All Tills</option>
                         {availableTills.map(t => (
-                            <option key={t.id} value={t.id}>{t.name}</option>
+                            <option key={t.id} value={t.id}>{allStores && t.store?.name ? `${t.name} — ${t.store.name}` : t.name}</option>
                         ))}
                     </select>
                 </div>
@@ -212,6 +223,7 @@ export default function TillReportsPage() {
                             <Activity className="w-4 h-4 text-brand-500" />
                         </div>
                         <p className="text-2xl font-semibold text-brand-600">{formatCurrency(overview.sales.totalCollected, user?.currency, user?.locale)}</p>
+                        <p className="text-xs text-gray-500 mt-1">Gross − discounts + {formatCurrency(overview.sales.totalTax, user?.currency, user?.locale)} tax − refunds</p>
                     </div>
                 </div>
 
@@ -256,7 +268,7 @@ export default function TillReportsPage() {
                                         <tr key={s.id}>
                                             <td className="px-4 py-3 font-medium text-gray-900">
                                                 {s.tillName}<br />
-                                                <span className="text-xs text-gray-400">{s.staffName}</span>
+                                                <span className="text-xs text-gray-400">{allStores && s.storeName ? `${s.storeName} · ${s.staffName}` : s.staffName}</span>
                                             </td>
                                             <td className="px-4 py-3">
                                                 <span className={`px-2 py-1 rounded-full text-xs font-semibold ${s.status === 'OPEN' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
@@ -297,7 +309,7 @@ export default function TillReportsPage() {
                                     <tr key={r.id} className="hover:bg-red-50">
                                         <td className="px-4 py-3 text-red-600 font-semibold">REFUND</td>
                                         <td className="px-4 py-3">{r.user.name}</td>
-                                        <td className="px-4 py-3 text-gray-500">{new Date(r.createdAt).toLocaleTimeString()}</td>
+                                        <td className="px-4 py-3 text-gray-500">{new Date(r.createdAt).toLocaleString()}</td>
                                         <td className="px-4 py-3 text-right font-semibold text-red-600">-{formatCurrency(r.total, user?.currency, user?.locale)}</td>
                                     </tr>
                                 ))}
@@ -305,7 +317,7 @@ export default function TillReportsPage() {
                                     <tr key={v.id} className="hover:bg-orange-50">
                                         <td className="px-4 py-3 text-orange-600 font-semibold">VOID</td>
                                         <td className="px-4 py-3">{v.user.name}</td>
-                                        <td className="px-4 py-3 text-gray-500">{new Date(v.createdAt).toLocaleTimeString()}</td>
+                                        <td className="px-4 py-3 text-gray-500">{new Date(v.createdAt).toLocaleString()}</td>
                                         <td className="px-4 py-3 text-right font-semibold text-gray-400">-</td>
                                     </tr>
                                 ))}
@@ -313,7 +325,7 @@ export default function TillReportsPage() {
                                     <tr key={c.id}>
                                         <td className="px-4 py-3 font-semibold">{c.type}</td>
                                         <td className="px-4 py-3">-</td>
-                                        <td className="px-4 py-3 text-gray-500">{new Date(c.createdAt).toLocaleTimeString()}</td>
+                                        <td className="px-4 py-3 text-gray-500">{new Date(c.createdAt).toLocaleString()}</td>
                                         <td className="px-4 py-3 text-right font-semibold">{formatCurrency(c.amount, user?.currency, user?.locale)}</td>
                                     </tr>
                                 ))}

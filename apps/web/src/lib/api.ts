@@ -550,25 +550,28 @@ export const api = {
         },
     },
     tillReports: {
-        getDashboard: (from: string, to: string, tillId?: string) => {
+        getDashboard: (from: string, to: string, tillId?: string, storeId?: string) => {
             const params = new URLSearchParams();
             if (from) params.append('from', from);
             if (to) params.append('to', to);
             if (tillId) params.append('tillId', tillId);
+            if (storeId) params.append('storeId', storeId);
             return fetchClient(`/till-reports/dashboard?${params.toString()}`).then(res => res as any);
         },
-        getExceptions: (from: string, to: string, tillId?: string) => {
+        getExceptions: (from: string, to: string, tillId?: string, storeId?: string) => {
             const params = new URLSearchParams();
             if (from) params.append('from', from);
             if (to) params.append('to', to);
             if (tillId) params.append('tillId', tillId);
+            if (storeId) params.append('storeId', storeId);
             return fetchClient(`/till-reports/exceptions?${params.toString()}`).then(res => res as any);
         },
-        getInventory: (from: string, to: string, tillId?: string) => {
+        getInventory: (from: string, to: string, tillId?: string, storeId?: string) => {
             const params = new URLSearchParams();
             if (from) params.append('from', from);
             if (to) params.append('to', to);
             if (tillId) params.append('tillId', tillId);
+            if (storeId) params.append('storeId', storeId);
             return fetchClient(`/till-reports/inventory?${params.toString()}`).then(res => res as any[]);
         }
     }

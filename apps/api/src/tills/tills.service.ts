@@ -26,7 +26,8 @@ export class TillsService {
         tenantId,
         ...(storeId ? { storeId } : {}),
       },
-      include: { sessions: { where: { status: "OPEN" } } },
+      // store: the Tills page and report filter label each till with its own branch.
+      include: { sessions: { where: { status: "OPEN" } }, store: { select: { id: true, name: true } } },
     });
   }
 
