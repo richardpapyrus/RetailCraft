@@ -1,4 +1,8 @@
--- PROPOSED — not applied, not part of any migration. Review before running.
+-- Applied automatically after each deploy by the "Apply Database Indexes"
+-- GitHub Action (.github/workflows/apply-indexes.yml → scripts/apply-indexes.js),
+-- which runs these one at a time and skips any that already exist. To add an
+-- index, add a line here in the same form; the script refuses anything that is
+-- not `CREATE INDEX CONCURRENTLY IF NOT EXISTS "Name" ON "Table" ("col", ...)`.
 --
 -- Postgres does not index foreign keys automatically, and apart from Expenses
 -- the schema declares no @@index at all, so every date-range report and every
@@ -8,11 +12,10 @@
 --
 -- Purely additive: no data changes, no column changes, query results identical.
 -- CONCURRENTLY builds without blocking sales at the till. It cannot run inside
--- a transaction, so run this file statement-by-statement (psql), NOT via
--- `prisma migrate`. Names follow Prisma's convention so a later
--- `@@index([...])` in schema.prisma matches them (use IF NOT EXISTS in that
--- migration). If a CONCURRENTLY build is interrupted it leaves an INVALID
--- index: DROP INDEX CONCURRENTLY it and re-run that line.
+-- a transaction, which is why this is not a `prisma migrate` migration. Names
+-- follow Prisma's convention so a later `@@index([...])` in schema.prisma
+-- matches them (use IF NOT EXISTS in that migration). An interrupted build
+-- leaves an INVALID index; the script drops and rebuilds those.
 
 -- Sales history, dashboard, reports, heatmap, till reports
 CREATE INDEX CONCURRENTLY IF NOT EXISTS "Sale_tenantId_storeId_createdAt_idx" ON "Sale" ("tenantId", "storeId", "createdAt");
@@ -29,7 +32,8 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS "SalesReturn_tenantId_storeId_createdAt_
 CREATE INDEX CONCURRENTLY IF NOT EXISTS "SalesReturnItem_returnId_idx"               ON "SalesReturnItem" ("returnId");
 
 -- Tills
-CREATE INDEX CONCURRENTLY IF NOT EXISTS "TillSession_tillId_status_idx"       ON "TillSession" ("tillId", "status");
+-- openedAt last so the paged session history (newest first) reads straight off the index.
+CREATE INDEX CONCURRENTLY IF NOT EXISTS "TillSession_tillId_status_openedAt_idx" ON "TillSession" ("tillId", "status", "openedAt");
 CREATE INDEX CONCURRENTLY IF NOT EXISTS "CashTransaction_tillSessionId_idx"   ON "CashTransaction" ("tillSessionId");
 
 -- Stock movements (product history, aging report)
@@ -41,6 +45,8 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS "Product_tenantId_isArchived_name_idx" O
 
 -- Purchasing
 CREATE INDEX CONCURRENTLY IF NOT EXISTS "PurchaseOrder_tenantId_storeId_createdAt_idx" ON "PurchaseOrder" ("tenantId", "storeId", "createdAt");
+-- Supplier page transaction history (paged, newest first)
+CREATE INDEX CONCURRENTLY IF NOT EXISTS "PurchaseOrder_supplierId_createdAt_idx" ON "PurchaseOrder" ("supplierId", "createdAt");
 CREATE INDEX CONCURRENTLY IF NOT EXISTS "PurchaseOrderItem_poId_idx"           ON "PurchaseOrderItem" ("poId");
 CREATE INDEX CONCURRENTLY IF NOT EXISTS "GoodsReceivedNote_poId_idx"           ON "GoodsReceivedNote" ("poId");
 CREATE INDEX CONCURRENTLY IF NOT EXISTS "GoodsReceivedNote_storeId_receivedDate_idx" ON "GoodsReceivedNote" ("storeId", "receivedDate");
