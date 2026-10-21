@@ -21,6 +21,11 @@ export interface TillAuditData {
     inventory: any[];     // GET /till-reports/inventory
 }
 
+// html2pdf captures the element at the width of the page's printable area (A4 minus margins),
+// so the document must be laid out at exactly that width or the right-hand side is cut off.
+export const AUDIT_PDF_MARGIN_MM: [number, number, number, number] = [8, 8, 10, 8]; // top, right, bottom, left
+const AUDIT_WIDTH_PX = Math.floor((210 - AUDIT_PDF_MARGIN_MM[1] - AUDIT_PDF_MARGIN_MM[3]) * 96 / 25.4);
+
 const C = { ink: '#111827', muted: '#6B7280', line: '#E5E7EB', head: '#F3F4F6', brand: '#235347', red: '#B91C1C', green: '#15803D' };
 
 const th: React.CSSProperties = { textAlign: 'left', padding: '6px 8px', background: C.head, borderBottom: `1px solid ${C.line}`, fontSize: 10, color: C.muted, fontWeight: 600 };
@@ -38,7 +43,10 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export function TillAuditDocument({ data }: { data: TillAuditData }) {
     const money = (v: number | null | undefined) => (v === null || v === undefined ? '—' : formatCurrency(v, data.currency, data.locale));
-    const dt = (v: string | null | undefined) => (v ? new Date(v).toLocaleString() : '—');
+    // Compact so date columns fit on one line: "21 Oct 2026, 4:01 PM".
+    const dt = (v: string | null | undefined) => (v
+        ? new Date(v).toLocaleString(data.locale, { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' })
+        : '—');
     const { sales } = data.overview;
     const sessions: any[] = data.overview.overview.sessions;
     const payments: any[] = data.overview.payments;
@@ -52,7 +60,7 @@ export function TillAuditDocument({ data }: { data: TillAuditData }) {
     ].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
 
     return (
-        <div id="till-audit-root" style={{ width: 794, padding: '28px 32px', background: '#FFFFFF', color: C.ink, fontFamily: 'Inter, Arial, sans-serif' }}>
+        <div id="till-audit-root" style={{ width: AUDIT_WIDTH_PX, boxSizing: 'border-box', padding: '24px 22px', background: '#FFFFFF', color: C.ink, fontFamily: 'Inter, Arial, sans-serif' }}>
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: `1px solid ${C.line}`, paddingBottom: 14 }}>
                 <div>
@@ -62,7 +70,7 @@ export function TillAuditDocument({ data }: { data: TillAuditData }) {
                 </div>
                 <table style={{ fontSize: 10.5, borderCollapse: 'collapse' }}>
                     <tbody>
-                        {[['Period', data.periodLabel], ['Store', data.scopeLabel], ['Till', data.tillLabel], ['Generated', data.generatedAt.toLocaleString()], ['By', data.generatedBy]].map(([k, v]) => (
+                        {[['Period', data.periodLabel], ['Store', data.scopeLabel], ['Till', data.tillLabel], ['Generated', dt(data.generatedAt.toISOString())], ['By', data.generatedBy]].map(([k, v]) => (
                             <tr key={k}><td style={{ color: C.muted, paddingRight: 10, paddingBottom: 2 }}>{k}</td><td style={{ fontWeight: 600, paddingBottom: 2 }}>{v}</td></tr>
                         ))}
                     </tbody>

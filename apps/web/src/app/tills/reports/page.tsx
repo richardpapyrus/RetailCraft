@@ -7,7 +7,7 @@ import { useAuth, formatCurrency } from '@/lib/useAuth';
 import { api } from '@/lib/api';
 import { ArrowLeft, Download, FileText, AlertTriangle, Activity, Package, CreditCard } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { TillAuditDocument, TillAuditData } from '@/components/tills/TillAuditDocument';
+import { TillAuditDocument, TillAuditData, AUDIT_PDF_MARGIN_MM } from '@/components/tills/TillAuditDocument';
 
 export default function TillReportsPage() {
     const router = useRouter();
@@ -207,7 +207,7 @@ export default function TillReportsPage() {
             const html2pdf = (await import('html2pdf.js')).default;
             await html2pdf()
                 .set({
-                    margin: [8, 8, 10, 8],
+                    margin: AUDIT_PDF_MARGIN_MM,
                     filename: `${fileStem()}-audit.pdf`,
                     image: { type: 'jpeg', quality: 0.95 },
                     html2canvas: { scale: 2, backgroundColor: '#FFFFFF' },
