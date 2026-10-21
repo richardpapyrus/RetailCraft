@@ -224,6 +224,9 @@ export const api = {
         },
         create: (data: any) => fetchClient('/suppliers', { method: 'POST', body: JSON.stringify(data) }),
         get: (id: string) => fetchClient(`/suppliers/${id}`).then(res => res as any),
+        purchaseOrders: (id: string, page: number, limit: number) =>
+            fetchClient(`/suppliers/${id}/purchase-orders?page=${page}&limit=${limit}`)
+                .then(res => res as { data: { id: string; poNumber: string; status: string; createdAt: string; itemCount: number; totalAmount: number }[]; total: number }),
         update: (id: string, data: any) => fetchClient(`/suppliers/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
         delete: (id: string) => fetchClient(`/suppliers/${id}`, { method: 'DELETE' }),
         addProduct: (id: string, data: any) => fetchClient(`/suppliers/${id}/products`, { method: 'POST', body: JSON.stringify(data) }),
@@ -420,6 +423,9 @@ export const api = {
         closeSession: (id: string, data: { closingCash: number }) => fetchClient(`/tills/session/${id}/close`, { method: 'POST', body: JSON.stringify(data) }),
         recordTransaction: (data: { tillSessionId: string; type: 'CASH_IN' | 'CASH_OUT'; amount: number; reason: string }) => fetchClient('/tills/transaction', { method: 'POST', body: JSON.stringify(data) }),
         getSessions: (id: string) => fetchClient(`/tills/${id}/sessions`),
+        // Returns { data, total } from a paging-aware API, or the full array from an older one.
+        getSessionsPage: (id: string, page: number, limit: number) =>
+            fetchClient(`/tills/${id}/sessions?page=${page}&limit=${limit}`).then(res => res as { data: any[]; total: number } | any[]),
         getReport: (sessionId: string) => fetchClient(`/tills/session/${sessionId}/report`).then(res => res as any),
     },
     auth: {

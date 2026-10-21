@@ -1,0 +1,96 @@
+name: Apply Database Indexes
+
+# Builds any missing indexes listed in scripts/proposed-indexes.sql, using
+# scripts/apply-indexes.js (read it for exactly what it does).
+#
+# Runs by itself on every push to develop (staging) or main (production): it
+# waits for that commit's deploy to finish, then builds whatever is missing on
+# the system that was just deployed. If the deploy fails, it does nothing.
+# Indexes that already exist are skipped, so after the first run it finishes
+# in seconds. Building an index never blocks sales and changes no data.
+#
+# Can also be run by hand: Actions → Apply Database Indexes → Run workflow.
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Which system'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+      mode:
+        description: 'dry-run = list what would be built. apply = build it.'
+        required: true
+        default: 'dry-run'
+        type: choice
+        options:
+          - dry-run
+          - apply
+
+# One run per system at a time.
+concurrency:
+  group: apply-indexes-${{ github.event_name == 'workflow_dispatch' && inputs.environment || (github.ref_name == 'main' && 'production' || 'staging') }}
+  cancel-in-progress: false
+
+permissions:
+  actions: read    # to watch this commit's deploy run
+  contents: read
+
+env:
+  ENVIRONMENT: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || (github.ref_name == 'main' && 'production' || 'staging') }}
+
+jobs:
+  indexes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      # The deploy copies the script onto the server and may reinstall packages
+      # there, so wait until it has finished — and only carry on if it worked.
+      - name: Wait for this commit's deploy
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          if [ "$ENVIRONMENT" = "production" ]; then WF=deploy.yml; else WF=deploy-staging.yml; fi
+          RUN_ID=""
+          for i in $(seq 1 30); do
+            RUN_ID=$(gh run list --workflow "$WF" --commit "$GITHUB_SHA" --event push --limit 1 --json databaseId --jq '.[0].databaseId // empty')
+            [ -n "$RUN_ID" ] && break
+            sleep 10
+          done
+          if [ -z "$RUN_ID" ]; then echo "No deploy run found for this commit; nothing to do."; exit 1; fi
+          echo "Waiting for deploy run $RUN_ID…"
+          gh run watch "$RUN_ID" --interval 30 --exit-status > /dev/null \
+            || { echo "The deploy did not succeed, so indexes were not touched."; exit 1; }
+          echo "Deploy finished successfully."
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/retail-craft
+          chmod 600 ~/.ssh/retail-craft
+          ssh-keyscan -H 165.227.26.131 >> ~/.ssh/known_hosts
+
+      # Runs the copy of the script the deploy just put on the server, so the
+      # index list always matches the code that is live.
+      - name: Build missing indexes
+        env:
+          MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'apply' }}
+        run: |
+          if [ "$ENVIRONMENT" = "production" ]; then
+            APP_DIR=/root/retail-craft-app; PM2_APP=pos-api-prod
+          else
+            APP_DIR=/root/retail-craft-staging; PM2_APP=pos-api-staging
+          fi
+          FLAG=""; [ "$MODE" = "dry-run" ] && FLAG="--dry-run"
+          echo "System: $ENVIRONMENT   Mode: $MODE"
+
+          ssh -i ~/.ssh/retail-craft root@165.227.26.131 \
+            "cd $APP_DIR && test -f scripts/apply-indexes.js || { echo 'scripts/apply-indexes.js is not on the server yet — deploy this commit first.'; exit 1; }; node scripts/apply-indexes.js $PM2_APP $FLAG"

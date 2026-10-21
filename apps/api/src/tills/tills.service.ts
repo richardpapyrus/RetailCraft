@@ -338,11 +338,13 @@ export class TillsService {
       },
     });
   }
-  async getTillSessions(tillId: string) {
+  // Scoped to the caller's tenant: a till id alone used to return any tenant's sessions.
+  async getTillSessions(tillId: string, tenantId: string) {
     return prisma.tillSession.findMany({
       where: {
         tillId,
         status: "CLOSED",
+        till: { tenantId },
       },
       include: {
         user: { select: { name: true, email: true } },
@@ -351,5 +353,24 @@ export class TillsService {
         openedAt: "desc",
       },
     });
+  }
+
+  // Paged variant of getTillSessions — a till closes a session most days, so the full
+  // history grows indefinitely.
+  async getTillSessionsPage(tillId: string, tenantId: string, page: number, limit: number) {
+    const where = { tillId, status: "CLOSED", till: { tenantId } };
+    const [data, total] = await Promise.all([
+      prisma.tillSession.findMany({
+        where,
+        include: {
+          user: { select: { name: true, email: true } },
+        },
+        orderBy: { openedAt: "desc" },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.tillSession.count({ where }),
+    ]);
+    return { data, total };
   }
 }

@@ -55,6 +55,18 @@ export class SuppliersController {
     return this.suppliersService.findOne(id, req.user.tenantId);
   }
 
+  @Get(":id/purchase-orders")
+  findPurchaseOrders(
+    @Param("id") id: string,
+    @Request() req,
+    @Query("page") page?: string,
+    @Query("limit") limit?: string,
+  ) {
+    const pageNum = Math.max(1, parseInt(page ?? '', 10) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit ?? '', 10) || 20));
+    return this.suppliersService.findPurchaseOrders(id, req.user.tenantId, pageNum, limitNum);
+  }
+
   @Patch(":id")
   update(@Param("id") id: string, @Body() body: any, @Request() req) {
     return this.suppliersService.update(id, body);

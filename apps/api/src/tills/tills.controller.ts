@@ -118,7 +118,18 @@ export class TillsController {
     });
   }
   @Get(":id/sessions")
-  getSessions(@Param("id") id: string) {
-    return this.tillsService.getTillSessions(id);
+  getSessions(
+    @Param("id") id: string,
+    @Request() req,
+    @Query("page") page?: string,
+    @Query("limit") limit?: string,
+  ) {
+    // Paging is opt-in: without ?page the response stays the plain array older clients expect.
+    if (page !== undefined) {
+      const pageNum = Math.max(1, parseInt(page, 10) || 1);
+      const limitNum = Math.min(100, Math.max(1, parseInt(limit ?? '', 10) || 20));
+      return this.tillsService.getTillSessionsPage(id, req.user.tenantId, pageNum, limitNum);
+    }
+    return this.tillsService.getTillSessions(id, req.user.tenantId);
   }
 }
