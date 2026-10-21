@@ -9,6 +9,9 @@ import { toast } from 'react-hot-toast';
 import { FileText } from 'lucide-react';
 import { TillReport } from '@/components/tills/TillReport';
 import { confirmDialog, promptDialog } from '@/lib/dialog';
+import { Pager } from '@/components/Pager';
+
+const HISTORY_PAGE_SIZE = 20;
 
 export default function TillsPage() {
     const router = useRouter();
@@ -83,17 +86,37 @@ export default function TillsPage() {
 
     const [historyTill, setHistoryTill] = useState<any>(null);
     const [historySessions, setHistorySessions] = useState<any[]>([]);
+    const [historyTotal, setHistoryTotal] = useState(0);
+    const [historyPage, setHistoryPage] = useState(1);
+    const [historyLoading, setHistoryLoading] = useState(false);
     const [reportSessionId, setReportSessionId] = useState<string | null>(null);
 
-    const fetchHistory = async (till: any) => {
+    const fetchHistory = async (till: any, page = 1) => {
         setHistoryTill(till);
+        setHistoryPage(page);
+        setHistoryLoading(true);
         try {
-            const sessions = await api.tills.getSessions(till.id);
-            setHistorySessions(sessions);
+            const res = await api.tills.getSessionsPage(till.id, page, HISTORY_PAGE_SIZE);
+            if (Array.isArray(res)) {
+                // Older API ignores ?page and returns every session; page it here instead.
+                setHistorySessions(res.slice((page - 1) * HISTORY_PAGE_SIZE, page * HISTORY_PAGE_SIZE));
+                setHistoryTotal(res.length);
+            } else {
+                setHistorySessions(res.data || []);
+                setHistoryTotal(res.total || 0);
+            }
         } catch (e) {
             console.error(e);
             toast.error('Failed to load history');
+        } finally {
+            setHistoryLoading(false);
         }
+    };
+
+    const closeHistory = () => {
+        setHistoryTill(null);
+        setHistorySessions([]);
+        setHistoryTotal(0);
     };
 
     if (!isHydrated) return null;
@@ -246,7 +269,7 @@ export default function TillsPage() {
                                     <h3 className="text-xl font-semibold">Session History</h3>
                                     <p className="text-sm text-gray-500">{historyTill.name}</p>
                                 </div>
-                                <button onClick={() => setHistoryTill(null)} className="text-gray-400 hover:text-black font-semibold p-2">✕</button>
+                                <button onClick={closeHistory} className="text-gray-400 hover:text-black font-semibold p-2">✕</button>
                             </div>
                             <div className="flex-1 overflow-auto p-0">
                                 <table className="w-full text-left text-sm">
@@ -264,7 +287,7 @@ export default function TillsPage() {
                                     </thead>
                                     <tbody className="divide-y">
                                         {historySessions.length === 0 && (
-                                            <tr><td colSpan={7} className="p-8 text-center text-gray-400">No closed sessions found.</td></tr>
+                                            <tr><td colSpan={8} className="p-8 text-center text-gray-400">{historyLoading ? 'Loading sessions...' : 'No closed sessions found.'}</td></tr>
                                         )}
                                         {historySessions.map(session => (
                                             <tr key={session.id} className="hover:bg-gray-50">
@@ -290,8 +313,16 @@ export default function TillsPage() {
                                     </tbody>
                                 </table>
                             </div>
+                            <Pager
+                                page={historyPage}
+                                pageSize={HISTORY_PAGE_SIZE}
+                                total={historyTotal}
+                                noun="sessions"
+                                loading={historyLoading}
+                                onPageChange={page => fetchHistory(historyTill, page)}
+                            />
                             <div className="p-4 border-t bg-gray-50 rounded-b-2xl flex justify-end">
-                                <button onClick={() => setHistoryTill(null)} className="px-6 py-2 bg-white border border-gray-300 rounded-xl font-semibold hover:bg-gray-50">Close</button>
+                                <button onClick={closeHistory} className="px-6 py-2 bg-white border border-gray-300 rounded-xl font-semibold hover:bg-gray-50">Close</button>
                             </div>
                         </div>
                     </div>

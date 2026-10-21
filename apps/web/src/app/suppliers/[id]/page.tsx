@@ -8,6 +8,20 @@ import { useAuth } from '@/lib/useAuth';
 import { useRouter, useParams } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { ArrowLeft, Save, Plus, Trash } from 'lucide-react';
+import { Pager } from '@/components/Pager';
+
+const ORDERS_PAGE_SIZE = 20;
+
+const statusColor = (status: string) => {
+    switch (status) {
+        case 'DRAFT': return 'bg-gray-100 text-gray-600';
+        case 'SENT': return 'bg-blue-100 text-blue-700';
+        case 'PARTIALLY_RECEIVED': return 'bg-yellow-100 text-yellow-800';
+        case 'FULLY_RECEIVED': return 'bg-green-100 text-green-700';
+        case 'CLOSED': return 'bg-gray-800 text-white';
+        default: return 'bg-gray-100 text-gray-600';
+    }
+};
 
 export default function SupplierDetailsPage() {
     const { id } = useParams();
@@ -24,10 +38,36 @@ export default function SupplierDetailsPage() {
     const [availableProducts, setAvailableProducts] = useState<any[]>([]);
     const [newProductData, setNewProductData] = useState({ productId: '', supplierSku: '', lastCost: 0, isPreferred: false });
 
+    // Transaction History (server-paged)
+    const [orders, setOrders] = useState<any[]>([]);
+    const [ordersTotal, setOrdersTotal] = useState(0);
+    const [ordersPage, setOrdersPage] = useState(1);
+    const [ordersLoading, setOrdersLoading] = useState(true);
+
     useEffect(() => {
         if (!isHydrated || !token) return;
         loadData();
     }, [id, token, isHydrated]);
+
+    useEffect(() => {
+        if (!isHydrated || !token) return;
+        let cancelled = false;
+        (async () => {
+            setOrdersLoading(true);
+            try {
+                const res = await api.suppliers.purchaseOrders(id as string, ordersPage, ORDERS_PAGE_SIZE);
+                if (cancelled) return;
+                setOrders(res.data || []);
+                setOrdersTotal(res.total || 0);
+            } catch (e) {
+                console.error(e);
+                if (!cancelled) toast.error("Failed to load transaction history");
+            } finally {
+                if (!cancelled) setOrdersLoading(false);
+            }
+        })();
+        return () => { cancelled = true; };
+    }, [id, token, isHydrated, ordersPage]);
 
     const loadData = async () => {
         setLoading(true);
@@ -193,7 +233,7 @@ export default function SupplierDetailsPage() {
                             {/* Transaction History Section */}
                             <div className="mt-12 pt-8 border-t border-gray-100">
                                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Transaction History</h3>
-                                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                                <div className={`border border-gray-200 rounded-lg overflow-hidden transition-opacity ${ordersLoading && orders.length > 0 ? 'opacity-60' : ''}`}>
                                     <table className="w-full text-left text-sm">
                                         <thead className="bg-gray-50 border-b border-gray-200">
                                             <tr>
@@ -205,8 +245,8 @@ export default function SupplierDetailsPage() {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-100">
-                                            {supplier.purchaseOrders && supplier.purchaseOrders.length > 0 ? (
-                                                supplier.purchaseOrders.map((po: any) => (
+                                            {orders.length > 0 ? (
+                                                orders.map((po: any) => (
                                                     <tr
                                                         key={po.id}
                                                         onClick={() => router.push(`/inventory/purchase-orders/${po.id}`)}
@@ -215,29 +255,33 @@ export default function SupplierDetailsPage() {
                                                         <td className="p-3 text-gray-900">{new Date(po.createdAt).toLocaleDateString()}</td>
                                                         <td className="p-3 font-mono text-brand-600">#{po.poNumber || po.id.slice(0, 8)}</td>
                                                         <td className="p-3">
-                                                            <span className={`px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wide
-                                                            ${po.status === 'DRAFT' ? 'bg-gray-100 text-gray-600' : ''}
-                                                            ${po.status === 'ISSUED' ? 'bg-blue-100 text-blue-600' : ''}
-                                                            ${po.status === 'RECEIVED' ? 'bg-green-100 text-green-600' : ''}
-                                                        `}>
-                                                                {po.status}
+                                                            <span className={`px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wide ${statusColor(po.status)}`}>
+                                                                {po.status.replace(/_/g, ' ')}
                                                             </span>
                                                         </td>
-                                                        <td className="p-3 text-right text-gray-600">{po.items?.length || 0}</td>
+                                                        <td className="p-3 text-right text-gray-600">{po.itemCount}</td>
                                                         <td className="p-3 text-right font-semibold text-gray-900">
-                                                            {po.items?.reduce((sum: number, item: any) => sum + (item.quantityOrdered * item.unitCost), 0).toLocaleString(undefined, { style: 'currency', currency: supplier.currency || user?.currency || 'NGN' })}
+                                                            {Number(po.totalAmount).toLocaleString(undefined, { style: 'currency', currency: supplier.currency || user?.currency || 'NGN' })}
                                                         </td>
                                                     </tr>
                                                 ))
                                             ) : (
                                                 <tr>
                                                     <td colSpan={5} className="p-8 text-center text-gray-400 bg-gray-50/50">
-                                                        No transactions found for this supplier.
+                                                        {ordersLoading ? 'Loading transactions...' : 'No transactions found for this supplier.'}
                                                     </td>
                                                 </tr>
                                             )}
                                         </tbody>
                                     </table>
+                                    <Pager
+                                        page={ordersPage}
+                                        pageSize={ORDERS_PAGE_SIZE}
+                                        total={ordersTotal}
+                                        noun="orders"
+                                        loading={ordersLoading}
+                                        onPageChange={setOrdersPage}
+                                    />
                                 </div>
                             </div>
                         </>

@@ -94,13 +94,8 @@ export class SuppliersService {
             }
           }
         },
-        purchaseOrders: {
-          orderBy: { createdAt: 'desc' },
-          include: {
-            // We might need items for total amount calculation if not stored on PO
-            items: true
-          }
-        }
+        // Purchase orders are no longer embedded here: every PO and all its items grew
+        // without bound. The page reads them a page at a time via findPurchaseOrders.
       },
     });
 
@@ -136,6 +131,35 @@ export class SuppliersService {
       ...supplier,
       supplierProducts: [...supplier.supplierProducts, ...implicitSupplierProducts]
     };
+  }
+
+  // One page of a supplier's purchase-order history, newest first, with the row totals
+  // the supplier page shows. Only the two item columns needed for the total are read.
+  async findPurchaseOrders(id: string, tenantId: string, page: number, limit: number) {
+    const where = { supplierId: id, tenantId };
+    const [orders, total] = await Promise.all([
+      prisma.purchaseOrder.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+        select: {
+          id: true,
+          poNumber: true,
+          status: true,
+          createdAt: true,
+          items: { select: { quantityOrdered: true, unitCost: true } },
+        },
+      }),
+      prisma.purchaseOrder.count({ where }),
+    ]);
+
+    const data = orders.map(({ items, ...po }) => ({
+      ...po,
+      itemCount: items.length,
+      totalAmount: items.reduce((sum, item) => sum + item.quantityOrdered * Number(item.unitCost), 0),
+    }));
+    return { data, total, page, limit };
   }
 
   async update(
