@@ -11,6 +11,9 @@
 // PO totals are plain numbers that take their currency label from the
 // supplier, so this changes how they display, never the amounts.
 //
+// The repo is public, so Action logs are too: output names no business or
+// supplier, only short record ids.
+//
 // Usage: node scripts/fix-supplier-currency.js <pm2-app-name> [--apply]
 //   Without --apply nothing is written (preview only).
 
@@ -33,21 +36,25 @@ if (!url) {
   console.error(`ERROR: no DATABASE_URL for pm2 app '${APP_NAME}' in ecosystem.config.js. Refusing to guess.`);
   process.exit(1);
 }
-process.env.DATABASE_URL = url;
+// One connection is plenty and keeps clear of the cluster's connection limit.
+process.env.DATABASE_URL = url + (url.includes('?') ? '&' : '?') + 'connection_limit=1';
 
-const { PrismaClient } = require('@prisma/client');
+// Resolve the client the API itself uses (hoisted to the root or inside apps/api).
+const { PrismaClient } = require(
+  require.resolve('@prisma/client', { paths: [path.join(__dirname, '..', 'apps', 'api')] })
+);
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log(`→ Database for ${APP_NAME}: ${url.replace(/\/\/[^@]*@/, '//***:***@')}`);
+  console.log(`→ Database for ${APP_NAME}: ${new URL(url).pathname.slice(1)}`);
   console.log(APPLY ? '→ Mode: APPLY (changes will be saved)\n' : '→ Mode: PREVIEW (nothing will be changed)\n');
 
   const suppliers = await prisma.supplier.findMany({
     include: {
-      tenant: { select: { name: true, currency: true } },
+      tenant: { select: { currency: true } },
       _count: { select: { purchaseOrders: true } },
     },
-    orderBy: { name: 'asc' },
+    orderBy: { tenantId: 'asc' },
   });
   const mismatched = suppliers.filter((s) => s.currency !== s.tenant.currency);
 
@@ -59,16 +66,18 @@ async function main() {
   const toFix = mismatched.filter((s) => s.name === 'Unregistered Supplier');
   const toReview = mismatched.filter((s) => s.name !== 'Unregistered Supplier');
 
+  const shortId = (id) => id.slice(0, 8);
   const line = (s) =>
-    `   • ${s.tenant.name} — "${s.name}": ${s.currency} → should be ${s.tenant.currency} (${s._count.purchaseOrders} purchase orders)`;
+    `   • business ${shortId(s.tenantId)} / supplier ${shortId(s.id)}: ${s.currency} → business uses ${s.tenant.currency} (${s._count.purchaseOrders} purchase orders)`;
 
   if (toFix.length) {
-    console.log(`Will fix automatically (${toFix.length}):`);
+    console.log(`"Unregistered Supplier" records to fix (${toFix.length}):`);
     toFix.forEach((s) => console.log(line(s)));
     console.log('');
   }
   if (toReview.length) {
-    console.log(`Different currency from the business — NOT changed, check these by hand in Suppliers (${toReview.length}):`);
+    console.log(`Other suppliers with a different currency from their business — NOT changed (${toReview.length}).`);
+    console.log('   These may be genuine foreign-currency suppliers. Check the Currency field in the Suppliers screen.');
     toReview.forEach((s) => console.log(line(s)));
     console.log('');
   }
@@ -79,8 +88,12 @@ async function main() {
   }
 
   for (const s of toFix) {
-    await prisma.supplier.update({ where: { id: s.id }, data: { currency: s.tenant.currency } });
-    console.log(`✅ Fixed: ${s.tenant.name} — "${s.name}" is now ${s.tenant.currency}`);
+    // Only if still unchanged since the preview read above.
+    await prisma.supplier.updateMany({
+      where: { id: s.id, currency: s.currency },
+      data: { currency: s.tenant.currency },
+    });
+    console.log(`✅ Fixed: business ${shortId(s.tenantId)} / supplier ${shortId(s.id)} is now ${s.tenant.currency}`);
   }
   console.log(`\nDone. ${toFix.length} supplier(s) updated.`);
 }

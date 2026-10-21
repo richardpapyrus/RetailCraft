@@ -25,6 +25,11 @@ on:
           - preview
           - apply
 
+# Never let two runs overlap.
+concurrency:
+  group: fix-supplier-currency
+  cancel-in-progress: false
+
 jobs:
   fix:
     runs-on: ubuntu-latest
