@@ -7,6 +7,7 @@ import { useAuth, formatCurrency } from '@/lib/useAuth';
 import { api } from '@/lib/api';
 import { ArrowLeft, Download, FileText, AlertTriangle, Activity, Package, CreditCard } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { TillAuditDocument, TillAuditData } from '@/components/tills/TillAuditDocument';
 
 export default function TillReportsPage() {
     const router = useRouter();
@@ -24,6 +25,8 @@ export default function TillReportsPage() {
     const [overview, setOverview] = useState<any>(null);
     const [exceptions, setExceptions] = useState<any>(null);
     const [inventory, setInventory] = useState<any>(null);
+    const [exporting, setExporting] = useState(false);
+    const [auditStamp, setAuditStamp] = useState(() => new Date());
 
     useEffect(() => {
         if (!user) return;
@@ -32,22 +35,25 @@ export default function TillReportsPage() {
             router.push('/tills');
             return;
         }
+        setSelectedTillId('');
         loadTills();
-    }, [user]);
+    }, [user, selectedStoreId]);
 
     useEffect(() => {
         if (user && hasPermission('VIEW_TILL_REPORTS')) {
             loadReportData();
         }
-    }, [dateRange, customFrom, customTo, selectedTillId, user]);
+    }, [dateRange, customFrom, customTo, selectedTillId, user, selectedStoreId]);
+
+    // Same store scope as the Tills page: the store picked in the top bar, or every store when
+    // Organization HQ is selected (the API holds non-admins to their own store either way).
+    const reportStoreId = selectedStoreId || undefined;
+    const allStores = !selectedStoreId;
 
     const loadTills = async () => {
         try {
-            const storeId = selectedStoreId || user?.storeId;
-            if (storeId) {
-                const data = await api.tills.list(storeId);
-                setAvailableTills(Array.isArray(data) ? data : []);
-            }
+            const data = await api.tills.list(selectedStoreId || '');
+            setAvailableTills(Array.isArray(data) ? data : []);
         } catch (e) {
             console.error('Failed to load tills filter', e);
         }
@@ -68,11 +74,17 @@ export default function TillReportsPage() {
             to.setHours(23, 59, 59, 999);
         } else if (dateRange === 'week') {
             from.setDate(from.getDate() - 7);
+            from.setHours(0, 0, 0, 0);
         } else if (dateRange === 'month') {
             from.setDate(from.getDate() - 30);
+            from.setHours(0, 0, 0, 0);
         } else if (dateRange === 'custom') {
-            from = new Date(customFrom);
-            to = new Date(customTo);
+            // new Date('YYYY-MM-DD') is UTC midnight, which dropped the whole last day and
+            // the first hour of the first; read the picked dates as whole local days instead.
+            const [fy, fm, fd] = customFrom.split('-').map(Number);
+            const [ty, tm, td] = customTo.split('-').map(Number);
+            from = new Date(fy, fm - 1, fd, 0, 0, 0, 0);
+            to = new Date(ty, tm - 1, td, 23, 59, 59, 999);
         }
 
         return { from: from.toISOString(), to: to.toISOString() };
@@ -81,12 +93,14 @@ export default function TillReportsPage() {
     const loadReportData = async () => {
         try {
             setLoading(true);
+            // A custom range does nothing until both dates are picked.
+            if (dateRange === 'custom' && (!customFrom || !customTo)) return;
             const { from, to } = getDateParams();
 
             const [dashData, excData, invData] = await Promise.all([
-                api.tillReports.getDashboard(from, to, selectedTillId),
-                api.tillReports.getExceptions(from, to, selectedTillId),
-                api.tillReports.getInventory(from, to, selectedTillId)
+                api.tillReports.getDashboard(from, to, selectedTillId, reportStoreId),
+                api.tillReports.getExceptions(from, to, selectedTillId, reportStoreId),
+                api.tillReports.getInventory(from, to, selectedTillId, reportStoreId)
             ]);
 
             setOverview(dashData);
@@ -97,6 +111,116 @@ export default function TillReportsPage() {
             toast.error(e.message || 'Failed to load report data');
         } finally {
             setLoading(false);
+        }
+    };
+
+    // What the current filters cover, written into both exports.
+    const periodLabel = () => {
+        const { from, to } = getDateParams();
+        const f = new Date(from).toLocaleDateString();
+        const t = new Date(to).toLocaleDateString();
+        return f === t ? f : `${f} – ${t}`;
+    };
+    const scopeLabel = () => allStores
+        ? 'All stores'
+        : (availableTills[0]?.store?.name || user?.store?.name || 'Selected store');
+    const tillLabel = () => {
+        const till = availableTills.find(t => t.id === selectedTillId);
+        return till ? till.name : 'All tills';
+    };
+    const fileStem = () => {
+        const { from, to } = getDateParams();
+        const f = from.slice(0, 10), t = to.slice(0, 10);
+        const scope = allStores ? 'all-stores' : scopeLabel();
+        return `till-activity-${scope}-${f === t ? f : `${f}_${t}`}`.replace(/[^\w-]+/g, '_');
+    };
+
+    // One CSV with a block per dashboard section, plain numbers so spreadsheets can total them.
+    const exportCsv = () => {
+        if (!overview || !exceptions || !inventory) return;
+        const esc = (v: unknown) => {
+            const str = v === null || v === undefined ? '' : String(v);
+            return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+        };
+        const amt = (v: number | null | undefined) => (v === null || v === undefined ? '' : Number(v).toFixed(2));
+        const when = (v: string | null | undefined) => (v ? new Date(v).toLocaleString() : '');
+        const rows: unknown[][] = [];
+        const block = (title: string, header: string[], body: unknown[][]) => {
+            rows.push([title], header, ...body, []);
+        };
+        const sales = overview.sales;
+
+        rows.push(['Till Activity Report'], ['Business', user?.tenantName || ''], ['Store', scopeLabel()], ['Till', tillLabel()],
+            ['Period', periodLabel()], ['Generated', new Date().toLocaleString()], ['Currency', user?.currency || ''], []);
+        block('Summary', ['Measure', 'Value'], [
+            ['Gross sales', amt(sales.grossSales)], ['Discounts', amt(sales.totalDiscount)], ['Tax', amt(sales.totalTax)],
+            ['Refunds', amt(sales.refundTotal)], ['Net collected', amt(sales.totalCollected)],
+            ['Transactions', sales.transactionCount], ['Refund count', sales.refundCount],
+            ['Sessions', overview.overview.sessionCount], ['Open sessions', overview.overview.openSessions],
+        ]);
+        block('Payment Methods', ['Method', 'Transactions', 'Amount'],
+            overview.payments.map((p: any) => [p.method, p.count, amt(p.amount)]));
+        block('Cash Reconciliation', ['Till', 'Store', 'Staff', 'Opened', 'Closed', 'Status', 'Float', 'Expected', 'Counted', 'Variance'],
+            overview.overview.sessions.map((s: any) => [s.tillName, s.storeName || '', s.staffName, when(s.openedAt), when(s.closedAt), s.status,
+                amt(s.openingFloat), amt(s.expectedCash), amt(s.closingCash), amt(s.variance)]));
+        block('Exceptions & Audit Log', ['Date & time', 'Type', 'Staff', 'Reason', 'Amount'], [
+            ...exceptions.refunds.map((r: any) => [when(r.createdAt), 'REFUND', r.user?.name || '', r.reason || '', amt(-Number(r.total))]),
+            ...exceptions.voids.map((v: any) => [when(v.createdAt), 'VOID', v.user?.name || '', '', '']),
+            ...exceptions.cashEvents.map((c: any) => [when(c.createdAt), c.type, '', c.reason || c.description || '', amt(c.amount)]),
+        ]);
+        block('Inventory Impact', ['Product', 'SKU', 'Quantity sold'],
+            inventory.map((i: any) => [i.name, i.sku, i.quantitySold]));
+
+        // BOM so Excel reads the naira sign and other non-ASCII text correctly.
+        const csv = '\uFEFF' + rows.map(r => r.map(esc).join(',')).join('\n');
+        const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${fileStem()}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    const auditData = (): TillAuditData | null => (overview && exceptions && inventory ? {
+        businessName: user?.tenantName || '',
+        scopeLabel: scopeLabel(),
+        tillLabel: tillLabel(),
+        periodLabel: periodLabel(),
+        generatedAt: auditStamp,
+        generatedBy: user?.name || user?.email || '',
+        currency: user?.currency,
+        locale: user?.locale,
+        overview,
+        exceptions,
+        inventory,
+    } : null);
+
+    const downloadAuditPdf = async () => {
+        const el = document.getElementById('till-audit-root');
+        if (!el || exporting) return;
+        setExporting(true);
+        // Stamp the document with the moment of download, and let it re-render before capture.
+        setAuditStamp(new Date());
+        await new Promise(resolve => setTimeout(resolve, 50));
+        try {
+            // Client-only library, loaded on demand (same approach as the EOD report).
+            const html2pdf = (await import('html2pdf.js')).default;
+            await html2pdf()
+                .set({
+                    margin: [8, 8, 10, 8],
+                    filename: `${fileStem()}-audit.pdf`,
+                    image: { type: 'jpeg', quality: 0.95 },
+                    html2canvas: { scale: 2, backgroundColor: '#FFFFFF' },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                    pagebreak: { mode: ['css', 'legacy'], avoid: 'tr' },
+                })
+                .from(el)
+                .save();
+        } catch (err) {
+            console.error('Audit PDF failed', err);
+            toast.error('Could not generate the audit PDF. Please try again.');
+        } finally {
+            setExporting(false);
         }
     };
 
@@ -121,13 +245,13 @@ export default function TillReportsPage() {
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
-                        <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50">
+                        <button onClick={exportCsv} disabled={loading} className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50">
                             <Download className="w-4 h-4" />
                             Export CSV
                         </button>
-                        <button className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700">
+                        <button onClick={downloadAuditPdf} disabled={loading || exporting} className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 disabled:opacity-50">
                             <FileText className="w-4 h-4" />
-                            Audit PDF
+                            {exporting ? 'Generating…' : 'Audit PDF'}
                         </button>
                     </div>
                 </div>
@@ -173,7 +297,7 @@ export default function TillReportsPage() {
                     >
                         <option value="">All Tills</option>
                         {availableTills.map(t => (
-                            <option key={t.id} value={t.id}>{t.name}</option>
+                            <option key={t.id} value={t.id}>{allStores && t.store?.name ? `${t.name} — ${t.store.name}` : t.name}</option>
                         ))}
                     </select>
                 </div>
@@ -212,6 +336,7 @@ export default function TillReportsPage() {
                             <Activity className="w-4 h-4 text-brand-500" />
                         </div>
                         <p className="text-2xl font-semibold text-brand-600">{formatCurrency(overview.sales.totalCollected, user?.currency, user?.locale)}</p>
+                        <p className="text-xs text-gray-500 mt-1">Gross − discounts + {formatCurrency(overview.sales.totalTax, user?.currency, user?.locale)} tax − refunds</p>
                     </div>
                 </div>
 
@@ -256,7 +381,7 @@ export default function TillReportsPage() {
                                         <tr key={s.id}>
                                             <td className="px-4 py-3 font-medium text-gray-900">
                                                 {s.tillName}<br />
-                                                <span className="text-xs text-gray-400">{s.staffName}</span>
+                                                <span className="text-xs text-gray-400">{allStores && s.storeName ? `${s.storeName} · ${s.staffName}` : s.staffName}</span>
                                             </td>
                                             <td className="px-4 py-3">
                                                 <span className={`px-2 py-1 rounded-full text-xs font-semibold ${s.status === 'OPEN' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
@@ -297,7 +422,7 @@ export default function TillReportsPage() {
                                     <tr key={r.id} className="hover:bg-red-50">
                                         <td className="px-4 py-3 text-red-600 font-semibold">REFUND</td>
                                         <td className="px-4 py-3">{r.user.name}</td>
-                                        <td className="px-4 py-3 text-gray-500">{new Date(r.createdAt).toLocaleTimeString()}</td>
+                                        <td className="px-4 py-3 text-gray-500">{new Date(r.createdAt).toLocaleString()}</td>
                                         <td className="px-4 py-3 text-right font-semibold text-red-600">-{formatCurrency(r.total, user?.currency, user?.locale)}</td>
                                     </tr>
                                 ))}
@@ -305,7 +430,7 @@ export default function TillReportsPage() {
                                     <tr key={v.id} className="hover:bg-orange-50">
                                         <td className="px-4 py-3 text-orange-600 font-semibold">VOID</td>
                                         <td className="px-4 py-3">{v.user.name}</td>
-                                        <td className="px-4 py-3 text-gray-500">{new Date(v.createdAt).toLocaleTimeString()}</td>
+                                        <td className="px-4 py-3 text-gray-500">{new Date(v.createdAt).toLocaleString()}</td>
                                         <td className="px-4 py-3 text-right font-semibold text-gray-400">-</td>
                                     </tr>
                                 ))}
@@ -313,7 +438,7 @@ export default function TillReportsPage() {
                                     <tr key={c.id}>
                                         <td className="px-4 py-3 font-semibold">{c.type}</td>
                                         <td className="px-4 py-3">-</td>
-                                        <td className="px-4 py-3 text-gray-500">{new Date(c.createdAt).toLocaleTimeString()}</td>
+                                        <td className="px-4 py-3 text-gray-500">{new Date(c.createdAt).toLocaleString()}</td>
                                         <td className="px-4 py-3 text-right font-semibold">{formatCurrency(c.amount, user?.currency, user?.locale)}</td>
                                     </tr>
                                 ))}
@@ -359,6 +484,11 @@ export default function TillReportsPage() {
                         </table>
                     </div>
                 </div>
+            </div>
+
+            {/* Source for the Audit PDF: rendered out of sight; html2pdf captures a clone of it. */}
+            <div aria-hidden style={{ height: 0, overflow: 'hidden' }}>
+                {(() => { const d = auditData(); return d ? <TillAuditDocument data={d} /> : null; })()}
             </div>
         </div>
     );
