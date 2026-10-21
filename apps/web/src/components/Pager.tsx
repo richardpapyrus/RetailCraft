@@ -11,7 +11,8 @@ export function Pager({ page, pageSize, total, noun, loading, onPageChange }: {
     loading?: boolean;
     onPageChange: (page: number) => void;
 }) {
-    if (total <= pageSize) return null;
+    // The count always shows, so a single page reads as complete rather than cut off.
+    if (total === 0) return null;
 
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
     const start = (page - 1) * pageSize + 1;
@@ -24,7 +25,7 @@ export function Pager({ page, pageSize, total, noun, loading, onPageChange }: {
                 Showing <span className="font-semibold">{start}</span>–<span className="font-semibold">{end}</span> of{' '}
                 <span className="font-semibold">{total}</span> {noun}
             </p>
-            <div className="flex items-center gap-2">
+            {totalPages > 1 && <div className="flex items-center gap-2">
                 <button onClick={() => onPageChange(page - 1)} disabled={page <= 1 || loading} className={buttonClass}>
                     <ChevronLeft className="w-4 h-4" /> Previous
                 </button>
@@ -34,7 +35,7 @@ export function Pager({ page, pageSize, total, noun, loading, onPageChange }: {
                 <button onClick={() => onPageChange(page + 1)} disabled={page >= totalPages || loading} className={buttonClass}>
                     Next <ChevronRight className="w-4 h-4" />
                 </button>
-            </div>
+            </div>}
         </div>
     );
 }
