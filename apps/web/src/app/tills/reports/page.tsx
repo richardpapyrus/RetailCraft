@@ -7,6 +7,7 @@ import { useAuth, formatCurrency } from '@/lib/useAuth';
 import { api } from '@/lib/api';
 import { ArrowLeft, Download, FileText, AlertTriangle, Activity, Package, CreditCard } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { TillAuditDocument, TillAuditData } from '@/components/tills/TillAuditDocument';
 
 export default function TillReportsPage() {
     const router = useRouter();
@@ -24,6 +25,8 @@ export default function TillReportsPage() {
     const [overview, setOverview] = useState<any>(null);
     const [exceptions, setExceptions] = useState<any>(null);
     const [inventory, setInventory] = useState<any>(null);
+    const [exporting, setExporting] = useState(false);
+    const [auditStamp, setAuditStamp] = useState(() => new Date());
 
     useEffect(() => {
         if (!user) return;
@@ -111,6 +114,116 @@ export default function TillReportsPage() {
         }
     };
 
+    // What the current filters cover, written into both exports.
+    const periodLabel = () => {
+        const { from, to } = getDateParams();
+        const f = new Date(from).toLocaleDateString();
+        const t = new Date(to).toLocaleDateString();
+        return f === t ? f : `${f} – ${t}`;
+    };
+    const scopeLabel = () => allStores
+        ? 'All stores'
+        : (availableTills[0]?.store?.name || user?.store?.name || 'Selected store');
+    const tillLabel = () => {
+        const till = availableTills.find(t => t.id === selectedTillId);
+        return till ? till.name : 'All tills';
+    };
+    const fileStem = () => {
+        const { from, to } = getDateParams();
+        const f = from.slice(0, 10), t = to.slice(0, 10);
+        const scope = allStores ? 'all-stores' : scopeLabel();
+        return `till-activity-${scope}-${f === t ? f : `${f}_${t}`}`.replace(/[^\w-]+/g, '_');
+    };
+
+    // One CSV with a block per dashboard section, plain numbers so spreadsheets can total them.
+    const exportCsv = () => {
+        if (!overview || !exceptions || !inventory) return;
+        const esc = (v: unknown) => {
+            const str = v === null || v === undefined ? '' : String(v);
+            return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+        };
+        const amt = (v: number | null | undefined) => (v === null || v === undefined ? '' : Number(v).toFixed(2));
+        const when = (v: string | null | undefined) => (v ? new Date(v).toLocaleString() : '');
+        const rows: unknown[][] = [];
+        const block = (title: string, header: string[], body: unknown[][]) => {
+            rows.push([title], header, ...body, []);
+        };
+        const sales = overview.sales;
+
+        rows.push(['Till Activity Report'], ['Business', user?.tenantName || ''], ['Store', scopeLabel()], ['Till', tillLabel()],
+            ['Period', periodLabel()], ['Generated', new Date().toLocaleString()], ['Currency', user?.currency || ''], []);
+        block('Summary', ['Measure', 'Value'], [
+            ['Gross sales', amt(sales.grossSales)], ['Discounts', amt(sales.totalDiscount)], ['Tax', amt(sales.totalTax)],
+            ['Refunds', amt(sales.refundTotal)], ['Net collected', amt(sales.totalCollected)],
+            ['Transactions', sales.transactionCount], ['Refund count', sales.refundCount],
+            ['Sessions', overview.overview.sessionCount], ['Open sessions', overview.overview.openSessions],
+        ]);
+        block('Payment Methods', ['Method', 'Transactions', 'Amount'],
+            overview.payments.map((p: any) => [p.method, p.count, amt(p.amount)]));
+        block('Cash Reconciliation', ['Till', 'Store', 'Staff', 'Opened', 'Closed', 'Status', 'Float', 'Expected', 'Counted', 'Variance'],
+            overview.overview.sessions.map((s: any) => [s.tillName, s.storeName || '', s.staffName, when(s.openedAt), when(s.closedAt), s.status,
+                amt(s.openingFloat), amt(s.expectedCash), amt(s.closingCash), amt(s.variance)]));
+        block('Exceptions & Audit Log', ['Date & time', 'Type', 'Staff', 'Reason', 'Amount'], [
+            ...exceptions.refunds.map((r: any) => [when(r.createdAt), 'REFUND', r.user?.name || '', r.reason || '', amt(-Number(r.total))]),
+            ...exceptions.voids.map((v: any) => [when(v.createdAt), 'VOID', v.user?.name || '', '', '']),
+            ...exceptions.cashEvents.map((c: any) => [when(c.createdAt), c.type, '', c.reason || c.description || '', amt(c.amount)]),
+        ]);
+        block('Inventory Impact', ['Product', 'SKU', 'Quantity sold'],
+            inventory.map((i: any) => [i.name, i.sku, i.quantitySold]));
+
+        // BOM so Excel reads the naira sign and other non-ASCII text correctly.
+        const csv = '\uFEFF' + rows.map(r => r.map(esc).join(',')).join('\n');
+        const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${fileStem()}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    const auditData = (): TillAuditData | null => (overview && exceptions && inventory ? {
+        businessName: user?.tenantName || '',
+        scopeLabel: scopeLabel(),
+        tillLabel: tillLabel(),
+        periodLabel: periodLabel(),
+        generatedAt: auditStamp,
+        generatedBy: user?.name || user?.email || '',
+        currency: user?.currency,
+        locale: user?.locale,
+        overview,
+        exceptions,
+        inventory,
+    } : null);
+
+    const downloadAuditPdf = async () => {
+        const el = document.getElementById('till-audit-root');
+        if (!el || exporting) return;
+        setExporting(true);
+        // Stamp the document with the moment of download, and let it re-render before capture.
+        setAuditStamp(new Date());
+        await new Promise(resolve => setTimeout(resolve, 50));
+        try {
+            // Client-only library, loaded on demand (same approach as the EOD report).
+            const html2pdf = (await import('html2pdf.js')).default;
+            await html2pdf()
+                .set({
+                    margin: [8, 8, 10, 8],
+                    filename: `${fileStem()}-audit.pdf`,
+                    image: { type: 'jpeg', quality: 0.95 },
+                    html2canvas: { scale: 2, backgroundColor: '#FFFFFF' },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                    pagebreak: { mode: ['css', 'legacy'], avoid: 'tr' },
+                })
+                .from(el)
+                .save();
+        } catch (err) {
+            console.error('Audit PDF failed', err);
+            toast.error('Could not generate the audit PDF. Please try again.');
+        } finally {
+            setExporting(false);
+        }
+    };
+
     if (loading && !overview) {
         return <div className="p-8 flex items-center justify-center">Loading Report Dashboard...</div>;
     }
@@ -132,13 +245,13 @@ export default function TillReportsPage() {
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
-                        <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50">
+                        <button onClick={exportCsv} disabled={loading} className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50">
                             <Download className="w-4 h-4" />
                             Export CSV
                         </button>
-                        <button className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700">
+                        <button onClick={downloadAuditPdf} disabled={loading || exporting} className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 disabled:opacity-50">
                             <FileText className="w-4 h-4" />
-                            Audit PDF
+                            {exporting ? 'Generating…' : 'Audit PDF'}
                         </button>
                     </div>
                 </div>
@@ -371,6 +484,11 @@ export default function TillReportsPage() {
                         </table>
                     </div>
                 </div>
+            </div>
+
+            {/* Source for the Audit PDF: rendered out of sight; html2pdf captures a clone of it. */}
+            <div aria-hidden style={{ height: 0, overflow: 'hidden' }}>
+                {(() => { const d = auditData(); return d ? <TillAuditDocument data={d} /> : null; })()}
             </div>
         </div>
     );

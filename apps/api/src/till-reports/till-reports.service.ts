@@ -66,6 +66,7 @@ export class TillReportsService {
                     status: s.status,
                     openingFloat: Number(s.openingFloat),
                     // != null, not truthiness: a till that balanced exactly has variance 0.
+                    expectedCash: s.expectedCash != null ? Number(s.expectedCash) : null,
                     closingCash: s.closingCash != null ? Number(s.closingCash) : null,
                     variance: s.variance != null ? Number(s.variance) : null
                 }))
