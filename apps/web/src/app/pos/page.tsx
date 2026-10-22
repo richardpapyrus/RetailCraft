@@ -722,7 +722,9 @@ export default function POSPage() {
                     }
                 } else {
                     api.customers.get(customerId)
-                        .then((fresh: any) => applyBalance(Number(fresh?.loyaltyPoints) || 0))
+                        .then((fresh: any) => {
+                            if (fresh?.loyaltyPoints != null) applyBalance(Number(fresh.loyaltyPoints));
+                        })
                         .catch(e => console.error('Failed to refresh customer points', e));
                 }
             }
