@@ -12,6 +12,8 @@ interface Customer {
     code: string;
     phone: string;
     email: string;
+    loyaltyPoints?: number;
+    isLoyaltyMember?: boolean;
     sales: Sale[];
 }
 
@@ -22,6 +24,7 @@ interface Sale {
     paymentMethod: string;
     status: string;
     loyaltyPointsUsed?: number;
+    loyaltyPointsEarned?: number;
     loyaltyDiscountAmount?: number;
 }
 
@@ -104,10 +107,23 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
                                 <span>{customer.email || 'No Email'}</span>
                             </div>
                         </div>
-                        <div className="text-right">
-                            <div className="text-sm text-gray-500">Total Spent</div>
-                            <div className="text-2xl font-semibold text-brand-600">
-                                {formatCurrency(customer.sales?.reduce((acc, curr) => acc + Number(curr.total), 0) || 0, user?.currency, user?.locale)}
+                        <div className="flex gap-10 text-right">
+                            {(customer.isLoyaltyMember || Number(customer.loyaltyPoints) > 0) && (
+                                <div>
+                                    <div className="text-sm text-gray-500">Points Balance</div>
+                                    <div className="text-2xl font-semibold text-gray-900">
+                                        {(Number(customer.loyaltyPoints) || 0).toLocaleString()} pts
+                                    </div>
+                                    <div className="text-xs text-gray-500">
+                                        Worth {formatCurrency((Number(customer.loyaltyPoints) || 0) * (Number(user?.tenant?.loyaltyRedeemRate) || 0.10), user?.currency, user?.locale)}
+                                    </div>
+                                </div>
+                            )}
+                            <div>
+                                <div className="text-sm text-gray-500">Total Spent</div>
+                                <div className="text-2xl font-semibold text-brand-600">
+                                    {formatCurrency(customer.sales?.reduce((acc, curr) => acc + Number(curr.total), 0) || 0, user?.currency, user?.locale)}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -140,15 +156,20 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
                                                 }`}>
                                                 {sale.paymentMethod}
                                             </span>
-                                            {sale.loyaltyPointsUsed && sale.loyaltyPointsUsed > 0 && (
+                                            {Number(sale.loyaltyPointsUsed) > 0 && (
+                                                <span className="ml-2 px-2 py-1 rounded text-xs font-semibold bg-amber-50 text-amber-800">
+                                                    −{Number(sale.loyaltyPointsUsed).toLocaleString()} pts redeemed
+                                                </span>
+                                            )}
+                                            {Number(sale.loyaltyPointsEarned) > 0 && (
                                                 <span className="ml-2 px-2 py-1 rounded text-xs font-semibold bg-brand-100 text-brand-800">
-                                                    + {sale.loyaltyPointsUsed} Pts
+                                                    +{Number(sale.loyaltyPointsEarned).toLocaleString()} pts earned
                                                 </span>
                                             )}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-gray-900">
                                             <div>{formatCurrency(sale.total, user?.currency, user?.locale)}</div>
-                                            {sale.loyaltyDiscountAmount && Number(sale.loyaltyDiscountAmount) > 0 && (
+                                            {Number(sale.loyaltyDiscountAmount) > 0 && (
                                                 <div className="text-[10px] text-green-600">Saved {formatCurrency(sale.loyaltyDiscountAmount, user?.currency, user?.locale)}</div>
                                             )}
                                         </td>

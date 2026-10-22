@@ -706,6 +706,29 @@ export default function POSPage() {
             });
             setLastSaleExt({ subtotal, tax: taxAmount, discount: discountAmount });
 
+            // The selected customer stays selected after the sale, so bring their
+            // points balance up to date — otherwise the next sale offers points
+            // they no longer have and the server rejects it.
+            if (selectedCustomer) {
+                const customerId = selectedCustomer.id;
+                const applyBalance = (loyaltyPoints: number) => {
+                    setSelectedCustomer(prev => prev?.id === customerId ? { ...prev, loyaltyPoints } : prev);
+                    setCustomers(prev => prev.map(c => c.id === customerId ? { ...c, loyaltyPoints } : c));
+                };
+                if (result.offline) {
+                    // Queued sale: the server deducts on sync; mirror only the redemption.
+                    if (usePoints && pointsToRedeem > 0) {
+                        applyBalance(Math.max(0, (selectedCustomer.loyaltyPoints || 0) - pointsToRedeem));
+                    }
+                } else {
+                    api.customers.get(customerId)
+                        .then((fresh: any) => {
+                            if (fresh?.loyaltyPoints != null) applyBalance(Number(fresh.loyaltyPoints));
+                        })
+                        .catch(e => console.error('Failed to refresh customer points', e));
+                }
+            }
+
             if (result.offline) {
                 toast.loading('Offline Mode: Sale saved to local queue.', { duration: 4000 });
             } else {
