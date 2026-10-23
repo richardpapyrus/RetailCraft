@@ -48,6 +48,31 @@ jobs:
             -e "ssh -i ~/.ssh/retail-craft" \
             ./ root@165.227.26.131:/root/retail-craft-app/
 
+      # ecosystem.config.js reads its secrets from the git-ignored .env in the
+      # deploy folder. Rebuild it from GitHub secrets on every deploy so the repo
+      # secrets are the single source of truth. Values travel over ssh stdin,
+      # never on a command line, so they cannot end up in this public log or in
+      # the server's process list.
+      - name: Write server .env from secrets
+        env:
+          DATABASE_URL_PROD: ${{ secrets.DATABASE_URL_PROD }}
+          JWT_SECRET_PROD: ${{ secrets.JWT_SECRET_PROD }}
+        run: |
+          for name in DATABASE_URL_PROD JWT_SECRET_PROD; do
+            value="${!name}"
+            if [ -z "$value" ]; then
+              echo "::error::GitHub secret $name is not set"; exit 1
+            fi
+            case "$value" in *$'\n'*|*$'\r'*)
+              echo "::error::GitHub secret $name must be a single line"; exit 1;;
+            esac
+          done
+          printf '%s=%s\n' \
+            DATABASE_URL_PROD "$DATABASE_URL_PROD" \
+            JWT_SECRET_PROD "$JWT_SECRET_PROD" |
+          ssh -i ~/.ssh/retail-craft root@165.227.26.131 \
+            'umask 077 && cat > /root/retail-craft-app/.env.new && mv /root/retail-craft-app/.env.new /root/retail-craft-app/.env'
+
       # Migrations are applied via scripts/deploy-migrate.sh, which resolves the
       # connection string from ecosystem.config.js — the same place the running
       # pm2 app gets it. Calling `prisma migrate deploy` directly here would

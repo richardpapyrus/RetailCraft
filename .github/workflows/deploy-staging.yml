@@ -49,18 +49,37 @@ jobs:
             -e "ssh -i ~/.ssh/retail-craft" \
             ./ root@165.227.26.131:/root/retail-craft-staging/
 
+      # ecosystem.config.js reads its secrets from the git-ignored .env in the
+      # deploy folder. Rebuild it from GitHub secrets on every deploy so the repo
+      # secrets are the single source of truth. Values travel over ssh stdin,
+      # never on a command line, so they cannot end up in this public log or in
+      # the server's process list.
+      - name: Write server .env from secrets
+        env:
+          DATABASE_URL_STAGING: ${{ secrets.DATABASE_URL_STAGING }}
+          JWT_SECRET_STAGING: ${{ secrets.JWT_SECRET_STAGING }}
+        run: |
+          for name in DATABASE_URL_STAGING JWT_SECRET_STAGING; do
+            value="${!name}"
+            if [ -z "$value" ]; then
+              echo "::error::GitHub secret $name is not set"; exit 1
+            fi
+            case "$value" in *$'\n'*|*$'\r'*)
+              echo "::error::GitHub secret $name must be a single line"; exit 1;;
+            esac
+          done
+          printf '%s=%s\n' \
+            DATABASE_URL_STAGING "$DATABASE_URL_STAGING" \
+            JWT_SECRET_STAGING "$JWT_SECRET_STAGING" |
+          ssh -i ~/.ssh/retail-craft root@165.227.26.131 \
+            'umask 077 && cat > /root/retail-craft-staging/.env.new && mv /root/retail-craft-staging/.env.new /root/retail-craft-staging/.env'
+
       # See deploy.yml — the migration target is resolved from ecosystem.config.js
       # so it can never diverge from the database this pm2 app actually runs on.
-      #
-      # ecosystem.config.js needs a git-ignored .env here. Staging's folder never
-      # got one, so seed it once from production's (it holds both database URLs).
-      # Never overwrites an existing file. TEMPORARY: replace with a .env built
-      # from GitHub secrets once the leaked credentials are rotated.
       - name: Deploy on server
         run: |
           ssh -i ~/.ssh/retail-craft root@165.227.26.131 "
             cd /root/retail-craft-staging/ && \
-            { [ -f .env ] || { cp -n /root/retail-craft-app/.env .env && chmod 600 .env && echo 'Seeded .env from production'; }; } && \
             npm install --production && \
             (cd apps/api && npx prisma generate) && \
             bash scripts/deploy-migrate.sh pos-api-staging && \
