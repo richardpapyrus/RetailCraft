@@ -25,6 +25,11 @@ interface SaleItem {
 interface Sale {
     id: string;
     items: SaleItem[];
+    total?: string;
+    subtotal?: string;
+    customerId?: string | null;
+    loyaltyPointsUsed?: number;
+    loyaltyPointsEarned?: number;
 }
 
 interface ReturnModalProps {
@@ -95,14 +100,23 @@ export function ReturnModal({ isOpen, onClose, sale, onSuccess }: ReturnModalPro
         }
     };
 
-    // Calculate total refund preview
+    // Calculate total refund preview. Mirrors the server: each item refunds its
+    // share of what was actually paid (after discounts, points and tax).
+    const saleSubtotal = Number(sale.subtotal);
+    const paidRatio = sale.subtotal === undefined ? 1 : saleSubtotal > 0 ? Number(sale.total) / saleSubtotal : 0;
+    let returnedShelfValue = 0;
     const totalRefund = Object.entries(selectedItems).reduce((sum, [productId, qty]) => {
         const item = sale.items.find(i => (i.productId || (i.product as any).id) === productId);
-        // Need to be careful about where ID is.
-        // If Page.tsx didn't have productId in interface, it might be missing from frontend type but present in JSON.
-        // I will assume it's available.
-        return sum + (qty * Number(item?.priceAtSale || 0));
+        const lineValue = qty * Number(item?.priceAtSale || 0);
+        returnedShelfValue += lineValue;
+        return sum + Math.round(lineValue * paidRatio * 100) / 100;
     }, 0);
+    const itemsSelected = Object.values(selectedItems).some(qty => qty > 0);
+
+    // Approximate for this return alone; the server settles exact rounding.
+    const returnedShare = saleSubtotal > 0 ? Math.min(1, returnedShelfValue / saleSubtotal) : 0;
+    const pointsRestored = sale.customerId ? Math.round((sale.loyaltyPointsUsed || 0) * returnedShare) : 0;
+    const pointsReversed = sale.customerId ? Math.round((sale.loyaltyPointsEarned || 0) * returnedShare) : 0;
 
     return (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -176,6 +190,12 @@ export function ReturnModal({ isOpen, onClose, sale, onSuccess }: ReturnModalPro
                         <div className="text-right">
                             <span className="block text-xs text-gray-500">Refund Total</span>
                             <span className="block text-2xl font-semibold text-red-600">{formatCurrency(totalRefund, user?.currency)}</span>
+                            {pointsRestored > 0 && (
+                                <span className="block text-xs text-gray-600 mt-1">+{pointsRestored.toLocaleString()} points returned to customer</span>
+                            )}
+                            {pointsReversed > 0 && (
+                                <span className="block text-xs text-gray-600 mt-1">−{pointsReversed.toLocaleString()} earned points taken back</span>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -184,7 +204,7 @@ export function ReturnModal({ isOpen, onClose, sale, onSuccess }: ReturnModalPro
                     <button onClick={onClose} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
                     <button
                         onClick={handleSubmit}
-                        disabled={loading || totalRefund === 0}
+                        disabled={loading || !itemsSelected}
                         className="px-6 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 disabled:opacity-50"
                     >
                         {loading ? 'Processing...' : 'Confirm Return'}

@@ -185,6 +185,7 @@ export class SalesService {
 
       // Loyalty Redemption
       let pointsUsed = 0;
+      let redemptionValue = 0;
       if (redeemPoints && redeemPoints > 0) {
         if (!customerId)
           throw new BadRequestException("Customer required to redeem points");
@@ -195,15 +196,21 @@ export class SalesService {
         if (customer.loyaltyPoints < redeemPoints)
           throw new BadRequestException("Insufficient loyalty points");
 
-        const redemptionValue = redeemPoints * redeemRate;
+        // Only take the points needed to cover what other discounts left to
+        // pay — anything beyond that used to be deducted and simply lost.
+        const remaining = Math.max(0, subtotal - discountAmount);
+        const pointsNeeded = Math.ceil(remaining / redeemRate - 1e-9);
+        pointsUsed = Math.min(redeemPoints, pointsNeeded);
+        redemptionValue = Math.min(pointsUsed * redeemRate, remaining);
 
         discountAmount += redemptionValue;
-        pointsUsed = redeemPoints;
 
-        await tx.customer.update({
-          where: { id: customerId },
-          data: { loyaltyPoints: { decrement: redeemPoints } },
-        });
+        if (pointsUsed > 0) {
+          await tx.customer.update({
+            where: { id: customerId },
+            data: { loyaltyPoints: { decrement: pointsUsed } },
+          });
+        }
       }
 
       if (discountAmount > subtotal) discountAmount = subtotal;
@@ -291,6 +298,7 @@ export class SalesService {
           tillSession: tillSessionId ? { connect: { id: tillSessionId } } : undefined,
           loyaltyPointsUsed: pointsUsed,
           loyaltyPointsEarned: pointsEarned,
+          loyaltyDiscountAmount: redemptionValue,
         },
       });
 

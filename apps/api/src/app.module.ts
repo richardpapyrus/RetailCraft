@@ -27,6 +27,8 @@ import { GrnModule } from "./grn/grn.module";
 import { TillReportsModule } from "./till-reports/till-reports.module";
 import { CategoriesModule } from "./categories/categories.module";
 import { ExpensesModule } from "./expenses/expenses.module";
+import { LoyaltyModule } from "./loyalty/loyalty.module";
+import { ScheduleModule } from "@nestjs/schedule";
 import { join } from 'path';
 
 import { LoggerMiddleware } from "./common/middleware/logger.middleware";
@@ -58,6 +60,8 @@ import { ApiPrefixMiddleware } from "./common/middleware/api-prefix.middleware";
     TillReportsModule,
     CategoriesModule,
     ExpensesModule,
+    ScheduleModule.forRoot(),
+    LoyaltyModule,
   ],
   controllers: [],
   providers: [],
