@@ -34,6 +34,19 @@ export class ReturnsService {
     const returnItemsData: any[] = [];
     const inventoryUpdates: any[] = [];
 
+    // Refunds give back each item's share of what was actually paid — the sale
+    // total after discounts, loyalty points and tax, spread over shelf value.
+    // A sale paid entirely with points therefore refunds no cash.
+    const saleSubtotal = Number(sale.subtotal);
+    const paidRatio = saleSubtotal > 0 ? Number(sale.total) / saleSubtotal : 0;
+    const shelfValueOf = (productId: string, quantity: number) =>
+      Number(sale.items.find((si) => si.productId === productId)?.priceAtSale || 0) * quantity;
+    const previouslyReturnedValue = sale.returns.reduce(
+      (sum, ret) => sum + ret.items.reduce((s, ri) => s + shelfValueOf(ri.productId, ri.quantity), 0),
+      0,
+    );
+    let returnedValue = 0;
+
     // 2. Validate Items
     for (const item of items) {
       const saleItem = sale.items.find((si) => si.productId === item.productId);
@@ -55,11 +68,10 @@ export class ReturnsService {
         );
       }
 
-      // Calculate refund amount for this line (simple pro-rata of priceAtSale)
-      // Note: Does not currently handle pro-rata of global discounts/taxes perfectly.
-      // MVP: Refund = PriceAtSale * Qty.
-      const refundAmount = Number(saleItem.priceAtSale) * item.quantity;
+      const lineValue = Number(saleItem.priceAtSale) * item.quantity;
+      const refundAmount = Math.round(lineValue * paidRatio * 100) / 100;
       totalRefund += refundAmount;
+      returnedValue += lineValue;
 
       returnItemsData.push({
         productId: item.productId,
@@ -97,6 +109,28 @@ export class ReturnsService {
             },
           }),
         );
+      }
+    }
+
+    // Loyalty: take back the returned share of points earned on the sale and
+    // give back the returned share of points spent on it. Shares are cumulative
+    // across partial returns so rounding never drifts. Balance floors at 0
+    // when the customer has already spent the points being taken back.
+    const loyaltyUpdates: any[] = [];
+    if (sale.customerId && saleSubtotal > 0) {
+      const pointsShare = (points: number, value: number) =>
+        Math.round(points * Math.min(1, value / saleSubtotal));
+      const pointsDelta = (points: number) =>
+        pointsShare(points, previouslyReturnedValue + returnedValue) -
+        pointsShare(points, previouslyReturnedValue);
+      const earnedBack = pointsDelta(sale.loyaltyPointsEarned || 0);
+      const usedBack = pointsDelta(sale.loyaltyPointsUsed || 0);
+      const delta = usedBack - earnedBack;
+      if (delta !== 0) {
+        loyaltyUpdates.push(
+          prisma.$executeRaw`UPDATE "Customer" SET "loyaltyPoints" = GREATEST(0, "loyaltyPoints" + ${delta}), "updatedAt" = NOW() WHERE "id" = ${sale.customerId}`,
+        );
+        console.log(`[ReturnsService] Loyalty for Sale ${sale.id}: -${earnedBack} earned, +${usedBack} redeemed restored`);
       }
     }
 
@@ -194,6 +228,8 @@ export class ReturnsService {
       ...inventoryUpdates,
       // Execute Till Updates
       ...transactionUpdates,
+      // Reverse loyalty points
+      ...loyaltyUpdates,
     ]);
   }
 }

@@ -8,7 +8,7 @@ import { Award, Gift, TrendingUp, Users, ArrowRight, Settings } from 'lucide-rea
 import Link from 'next/link';
 
 export default function LoyaltyPage() {
-    const { user } = useAuth();
+    const { user, refreshProfile } = useAuth();
     const [stats, setStats] = useState({
         totalPoints: 0,
         enrolledCustomers: 0,
@@ -39,7 +39,7 @@ export default function LoyaltyPage() {
                 setSettings({
                     earnRate: Number(user.tenant.loyaltyEarnRate) || 1.0,
                     redeemRate: Number(user.tenant.loyaltyRedeemRate) || 0.10,
-                    expiryDays: Number(user.tenant.loyaltyExpiryDays) || 365
+                    expiryDays: user.tenant.loyaltyExpiryDays == null ? 365 : Number(user.tenant.loyaltyExpiryDays)
                 });
             }
 
@@ -72,12 +72,20 @@ export default function LoyaltyPage() {
             });
             setSettings(editSettings);
             setIsSettingsOpen(false);
-            // Ideally trigger a profile refresh here
+            // The POS reads rates from the cached profile; refresh it so this
+            // tab's tills use the new rates straight away.
+            refreshProfile().catch(() => { });
         } catch (e) {
             console.error(e);
             toast.error('Failed to save settings');
         }
     };
+
+    // Share of spend handed back as discount: points per unit × value per point.
+    const rewardPercent = (s: { earnRate: number; redeemRate: number }) =>
+        (Number(s.earnRate) || 0) * (Number(s.redeemRate) || 0) * 100;
+    const formatPercent = (p: number) => `${p.toLocaleString(undefined, { maximumFractionDigits: 2 })}%`;
+    const REWARD_WARN_PERCENT = 10;
 
     const openSettings = () => {
         setEditSettings({ ...settings });
@@ -143,8 +151,19 @@ export default function LoyaltyPage() {
                                 <span>Redeem Value</span>
                                 <span className="font-semibold font-mono">{formatCurrency((100 * settings.earnRate) * settings.redeemRate, user?.currency, user?.locale)}</span>
                             </div>
+                            <div className="flex justify-between pt-2 border-t border-white/10 mt-2">
+                                <span>Customers get back</span>
+                                <span className="font-semibold">{formatPercent(rewardPercent(settings))} of spend</span>
+                            </div>
+                            {rewardPercent(settings) > REWARD_WARN_PERCENT && (
+                                <div className="mt-2 rounded-lg bg-red-500/20 px-3 py-2 text-xs font-semibold text-red-100">
+                                    Above {REWARD_WARN_PERCENT}% — check these rates are intended.
+                                </div>
+                            )}
                             <div className="mt-4 text-xs text-brand-200">
-                                * Points expire after {settings.expiryDays} days of inactivity
+                                {settings.expiryDays > 0
+                                    ? `* Points expire after ${settings.expiryDays} days without a purchase`
+                                    : '* Points never expire'}
                             </div>
                         </div>
                     </div>
@@ -299,7 +318,16 @@ export default function LoyaltyPage() {
                                     value={editSettings.expiryDays}
                                     onChange={e => setEditSettings({ ...editSettings, expiryDays: parseInt(e.target.value) })}
                                 />
-                                <p className="text-xs text-gray-400 mt-1">Days after last purchase until points reset.</p>
+                                <p className="text-xs text-gray-400 mt-1">Days after last purchase until points reset. 0 = never expire.</p>
+                            </div>
+
+                            <div className={`rounded-xl px-4 py-3 text-sm ${rewardPercent(editSettings) > REWARD_WARN_PERCENT ? 'bg-red-50 text-red-700' : 'bg-gray-50 text-gray-600'}`}>
+                                Customers get back <span className="font-semibold">{formatPercent(rewardPercent(editSettings))}</span> of what they spend.
+                                {rewardPercent(editSettings) > REWARD_WARN_PERCENT && (
+                                    <span className="block mt-1 font-semibold">
+                                        That's above {REWARD_WARN_PERCENT}% — most retailers give 1–5%. Check these rates before saving.
+                                    </span>
+                                )}
                             </div>
                         </div>
 
