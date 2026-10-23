@@ -723,6 +723,12 @@ export default function POSPage() {
                 ...result.data, // Merge ID
                 total: Number(cartTotal),
                 customerName: selectedCustomer?.name,
+                // Balance after this sale, for the receipt's points summary.
+                customerPointsBalance: selectedCustomer?.isLoyaltyMember && !result.offline && result.data
+                    ? Math.max(0, (selectedCustomer.loyaltyPoints || 0)
+                        - (Number(result.data.loyaltyPointsUsed) || 0)
+                        + (Number(result.data.loyaltyPointsEarned) || 0))
+                    : undefined,
                 payments: isSplit ? splitPayments.map(p => ({ method: p.method, amount: p.amount })) : undefined
             });
             setLastSaleExt({ subtotal, tax: taxAmount, discount: discountAmount });

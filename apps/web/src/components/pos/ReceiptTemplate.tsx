@@ -57,6 +57,23 @@ export default function ReceiptTemplate({ sale, user, store: propStore }: Receip
         ? storedChange
         : Math.max(0, paidValue - totalValue);
 
+    // Loyalty. The sale's discount total includes any points redeemed, so split
+    // it: points get their own labelled line and only the rest shows as
+    // "Discount" — otherwise the same money appeared twice on the receipt.
+    // loyaltyDiscountAmount is recorded by the server; an offline sale has no
+    // server record yet, so fall back to points × today's rate.
+    const pointsUsed = num(sale.loyaltyPointsUsed ?? sale.redeemPoints);
+    const pointsEarned = num(sale.loyaltyPointsEarned);
+    const pointsValue = pointsUsed > 0
+        ? Math.min(
+            discountValue,
+            num(sale.loyaltyDiscountAmount) || pointsUsed * (Number(user?.tenant?.loyaltyRedeemRate) || 0.10),
+        )
+        : 0;
+    const otherDiscountValue = Math.max(0, discountValue - pointsValue);
+    // Only the POS knows the balance right after the sale; reprints omit it.
+    const pointsBalance = sale.customerPointsBalance;
+
     // Effective tax rate, shown only when it can be derived cleanly, so the
     // customer can see what they were charged rather than a bare figure.
     const taxableValue = subtotalValue - discountValue;
@@ -194,10 +211,17 @@ export default function ReceiptTemplate({ sale, user, store: propStore }: Receip
                     <span>{formatCurrency(subtotalValue, user?.currency, user?.locale)}</span>
                 </div>
 
-                {discountValue > 0 && (
+                {otherDiscountValue > 0.005 && (
                     <div className="flex justify-between text-black">
                         <span>Discount</span>
-                        <span>-{formatCurrency(discountValue, user?.currency, user?.locale)}</span>
+                        <span>-{formatCurrency(otherDiscountValue, user?.currency, user?.locale)}</span>
+                    </div>
+                )}
+
+                {pointsValue > 0 && (
+                    <div className="flex justify-between text-black">
+                        <span>Loyalty points ({pointsUsed.toLocaleString()} pts)</span>
+                        <span>-{formatCurrency(pointsValue, user?.currency, user?.locale)}</span>
                     </div>
                 )}
 
@@ -242,10 +266,20 @@ export default function ReceiptTemplate({ sale, user, store: propStore }: Receip
                     </div>
                 )}
 
-                {(sale.loyaltyPointsUsed > 0 || sale.redeemPoints > 0) && (
-                    <div className="flex justify-between font-bold text-black mt-1 bg-gray-100 p-1">
-                        <span>Loyalty Redemp. ({sale.loyaltyPointsUsed || sale.redeemPoints} pts)</span>
-                        <span>-{formatCurrency(sale.loyaltyDiscountAmount || ((sale.loyaltyPointsUsed || sale.redeemPoints) * (Number(user?.tenant?.loyaltyRedeemRate) || 0.10)), user?.currency, user?.locale)}</span>
+                {(pointsEarned > 0 || pointsBalance !== undefined && pointsBalance !== null) && (
+                    <div className="border-t border-dashed border-black mt-2 pt-1 space-y-0.5 text-[10px]">
+                        {pointsEarned > 0 && (
+                            <div className="flex justify-between">
+                                <span>Points earned</span>
+                                <span>+{pointsEarned.toLocaleString()} pts</span>
+                            </div>
+                        )}
+                        {pointsBalance !== undefined && pointsBalance !== null && (
+                            <div className="flex justify-between font-bold">
+                                <span>Points balance</span>
+                                <span>{num(pointsBalance).toLocaleString()} pts</span>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
