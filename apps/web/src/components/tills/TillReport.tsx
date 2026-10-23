@@ -1,6 +1,7 @@
 "use client";
 
 import { formatCurrency, useAuth } from '@/lib/useAuth';
+import { receiptNumber } from '@/lib/format';
 import { useRef, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Printer } from 'lucide-react';
@@ -255,7 +256,7 @@ export function TillReport({ data, onClose }: TillReportProps) {
                                 <tr key={tx.id} className={tx.type === 'RETURN' ? 'bg-red-50/50' : ''}>
                                     <td className="py-2 text-gray-600">{new Date(tx.createdAt).toLocaleTimeString()}</td>
                                     <td className="py-2 font-mono text-xs">
-                                        #{tx.id.slice(0, 8)}
+                                        {receiptNumber(tx.id)}
                                         {tx.type === 'RETURN' && <span className="ml-2 text-[10px] bg-red-100 text-red-700 px-1 py-0.5 rounded">REFUND</span>}
                                     </td>
                                     <td className="py-2 text-right">{tx.items?.length || 0}</td>

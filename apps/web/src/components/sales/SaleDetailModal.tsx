@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth, formatCurrency } from '@/lib/useAuth';
+import { receiptNumber } from '@/lib/format';
 import ReceiptTemplate from '@/components/pos/ReceiptTemplate';
 import { X, Printer, RotateCcw } from 'lucide-react';
 
@@ -66,7 +67,7 @@ export function SaleDetailModal({ sale, onClose, onReturn }: SaleDetailModalProp
                 <div className="p-6 border-b border-gray-100 flex justify-between items-start shrink-0">
                     <div className="min-w-0">
                         <h2 className="text-xl font-semibold text-gray-900 tracking-tight">Receipt Details</h2>
-                        <p className="text-xs text-mid-grey font-mono truncate mt-0.5">#{sale.id}</p>
+                        <p className="text-xs text-mid-grey font-mono truncate mt-0.5" title={sale.id}>Receipt {receiptNumber(sale.id)}</p>
                     </div>
                     <button
                         className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition-colors shrink-0"

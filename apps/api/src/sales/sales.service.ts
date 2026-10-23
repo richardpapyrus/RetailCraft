@@ -299,6 +299,9 @@ export class SalesService {
           loyaltyPointsUsed: pointsUsed,
           loyaltyPointsEarned: pointsEarned,
           loyaltyDiscountAmount: redemptionValue,
+          // Computed above but never saved, so till reports' change total and
+          // the returns cash split always read 0.
+          changeGiven: changeGiven,
         },
       });
 

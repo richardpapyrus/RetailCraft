@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth, formatCurrency } from '@/lib/useAuth';
+import { receiptNumber } from '@/lib/format';
 
 interface SaleItem {
     id: string;
@@ -133,7 +134,7 @@ export function ReturnModal({ isOpen, onClose, sale, onSuccess }: ReturnModalPro
                         </div>
                     )}
                     <p className="mb-4 text-sm text-gray-600">
-                        Select items to return from Sale <b>#{sale.id.slice(0, 8)}</b>.
+                        Select items to return from Sale <b>{receiptNumber(sale.id)}</b>.
                     </p>
 
                     <table className="min-w-full divide-y divide-gray-100">

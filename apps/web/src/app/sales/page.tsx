@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth, formatCurrency } from '@/lib/useAuth';
+import { receiptNumber } from '@/lib/format';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ReturnModal } from '@/components/sales/ReturnModal';
 import { SaleDetailModal } from '@/components/sales/SaleDetailModal';
@@ -261,7 +262,7 @@ export default function SalesHistoryPage() {
                                                 {formatDate(sale.createdAt)}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-600">
-                                                #{sale.id.slice(0, 8)}
+                                                {receiptNumber(sale.id)}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
                                                 {sale.customer ? (

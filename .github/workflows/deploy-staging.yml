@@ -51,10 +51,16 @@ jobs:
 
       # See deploy.yml — the migration target is resolved from ecosystem.config.js
       # so it can never diverge from the database this pm2 app actually runs on.
+      #
+      # ecosystem.config.js needs a git-ignored .env here. Staging's folder never
+      # got one, so seed it once from production's (it holds both database URLs).
+      # Never overwrites an existing file. TEMPORARY: replace with a .env built
+      # from GitHub secrets once the leaked credentials are rotated.
       - name: Deploy on server
         run: |
           ssh -i ~/.ssh/retail-craft root@165.227.26.131 "
             cd /root/retail-craft-staging/ && \
+            { [ -f .env ] || { cp -n /root/retail-craft-app/.env .env && chmod 600 .env && echo 'Seeded .env from production'; }; } && \
             npm install --production && \
             (cd apps/api && npx prisma generate) && \
             bash scripts/deploy-migrate.sh pos-api-staging && \
