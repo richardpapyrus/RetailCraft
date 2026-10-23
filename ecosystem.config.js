@@ -1,3 +1,21 @@
+const fs = require("fs");
+const path = require("path");
+
+// Secrets live in ./.env (git-ignored). Minimal KEY=VALUE parser so pm2 needs no extra dependency.
+function loadEnv(file) {
+    const out = {};
+    if (!fs.existsSync(file)) {
+        throw new Error(`Missing ${file} - copy .env.example to .env and fill in the values`);
+    }
+    for (const line of fs.readFileSync(file, "utf8").split(/\r?\n/)) {
+        const m = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/);
+        if (!m) continue;
+        out[m[1]] = m[2].replace(/^(["'])(.*)\1$/, "$2");
+    }
+    return out;
+}
+const env = { ...loadEnv(path.join(__dirname, ".env")), ...process.env };
+
 module.exports = {
     apps: [
         {
@@ -11,7 +29,8 @@ module.exports = {
                 // Max DB connections for this API process (apps/api/src/prisma/client.ts).
                 // Prod + staging together must stay under the DO cluster's connection limit.
                 DATABASE_POOL_SIZE: "10",
-                DATABASE_URL: "postgresql://doadmin:AVNS_iNZVQYj-RX036W3B0oS@retail-craft-db-postgres-do-user-24373738-0.k.db.ondigitalocean.com:25060/pos_db?sslmode=require"
+                DATABASE_URL: env.DATABASE_URL_PROD,
+                JWT_SECRET: env.JWT_SECRET
             }
         },
         {
@@ -34,7 +53,8 @@ module.exports = {
                 NODE_ENV: "production",
                 PORT: 4001,
                 DATABASE_POOL_SIZE: "5",
-                DATABASE_URL: "postgresql://doadmin:AVNS_iNZVQYj-RX036W3B0oS@retail-craft-db-postgres-do-user-24373738-0.k.db.ondigitalocean.com:25060/pos_db_staging?sslmode=require"
+                DATABASE_URL: env.DATABASE_URL_STAGING,
+                JWT_SECRET: env.JWT_SECRET
             }
         },
         {
