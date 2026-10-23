@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { useAuth, formatCurrency } from '@/lib/useAuth';
+import { receiptNumber } from '@/lib/format';
 import { api, Product, API_URL } from '@/lib/api'; // Import API_URL
 import { printerService, PrinterService } from '@/lib/printer-service';
 import { DataService } from '@/lib/db-service';
@@ -1949,7 +1950,7 @@ export default function POSPage() {
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
                                 </div>
                                 <h2 className="text-2xl font-semibold uppercase tracking-wide">Sale Complete!</h2>
-                                <p className="opacity-90 font-medium">Receipt #{lastSale.id?.slice(-6).toUpperCase()}</p>
+                                <p className="opacity-90 font-medium">Receipt {receiptNumber(lastSale.id)}</p>
                             </div>
                             <div className="p-8">
                                 <div className="space-y-4 mb-8">

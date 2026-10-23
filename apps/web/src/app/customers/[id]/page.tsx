@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/useAuth';
 import { useRouter } from 'next/navigation';
-import { formatCurrency } from '@/lib/format';
+import { formatCurrency, receiptNumber } from '@/lib/format';
 
 interface Customer {
     id: string;
@@ -149,7 +149,7 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
                                             {new Date(sale.createdAt).toLocaleString()}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-600">
-                                            #{sale.id.slice(0, 8)}
+                                            {receiptNumber(sale.id)}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <span className={`px-2 py-1 rounded text-xs font-semibold ${sale.paymentMethod === 'CASH' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'

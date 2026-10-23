@@ -1,5 +1,6 @@
 import React from 'react';
 import { formatCurrency } from '@/lib/useAuth';
+import { receiptNumber } from '@/lib/format';
 import { API_URL } from '@/lib/api';
 
 interface ReceiptTemplateProps {
@@ -157,7 +158,7 @@ export default function ReceiptTemplate({ sale, user, store: propStore }: Receip
                         <p>{new Date(sale.date || sale.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                     </div>
                     <div className="text-right">
-                        <p>Rcpt: #{sale.id?.slice(-8, -1).toUpperCase()}</p>
+                        <p>Rcpt: {receiptNumber(sale.id)}</p>
                         <p>Cashier: {(sale.user?.name || user?.name)?.split(' ')[0]}</p>
                     </div>
                 </div>
