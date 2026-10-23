@@ -1407,7 +1407,7 @@ export default function POSPage() {
                                                 className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${usePoints ? 'bg-green-400' : 'bg-gray-300'}`}
                                             ></label>
                                         </div>
-                                        <span className="text-sm font-medium text-gray-700">Redeem Points (Rate: {formatCurrency(Number(user?.tenant?.loyaltyRedeemRate) || 0.10)})</span>
+                                        <span className="text-sm font-medium text-gray-700">Redeem Points (Rate: {formatCurrency(Number(user?.tenant?.loyaltyRedeemRate) || 0.10, user?.currency, user?.locale)} per point)</span>
                                     </div>
 
                                     {usePoints && (
