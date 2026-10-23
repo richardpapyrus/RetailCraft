@@ -30,7 +30,9 @@ module.exports = {
                 // Prod + staging together must stay under the DO cluster's connection limit.
                 DATABASE_POOL_SIZE: "10",
                 DATABASE_URL: env.DATABASE_URL_PROD,
-                JWT_SECRET: env.JWT_SECRET
+                // Separate per environment so a staging token is never valid on prod.
+                // Plain JWT_SECRET is only a fallback for hand-written .env files.
+                JWT_SECRET: env.JWT_SECRET_PROD || env.JWT_SECRET
             }
         },
         {
@@ -54,7 +56,7 @@ module.exports = {
                 PORT: 4001,
                 DATABASE_POOL_SIZE: "5",
                 DATABASE_URL: env.DATABASE_URL_STAGING,
-                JWT_SECRET: env.JWT_SECRET
+                JWT_SECRET: env.JWT_SECRET_STAGING || env.JWT_SECRET
             }
         },
         {
