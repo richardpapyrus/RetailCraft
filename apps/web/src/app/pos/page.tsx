@@ -180,6 +180,10 @@ export default function POSPage() {
 
     // Keyboard Shortcuts
     const searchInputRef = useRef<HTMLInputElement>(null);
+    const tenderedInputRef = useRef<HTMLInputElement>(null);
+    // The amount field starts at the total and follows it (e.g. when points
+    // are redeemed) until the cashier types their own figure.
+    const [tenderedTouched, setTenderedTouched] = useState(false);
     const [shortcutsHelpOpen, setShortcutsHelpOpen] = useState(false);
 
     // Effect: Auto-scroll to bottom only when NEW items are added
@@ -599,6 +603,19 @@ export default function POSPage() {
         };
     }, [cart, appliedDiscount, taxes, usePoints, pointsToRedeem, user?.tenant?.loyaltyRedeemRate]);
 
+    // Prefill the amount with the total each time the payment step opens, and
+    // select it so Enter accepts it and typing replaces it.
+    useEffect(() => {
+        if (!checkoutModalOpen) return;
+        setTenderedTouched(false);
+        const t = setTimeout(() => tenderedInputRef.current?.select(), 0);
+        return () => clearTimeout(t);
+    }, [checkoutModalOpen]);
+
+    useEffect(() => {
+        if (checkoutModalOpen && !tenderedTouched) setTendered(cartTotal.toFixed(2));
+    }, [checkoutModalOpen, tenderedTouched, cartTotal]);
+
     // Automatically apply the best-value discount configured in Settings.
     //
     // Discounts set up in the back office are meant to just happen — the picker
@@ -680,7 +697,7 @@ export default function POSPage() {
 
         setIsProcessingCheckout(true);
         const tenderedVal = parseFloat(tendered) || 0;
-        const change = tenderedVal - cartTotal;
+        const change = tenderedVal ? Math.max(0, Math.round((tenderedVal - cartTotal) * 100) / 100) : 0;
 
         try {
             const isSplit = splitPayments.length > 0;
@@ -1359,13 +1376,28 @@ export default function POSPage() {
                                             {formatCurrency(0, user?.currency, user?.locale).replace(/[\d\s.,]/g, '')}
                                         </span>
                                         <input
+                                            ref={tenderedInputRef}
                                             type="number"
                                             autoFocus
                                             className="w-full text-3xl py-3 pl-8 pr-4 border-2 border-gray-200 rounded-xl text-right font-semibold focus:border-brand-500 focus:outline-none text-gray-800"
                                             placeholder="0.00"
                                             value={tendered}
-                                            onChange={e => setTendered(e.target.value)}
+                                            onFocus={e => e.target.select()}
+                                            onChange={e => {
+                                                setTenderedTouched(true);
+                                                setTendered(e.target.value);
+                                            }}
+                                            onKeyDown={e => {
+                                                if (e.key !== 'Enter') return;
+                                                e.preventDefault();
+                                                const tendVal = parseFloat(tendered) || 0;
+                                                if (isProcessingCheckout || (tendVal > 0 && tendVal < cartTotal - 0.005)) return;
+                                                handleCheckout();
+                                            }}
                                         />
+                                        <p className="text-xs text-gray-400 mt-1.5 text-right">
+                                            {tenderedTouched ? 'Press Enter to complete' : 'Exact amount — press Enter to accept, or type the amount received'}
+                                        </p>
                                     </div>
                                 )}
                             </div>
@@ -1432,8 +1464,10 @@ export default function POSPage() {
 
                             {(() => {
                                 const tendVal = parseFloat(tendered) || 0;
-                                const change = tendVal - cartTotal;
-                                const remaining = cartTotal - tendVal;
+                                // Compare in kobo/cents so a prefilled "945.00" against a
+                                // float total of 945.0000001 isn't read as short.
+                                const change = Math.round((tendVal - cartTotal) * 100) / 100;
+                                const remaining = -change;
 
                                 return (
                                     <div className="space-y-4">
